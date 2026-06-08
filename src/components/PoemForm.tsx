@@ -149,15 +149,15 @@ export default function PoemForm({
 
   return (
     <form id="poem-form" onSubmit={handleSubmit} className="space-y-6">
-      <div className="flex items-center justify-between border-b pb-4 border-slate-850">
-        <h3 id="form-heading" className="text-xl font-serif font-semibold text-transparent bg-clip-text bg-gradient-to-r from-slate-100 to-amber-200">
+      <div className="flex items-center justify-between border-b pb-4 border-amber-100">
+        <h3 id="form-heading" className="text-xl font-serif font-bold text-amber-950">
           {poem ? 'Amending Poem' : 'Inscribing New Poem'}
         </h3>
         <button
           id="btn-close-form"
           type="button"
           onClick={onCancel}
-          className="text-slate-400 hover:text-slate-200 rounded-full p-1.5 hover:bg-slate-900 transition-colors cursor-pointer"
+          className="text-stone-400 hover:text-stone-700 rounded-full p-1.5 hover:bg-amber-50 transition-colors cursor-pointer"
           title="Cancel"
         >
           <X className="w-5 h-5" />
@@ -167,7 +167,7 @@ export default function PoemForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Title input */}
         <div className="space-y-1">
-          <label id="lbl-title" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <label id="lbl-title" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider font-sans">
             Poem Title *
           </label>
           <input
@@ -177,13 +177,13 @@ export default function PoemForm({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Ozymandias"
-            className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 font-serif focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500/40 transition-all placeholder:text-slate-500"
+            className="w-full px-3 py-2.5 bg-white border border-amber-200 rounded-lg text-stone-900 font-serif focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all placeholder:text-stone-405"
           />
         </div>
 
         {/* Author input */}
         <div className="space-y-1">
-          <label id="lbl-author" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <label id="lbl-author" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider font-sans">
             Poet / Author
           </label>
           <input
@@ -192,16 +192,16 @@ export default function PoemForm({
             value={author}
             onChange={(e) => setAuthor(e.target.value)}
             placeholder="e.g. Percy Bysshe Shelley"
-            className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500/40 transition-all placeholder:text-slate-500"
+            className="w-full px-3 py-2.5 bg-white border border-amber-200 rounded-lg text-stone-900 font-sans focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all placeholder:text-stone-450"
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-none">
         {/* Category select with inline addition */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label id="lbl-category" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <label id="lbl-category" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider font-sans">
               Category *
             </label>
             {!showNewCatInput && (
@@ -209,7 +209,7 @@ export default function PoemForm({
                 id="btn-trigger-new-cat"
                 type="button"
                 onClick={() => setShowNewCatInput(true)}
-                className="text-xs text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1 font-medium cursor-pointer"
+                className="text-xs text-amber-700 hover:text-amber-800 hover:underline flex items-center gap-1 font-semibold cursor-pointer font-sans"
               >
                 <FolderPlus className="w-3.5 h-3.5" />
                 Add Category
@@ -225,7 +225,7 @@ export default function PoemForm({
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 placeholder="New Category Name"
-                className="flex-1 px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 text-sm focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/10 transition-all font-sans"
+                className="flex-1 px-3 py-2 bg-white border border-amber-200 rounded-lg text-stone-900 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/10 transition-all font-sans"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -251,15 +251,15 @@ export default function PoemForm({
                     setShowNewCatInput(false);
                   }
                 }}
-                className="bg-amber-500 text-slate-950 p-2.5 rounded-lg hover:bg-amber-400 transition-colors font-bold cursor-pointer"
+                className="bg-amber-600 text-white p-2.5 rounded-lg hover:bg-amber-700 transition-colors font-bold cursor-pointer"
               >
-                <Check className="w-4 h-4 font-black" />
+                <Check className="w-4 h-4 font-bold" />
               </button>
               <button
                 id="btn-cancel-new-cat"
                 type="button"
                 onClick={() => setShowNewCatInput(false)}
-                className="border border-slate-800 p-2.5 text-slate-400 rounded-lg hover:bg-slate-900 bg-slate-950 cursor-pointer"
+                className="border border-amber-200 p-2.5 text-stone-450 rounded-lg hover:bg-amber-50 bg-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -269,11 +269,11 @@ export default function PoemForm({
               id="select-category"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500/45 transition-all cursor-pointer"
+              className="w-full px-3 py-2.5 bg-white border border-amber-200 rounded-lg text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all cursor-pointer font-sans"
             >
-              <option className="bg-[#0b0e22] text-slate-400" value="" disabled>Select category</option>
+              <option className="bg-[#FAF7F0] text-stone-400" value="" disabled>Select category</option>
               {categories.map((cat) => (
-                <option className="bg-[#0b0e22] text-slate-100" key={cat.id} value={cat.id}>
+                <option className="bg-[#FAF7F0] text-stone-900 font-semibold" key={cat.id} value={cat.id}>
                   {cat.name}
                 </option>
               ))}
@@ -283,17 +283,17 @@ export default function PoemForm({
 
         {/* Mood select */}
         <div className="space-y-1">
-          <label id="lbl-mood" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+          <label id="lbl-mood" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider font-sans">
             Atmosphere & Mood
           </label>
           <select
             id="select-mood"
             value={mood}
             onChange={(e) => setMood(e.target.value as PoemMood)}
-            className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500/45 transition-all cursor-pointer"
+            className="w-full px-3 py-2.5 bg-white border border-amber-200 rounded-lg text-stone-900 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all cursor-pointer font-sans"
           >
             {MOODS.map((m) => (
-              <option className="bg-[#0b0e22] text-slate-100" key={m} value={m}>
+              <option className="bg-[#FAF7F0] text-stone-900 font-semibold" key={m} value={m}>
                 {m}
               </option>
             ))}
@@ -303,10 +303,10 @@ export default function PoemForm({
 
       {/* Body / Writing area */}
       <div className="space-y-1">
-        <label id="lbl-body" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        <label id="lbl-body" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider font-sans">
           Verses & Stanzas *
         </label>
-        <div className="relative border border-slate-805/80 rounded-lg focus-within:ring-2 focus-within:ring-amber-500/10 focus-within:border-amber-500/40 transition-all bg-[#070913]/90">
+        <div className="relative border border-amber-200 rounded-lg focus-within:ring-2 focus-within:ring-amber-500/10 focus-within:border-amber-500 transition-all bg-[#FCFAF2] shadow-inner">
           <textarea
             id="input-body"
             required
@@ -314,42 +314,42 @@ export default function PoemForm({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder="Type your poem here... Use Shift+Enter or Enter to break lines."
-            className="w-full px-4 py-4 bg-transparent outline-none text-slate-100 font-serif text-base leading-relaxed resize-y placeholder:text-slate-500"
+            className="w-full px-4 py-4 bg-transparent outline-none text-stone-900 font-serif text-base leading-relaxed resize-y placeholder:text-stone-400"
             style={{
-              backgroundImage: 'linear-gradient(rgba(245,158,11,0.03) 1px, transparent 1px)',
+              backgroundImage: 'linear-gradient(rgba(139,92,26,0.03) 1px, transparent 1px)',
               backgroundSize: '100% 1.75rem',
               lineHeight: '1.75rem',
             }}
           />
         </div>
-        <p className="text-[11px] text-slate-500 italic">
+        <p className="text-[11px] text-stone-500 italic font-sans">
           Tip: Styled as structured paper lines. Feel free to format with spacing or indentation.
         </p>
       </div>
 
       {/* Media Attachments Section */}
-      <div className="space-y-2 border-t pt-4 border-slate-850">
-        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
-          Media Ledger (Page scans, Recital recordings, or Spoken-word videos)
+      <div className="space-y-3 border-t pt-5 border-amber-100">
+        <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wider font-sans">
+          Direct Poem Media (Images and Videos viewable on tiles)
         </label>
         
         {errorMsg && (
-          <div id="attachments-alert" className="flex items-center gap-2 p-3 bg-amber-950/20 text-amber-300 border border-amber-900/50 rounded-lg text-xs leading-relaxed animate-pulse">
-            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+          <div id="attachments-alert" className="flex items-center gap-2 p-3 bg-amber-50 text-amber-900 border border-amber-200 rounded-lg text-xs leading-relaxed animate-none">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+ 
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {/* File selector card */}
           <div
             id="form-attachment-dropzone"
             onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-800 hover:border-amber-500/40 bg-slate-950/60 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-slate-950 transition-all min-h-[100px] group"
+            className="border-2 border-dashed border-amber-250 hover:border-amber-400/80 bg-stone-50 hover:bg-amber-50/40 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all min-h-[140px] group"
           >
-            <Paperclip className="w-5 h-5 text-slate-500 group-hover:text-amber-400 mb-1.5 transition-colors" />
-            <span className="text-xs font-medium text-slate-300 group-hover:text-amber-400">Attach Image or Video</span>
-            <span className="text-[10px] text-slate-500 mt-0.5">JPEG, PNG, MP4 (under 3MB)</span>
+            <Paperclip className="w-6 h-6 text-stone-400 group-hover:text-amber-700 mb-2 transition-colors" />
+            <span className="text-xs font-bold text-stone-700 group-hover:text-amber-950 transition-colors font-sans">Direct Upload Media</span>
+            <span className="text-[10px] text-stone-500 mt-1 max-w-[150px] font-sans">JPEG, PNG, MP4 (Recommended under 3MB)</span>
             <input
               id="file-attachment-input"
               ref={fileInputRef}
@@ -360,58 +360,62 @@ export default function PoemForm({
               className="hidden"
             />
           </div>
-
+ 
           {/* Render previews */}
           {attachments.map((attach) => (
             <div
               id={`upload-preview-${attach.id}`}
               key={attach.id}
-              className="relative border border-slate-900 rounded-xl overflow-hidden bg-slate-950/40 h-[100px] flex items-center group shadow-xs"
+              className="relative border border-amber-200 rounded-xl overflow-hidden bg-[#FAF8F5] h-[140px] flex flex-col group shadow-sm"
             >
-              {/* Thumbnail representation */}
-              <div className="w-16 h-full bg-slate-900 border-r border-slate-850 relative overflow-hidden flex items-center justify-center shrink-0">
+              <div className="relative w-full flex-1 overflow-hidden bg-amber-50/10">
                 {attach.type === 'image' ? (
                   <img
                     src={attach.url}
                     alt={attach.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <div className="relative w-full h-full">
+                  <div className="w-full h-full relative">
                     <video
                       src={attach.url}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       muted
                       playsInline
                     />
-                    <div className="absolute inset-0 bg-slate-900/10 flex items-center justify-center">
-                      <Video className="w-4 h-4 text-white drop-shadow-md" />
+                    <div className="absolute inset-0 bg-stone-900/10 flex items-center justify-center pointer-events-none">
+                      <Video className="w-6 h-6 text-white drop-shadow-sm" />
                     </div>
                   </div>
                 )}
+                {/* Visual marker of media type */}
+                <div className="absolute left-2.5 top-2.5 p-1 bg-[#FAF8F5] border border-amber-250 rounded text-[9px] text-amber-900 font-bold uppercase tracking-wider flex items-center gap-1 font-sans shadow-xs">
+                  {attach.type === 'image' ? <ImageIcon className="w-3 h-3 text-amber-700" /> : <Video className="w-3 h-3 text-amber-600 animate-pulse" />}
+                  <span>{attach.type}</span>
+                </div>
+
+                {/* Delete trigger */}
+                <button
+                  id={`btn-remove-pvw-${attach.id}`}
+                  type="button"
+                  onClick={() => handleRemoveAttachment(attach.id)}
+                  className="absolute right-2.5 top-2.5 p-1.5 bg-rose-550 hover:bg-rose-600 text-white rounded-lg shadow-sm transition-colors cursor-pointer border border-rose-200/50"
+                  title="Delete media"
+                >
+                  <X className="w-3.5 h-3.5 font-bold" />
+                </button>
               </div>
 
-              {/* Text metrics and info */}
-              <div className="flex-1 p-2.5 overflow-hidden pr-8">
-                <p className="text-xs font-semibold text-slate-250 truncate font-mono">
+              {/* Media Info Footer */}
+              <div className="p-2 border-t border-amber-100 bg-white flex items-center justify-between text-xs font-medium">
+                <span className="text-[10px] font-mono text-stone-700 truncate max-w-[70%] font-semibold" title={attach.name}>
                   {attach.name}
-                </p>
-                <span className="text-[10px] font-medium text-slate-500 uppercase block mt-1">
-                  {attach.type} • {(attach.size ? (attach.size / 1024 / 1024).toFixed(2) + ' MB' : 'Local file')}
+                </span>
+                <span className="text-[9px] text-stone-500 font-semibold whitespace-nowrap font-sans">
+                  {attach.size ? (attach.size / 1024 / 1024).toFixed(2) + ' MB' : 'Local'}
                 </span>
               </div>
-
-              {/* Delete trigger */}
-              <button
-                id={`btn-remove-pvw-${attach.id}`}
-                type="button"
-                onClick={() => handleRemoveAttachment(attach.id)}
-                className="absolute right-2 top-2 p-1 bg-slate-900 hover:bg-rose-950 border border-slate-800 hover:border-rose-900 text-slate-400 hover:text-rose-450 rounded-md shadow-sm transition-colors cursor-pointer"
-                title="Remove attachment"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
             </div>
           ))}
         </div>
@@ -419,25 +423,25 @@ export default function PoemForm({
 
       {/* Tags Input */}
       <div className="space-y-1.5">
-        <label id="lbl-tags" className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+        <label id="lbl-tags" className="block text-xs font-semibold text-stone-500 uppercase tracking-wider font-sans">
           Tags & Key Motifs
         </label>
-        <div className="flex flex-wrap gap-2 p-2 bg-slate-950 border border-slate-800 rounded-lg focus-within:border-slate-750">
+        <div className="flex flex-wrap gap-2 p-2 bg-white border border-amber-200 rounded-lg focus-within:border-amber-500">
           {tags.map((tag, idx) => (
             <span
               id={`tag-pill-${idx}`}
               key={idx}
-              className="inline-flex items-center gap-1 bg-slate-900 border border-slate-800 text-amber-200 text-xs px-2.5 py-1 rounded-full font-medium"
+              className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200/50 text-amber-950 text-xs px-2.5 py-1 rounded-full font-bold font-sans"
             >
-              <Tag className="w-3 h-3 text-amber-550" />
+              <Tag className="w-3 h-3 text-amber-700" />
               {tag}
               <button
                 id={`btn-remove-tag-${idx}`}
                 type="button"
                 onClick={() => handleRemoveTag(idx)}
-                className="hover:text-amber-400 cursor-pointer ml-1"
+                className="hover:text-amber-800 cursor-pointer ml-1"
               >
-                <X className="w-3.5 h-3.5 text-slate-400 hover:text-slate-100" />
+                <X className="w-3.5 h-3.5 text-stone-450 hover:text-stone-700" />
               </button>
             </span>
           ))}
@@ -448,27 +452,27 @@ export default function PoemForm({
             onChange={(e) => setTagInput(e.target.value)}
             onKeyDown={handleAddTag}
             placeholder="press enter/comma to add tag"
-            className="flex-1 min-w-[120px] bg-transparent outline-none text-xs text-slate-100 p-1 placeholder:text-slate-500"
+            className="flex-1 min-w-[120px] bg-transparent outline-none text-xs text-stone-800 p-1 placeholder:text-stone-400 font-sans"
           />
         </div>
       </div>
 
       {/* Submit / Cancel Buttons */}
-      <div className="flex items-center justify-between border-t pt-4 border-slate-850">
+      <div className="flex items-center justify-between border-t pt-4 border-amber-100">
         <button
           id="btn-cancel-form"
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-slate-800 bg-slate-950 hover:bg-slate-900 text-slate-400 hover:text-slate-300 rounded-lg text-sm font-medium transition-all cursor-pointer"
+          className="px-4 py-2 border border-amber-200 bg-white hover:bg-amber-50/55 text-stone-605 hover:text-stone-900 rounded-lg text-sm font-semibold transition-all cursor-pointer font-sans"
         >
           Nevermind
         </button>
         <button
           id="btn-submit-form"
           type="submit"
-          className="bg-amber-500 hover:bg-amber-400 text-slate-950 px-5 py-2 rounded-lg text-sm font-bold shadow-md shadow-amber-500/5 transition-all flex items-center gap-2 cursor-pointer"
+          className="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow-xs transition-all flex items-center gap-2 cursor-pointer font-sans"
         >
-          <Check className="w-4 h-4" />
+          <Check className="w-4 h-4 font-bold" />
           {poem ? 'Update Poem' : 'Save Poem'}
         </button>
       </div>
