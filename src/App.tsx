@@ -8,7 +8,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Feather, Plus, Search, Download, Upload, Trash2, 
   Sparkles, FolderPlus, ArrowUpDown, Clock, HelpCircle, 
-  Layers, ChevronDown, Check, X, RotateCcw, Quote, BookOpen, AlertCircle
+  Layers, ChevronDown, Check, X, RotateCcw, Quote, BookOpen, AlertCircle,
+  Grid3X3
 } from 'lucide-react';
 import { Poem, Category, PoemMood } from './types';
 import { INITIAL_CATEGORIES, INITIAL_POEMS } from './initialData';
@@ -28,9 +29,14 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
   });
 
-  const [appTheme, setAppTheme] = useState<'multicolor' | 'amber-eclipse'>(() => {
+  const [appTheme, setAppTheme] = useState<'multicolor' | 'amber-eclipse' | 'paper-specimen'>(() => {
     const saved = localStorage.getItem('poetry_notebook_theme');
-    return (saved === 'multicolor' || saved === 'amber-eclipse') ? saved : 'amber-eclipse';
+    return (saved === 'multicolor' || saved === 'amber-eclipse' || saved === 'paper-specimen') ? saved : 'amber-eclipse';
+  });
+
+  const [gridOverlayEnabled, setGridOverlayEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('poetry_notebook_grid_overlay');
+    return saved === 'true';
   });
 
   // --- Filtering & Sorting States ---
@@ -91,6 +97,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('poetry_notebook_categories', JSON.stringify(categories));
   }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem('poetry_notebook_grid_overlay', String(gridOverlayEnabled));
+  }, [gridOverlayEnabled]);
 
   // --- Poem Operations ---
   const handleSavePoem = (poemData: Omit<Poem, 'id' | 'createdAt'> & { id?: string }) => {
@@ -316,13 +326,31 @@ export default function App() {
   const allUniqueTags = Array.from(new Set(poems.flatMap((p) => p.tags || []))).slice(0, 15);
 
   return (
-    <div id="app-root" className="min-h-screen bg-[#07080d] text-[#e4e4e7] flex flex-col font-sans selection:bg-cyan-500/20 selection:text-cyan-300 relative overflow-x-hidden">
+    <div id="app-root" className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden transition-colors duration-500 ${
+      appTheme === 'paper-specimen'
+        ? 'bg-[#f5efe0] text-neutral-800 selection:bg-orange-100 selection:text-neutral-900'
+        : 'bg-[#07080d] text-[#e4e4e7] selection:bg-cyan-500/20 selection:text-cyan-300'
+    }`}>
+      {/* Blueprint Alignment Grid Coordinate Matrix Overlay */}
+      {gridOverlayEnabled && (
+        <div id="grid-coordinate-matrix" className={`absolute inset-0 bg-[linear-gradient(rgba(120,120,120,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(120,120,120,0.04)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none z-10 mt-20 ${
+          appTheme === 'paper-specimen' ? 'opacity-100' : 'opacity-70'
+        }`} />
+      )}
+
       {/* Background Glowing Ambient Aura */}
-      <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-[150px] -left-[100px] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[130px]" />
-        <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-cyan-500/10 blur-[140px]" />
-        <div className="absolute top-[300px] left-[30%] w-[600px] h-[600px] rounded-full bg-purple-500/5 blur-[160px]" />
-      </div>
+      {appTheme !== 'paper-specimen' ? (
+        <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden pointer-events-none z-0">
+          <div className="absolute -top-[150px] -left-[100px] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[130px]" />
+          <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-cyan-500/10 blur-[140px]" />
+          <div className="absolute top-[300px] left-[30%] w-[600px] h-[600px] rounded-full bg-purple-500/5 blur-[160px]" />
+        </div>
+      ) : (
+        <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden pointer-events-none z-0 opacity-40">
+          <div className="absolute -top-[150px] -left-[100px] w-[500px] h-[500px] rounded-full bg-amber-400/5 blur-[120px]" />
+          <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-orange-400/5 blur-[120px]" />
+        </div>
+      )}
 
       {/* Interactive Toast Banner */}
       <AnimatePresence>
@@ -352,7 +380,11 @@ export default function App() {
       </AnimatePresence>
 
       {/* Primary elegant header layout */}
-      <header id="primary-header" className="bg-[#0c0d14]/80 border-b border-neutral-850 py-5 px-4 md:px-8 sticky top-0 z-40 backdrop-blur-md shadow-lg shadow-black/25 relative">
+      <header id="primary-header" className={`py-5 px-4 md:px-8 sticky top-0 z-40 backdrop-blur-md transition-all duration-300 relative ${
+        appTheme === 'paper-specimen'
+          ? 'bg-[#f5efe0]/90 border-b border-[#e5dcbf] shadow-sm'
+          : 'bg-[#0c0d14]/80 border-b border-neutral-850 shadow-lg shadow-black/25'
+      }`}>
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           
           {/* Logo & Counter metrics */}
@@ -360,33 +392,71 @@ export default function App() {
             <div className="flex items-center gap-3">
               <div 
                 id="logo-icon-container" 
-                className={`p-2.5 bg-neutral-900 border border-neutral-800 rounded-xl shadow-md transition-all ${
-                  appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'
+                className={`p-2.5 rounded-xl shadow-md transition-all border ${
+                  appTheme === 'paper-specimen'
+                    ? 'bg-neutral-900 border-neutral-700 text-amber-500'
+                    : appTheme === 'amber-eclipse'
+                      ? 'bg-neutral-900 border-neutral-800 text-amber-400'
+                      : 'bg-neutral-900 border-neutral-800 text-cyan-400'
                 }`}
               >
                 <Feather className={`w-5 h-5 rotate-45 transform transition-all ${
-                  appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'
+                  appTheme === 'paper-specimen' ? 'text-amber-500' : appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'
                 }`} />
               </div>
               <div>
-                <h1 id="app-heading" className={`text-xl md:text-2xl font-bold tracking-tight font-display text-transparent bg-clip-text bg-gradient-to-r transition-all ${
-                  appTheme === 'amber-eclipse'
-                    ? 'from-amber-400 via-yellow-250 to-orange-500'
-                    : 'from-cyan-400 via-indigo-300 to-fuchsia-400'
+                <h1 id="app-heading" className={`text-xl md:text-2xl font-bold tracking-tight font-display transition-all ${
+                  appTheme === 'paper-specimen'
+                    ? 'text-neutral-900 font-extrabold'
+                    : 'text-transparent bg-clip-text bg-gradient-to-r ' + (appTheme === 'amber-eclipse' ? 'from-amber-400 via-yellow-250 to-orange-500' : 'from-cyan-400 via-indigo-300 to-fuchsia-400')
                 }`}>
                   Poetry Notebook
                 </h1>
                 <p id="app-subheading" className="text-xs text-neutral-400 font-mono font-medium uppercase tracking-widest mt-0.5">
-                  {poems.length} verses in <span className={appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}>{categories.length} archives</span>
+                  {poems.length} verses in <span className={
+                    appTheme === 'paper-specimen' 
+                      ? 'text-neutral-800 font-extrabold' 
+                      : appTheme === 'amber-eclipse' 
+                        ? 'text-amber-400' 
+                        : 'text-cyan-400'
+                  }>{categories.length} archives</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* Right Action buttons group */}
-          <div className="flex flex-wrap items-center gap-2.5 z-10">
+          <div className="flex flex-wrap items-center gap-2.5 z-10 animate-fade-in">
+            {/* Grid Overlay Toggle Tool (highly typical of ARS Type Foundry specimen previewers) */}
+            <button
+              id="grid-overlay-toggle"
+              onClick={() => {
+                setGridOverlayEnabled(!gridOverlayEnabled);
+                showToast(
+                  gridOverlayEnabled ? 'Specimen alignment guidelines disabled.' : 'Specimen alignment guidelines enabled.',
+                  'info'
+                );
+              }}
+              className={`p-2 rounded-full transition-all border cursor-pointer flex items-center justify-center shadow-sm ${
+                gridOverlayEnabled
+                  ? appTheme === 'paper-specimen'
+                    ? 'bg-neutral-900 text-amber-400 border-neutral-800 shadow-[0_0_12px_rgba(180,140,50,0.15)] bg-[#1a1c24]'
+                    : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
+                  : appTheme === 'paper-specimen'
+                    ? 'bg-[#ede6d4] border-[#e0d6be] text-neutral-600 hover:text-neutral-900 hover:border-neutral-500'
+                    : 'bg-neutral-900/95 border-neutral-850 text-neutral-400 hover:text-white hover:border-neutral-700'
+              }`}
+              title={gridOverlayEnabled ? "Hide alignment guidelines" : "Display alignment guidelines"}
+            >
+              <Grid3X3 className="w-4.5 h-4.5" />
+            </button>
+
             {/* Theme Selector Segmented Control (Always Visible) */}
-            <div id="theme-selector-group" className="flex items-center gap-0.5 bg-neutral-900/90 border border-neutral-850 p-1 rounded-full text-[9px] font-mono tracking-wider font-extrabold uppercase mr-1.5 shadow-inner select-none transition-all">
+            <div id="theme-selector-group" className={`flex items-center gap-0.5 border p-1 rounded-full text-[9px] font-mono tracking-wider font-extrabold uppercase mr-1.5 shadow-sm select-none transition-all ${
+              appTheme === 'paper-specimen'
+                ? 'bg-[#ede6d4] border-[#e0d6be]'
+                : 'bg-neutral-900/90 border-neutral-850'
+            }`}>
               <button
                 id="theme-btn-multicolor"
                 onClick={() => {
@@ -394,10 +464,12 @@ export default function App() {
                   localStorage.setItem('poetry_notebook_theme', 'multicolor');
                   showToast('Theme set to Multicolor system.', 'info');
                 }}
-                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
                   appTheme === 'multicolor'
                     ? 'bg-neutral-800 text-cyan-400 font-black shadow-[0_0_10px_rgba(6,182,212,0.12)]'
-                    : 'text-neutral-500 hover:text-neutral-300'
+                    : appTheme === 'paper-specimen'
+                      ? 'text-neutral-600 hover:text-neutral-900'
+                      : 'text-neutral-500 hover:text-neutral-300'
                 }`}
                 title="Switch to original multicolor theme"
               >
@@ -410,14 +482,32 @@ export default function App() {
                   localStorage.setItem('poetry_notebook_theme', 'amber-eclipse');
                   showToast('Theme set to Amber Eclipse system.', 'info');
                 }}
-                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
                   appTheme === 'amber-eclipse'
                     ? 'bg-amber-950/40 text-amber-400 font-black border border-amber-900/40 shadow-[0_0_10px_rgba(245,158,11,0.12)]'
-                    : 'text-neutral-500 hover:text-neutral-300'
+                    : appTheme === 'paper-specimen'
+                      ? 'text-neutral-600 hover:text-neutral-900'
+                      : 'text-neutral-500 hover:text-neutral-300'
                 }`}
                 title="Switch to dynamic amber eclipse theme"
               >
                 🌗 Amber Eclipse
+              </button>
+              <button
+                id="theme-btn-paper-specimen"
+                onClick={() => {
+                  setAppTheme('paper-specimen');
+                  localStorage.setItem('poetry_notebook_theme', 'paper-specimen');
+                  showToast('Theme set to ARS Paper Specimen. (Awwwards Inspired Layout)', 'info');
+                }}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
+                  appTheme === 'paper-specimen'
+                    ? 'bg-neutral-900 text-amber-200 font-black shadow-md border border-neutral-800'
+                    : 'text-neutral-500 hover:text-neutral-350'
+                }`}
+                title="Switch to Paper Specimen theme"
+              >
+                📝 Paper Specimen
               </button>
             </div>
 
@@ -506,7 +596,11 @@ export default function App() {
       <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-8 space-y-8 z-10 relative">
         
         {/* Advanced elegant filter bar row */}
-        <section id="filters-panel" className="bg-[#0f111a]/80 border border-neutral-800/80 p-6 rounded-2xl shadow-xl backdrop-blur-md space-y-5 relative">
+        <section id="filters-panel" className={`p-6 rounded-2xl space-y-5 relative transition-all duration-300 border ${
+          appTheme === 'paper-specimen'
+            ? 'bg-white border-[#e0d6be] text-[#1b1c20] shadow-[0_4px_24px_rgba(28,28,30,0.03)]'
+            : 'bg-[#0f111a]/80 border-neutral-800/80 shadow-xl backdrop-blur-md text-[#e4e4e7]'
+        }`}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
             {/* Search Input */}
@@ -518,13 +612,19 @@ export default function App() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search poetry verses, titles, tags or poets..."
-                className="w-full pl-10 pr-4 py-2.5 bg-[#141622] border border-neutral-800 rounded-xl text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500 focus:bg-[#181a28] transition-all font-sans"
+                className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:bg-white transition-all font-sans ${
+                  appTheme === 'paper-specimen'
+                    ? 'bg-[#fcfaf4] border-[#e0d6be] text-neutral-900 focus:ring-neutral-800/10 focus:border-neutral-800'
+                    : 'bg-[#141622] border border-neutral-800 text-neutral-100 focus:ring-cyan-500/40 focus:border-cyan-500 focus:bg-[#181a28]'
+                }`}
               />
               {searchQuery && (
                 <button
                   id="btn-clear-search"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white cursor-pointer"
+                  className={`absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer ${
+                    appTheme === 'paper-specimen' ? 'text-neutral-450 hover:text-neutral-800' : 'text-neutral-400 hover:text-white'
+                  }`}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -540,16 +640,20 @@ export default function App() {
                   id="mood-filter-select"
                   value={selectedMood}
                   onChange={(e) => setSelectedMood(e.target.value)}
-                  className="bg-[#141622] border border-neutral-800 text-xs text-neutral-200 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500 font-mono font-bold uppercase tracking-wider cursor-pointer transition-all hover:bg-neutral-800"
+                  className={`text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 font-mono font-bold uppercase tracking-wider cursor-pointer transition-all ${
+                    appTheme === 'paper-specimen'
+                      ? 'bg-[#fcfaf4] border-[#e0d6be] text-neutral-800 focus:ring-neutral-800/10 focus:border-neutral-800 hover:bg-[#ede5d4]'
+                      : 'bg-[#141622] border border-neutral-800 text-neutral-200 focus:ring-cyan-500/40 focus:border-cyan-500 hover:bg-neutral-800'
+                  }`}
                 >
-                  <option className="bg-[#141622] text-neutral-250 font-sans" value="all">🟢 All Atmosphere</option>
-                  <option className="bg-[#141622] text-cyan-400 font-sans" value="Reflective">Reflective</option>
-                  <option className="bg-[#141622] text-indigo-400 font-sans" value="Melancholy">Melancholy</option>
-                  <option className="bg-[#141622] text-rose-400 font-sans" value="Romantic">Romantic</option>
-                  <option className="bg-[#141622] text-teal-400 font-sans" value="Hopeful">Hopeful</option>
-                  <option className="bg-[#141622] text-amber-400 font-sans" value="Whimsical">Whimsical</option>
-                  <option className="bg-[#141622] text-fuchsia-400 font-sans" value="Mystical">Mystical</option>
-                  <option className="bg-[#141622] text-emerald-400 font-sans" value="Free">Free</option>
+                  <option className={appTheme === 'paper-specimen' ? 'bg-white text-neutral-800' : 'bg-[#141622]'} value="all">🟢 All Atmosphere</option>
+                  <option className={appTheme === 'paper-specimen' ? 'bg-white text-neutral-800' : 'bg-[#141622]'} value="Reflective">Reflective</option>
+                  <option className={appTheme === 'paper-specimen' ? 'bg-white text-neutral-800' : 'bg-[#141622]'} value="Melancholy">Melancholy</option>
+                  <option className={appTheme === 'paper-specimen' ? 'bg-white text-neutral-800' : 'bg-[#141622]'} value="Romantic">Romantic</option>
+                  <option className={appTheme === 'paper-specimen' ? 'bg-white text-neutral-800' : 'bg-[#141622]'} value="Hopeful">Hopeful</option>
+                  <option className={appTheme === 'paper-specimen' ? 'bg-white text-neutral-800' : 'bg-[#141622]'} value="Whimsical">Whimsical</option>
+                  <option className={appTheme === 'paper-specimen' ? 'bg-white text-neutral-800' : 'bg-[#141622]'} value="Mystical">Mystical</option>
+                  <option className={appTheme === 'paper-specimen' ? 'bg-white text-neutral-800' : 'bg-[#141622]'} value="Free">Free</option>
                 </select>
               </div>
 
@@ -559,11 +663,15 @@ export default function App() {
                 <button
                   id="btn-sort-chronology"
                   onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : sortBy === 'oldest' ? 'alphabetical' : 'newest')}
-                  className="flex items-center gap-1 px-3.5 py-1.5 bg-[#141622] hover:bg-neutral-800 border border-neutral-800 text-xs text-neutral-200 rounded-lg font-mono font-bold uppercase tracking-wider transition-all cursor-pointer"
+                  className={`flex items-center gap-1 px-3.5 py-1.5 rounded-lg font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
+                    appTheme === 'paper-specimen'
+                      ? 'bg-[#fcfaf4] hover:bg-[#ede5d4] border-[#e0d6be] text-neutral-805'
+                      : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-250'
+                  }`}
                 >
-                  {sortBy === 'newest' && <Clock className={`w-3.5 h-3.5 ${appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />}
-                  {sortBy === 'oldest' && <Clock className={`w-3.5 h-3.5 rotate-180 transform ${appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />}
-                  {sortBy === 'alphabetical' && <ArrowUpDown className={`w-3.5 h-3.5 ${appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />}
+                  {sortBy === 'newest' && <Clock className={`w-3.5 h-3.5 ${appTheme === 'paper-specimen' ? 'text-amber-600' : appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />}
+                  {sortBy === 'oldest' && <Clock className={`w-3.5 h-3.5 rotate-180 transform ${appTheme === 'paper-specimen' ? 'text-amber-600' : appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />}
+                  {sortBy === 'alphabetical' && <ArrowUpDown className={`w-3.5 h-3.5 ${appTheme === 'paper-specimen' ? 'text-amber-600' : appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />}
                   <span>{sortBy === 'newest' ? 'Newest' : sortBy === 'oldest' ? 'Oldest' : 'A to Z'}</span>
                 </button>
               </div>
@@ -571,7 +679,9 @@ export default function App() {
 
           </div>
 
-          <div className="border-t border-neutral-850 pt-4 flex flex-col md:flex-row md:items-start gap-4">
+          <div className={`border-t pt-4 flex flex-col md:flex-row md:items-start gap-4 ${
+            appTheme === 'paper-specimen' ? 'border-[#e0d6be]' : 'border-neutral-850'
+          }`}>
             <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono mt-2">Category:</span>
             {/* Horizontal Categories Row */}
             <div id="category-scroller" className="flex flex-wrap items-center gap-2">
@@ -580,10 +690,14 @@ export default function App() {
                 onClick={() => setSelectedCatId('all')}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold font-display cursor-pointer border transition-all duration-200 uppercase tracking-widest ${
                   selectedCatId === 'all'
-                    ? appTheme === 'amber-eclipse'
-                      ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white border-transparent shadow-[0_0_15px_rgba(245,158,11,0.25)] font-extrabold'
-                      : 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-white border-transparent shadow-[0_0_15px_rgba(6,182,212,0.25)] font-extrabold'
-                    : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300 font-semibold'
+                    ? appTheme === 'paper-specimen'
+                      ? 'bg-neutral-900 border-neutral-800 text-amber-200 shadow-md font-extrabold'
+                      : appTheme === 'amber-eclipse'
+                        ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white border-transparent shadow-[0_0_15px_rgba(245,158,11,0.25)] font-extrabold'
+                        : 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-white border-transparent shadow-[0_0_15px_rgba(6,182,212,0.25)] font-extrabold'
+                    : appTheme === 'paper-specimen'
+                      ? 'bg-[#ede6d4]/50 hover:bg-[#ede6d3] border-[#e0d6be] text-neutral-700 font-semibold'
+                      : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300 font-semibold'
                 }`}
               >
                 All Verses ({poems.length})
@@ -615,8 +729,12 @@ export default function App() {
                     onClick={() => setSelectedCatId(cat.id)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold font-display cursor-pointer border transition-all duration-200 uppercase tracking-widest ${
                       isSelected
-                        ? `bg-gradient-to-r ${activeGrad} border-transparent text-white`
-                        : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+                        ? appTheme === 'paper-specimen'
+                          ? 'bg-neutral-900 border-neutral-850 text-orange-200 shadow-md font-black'
+                          : `bg-gradient-to-r ${activeGrad} border-transparent text-white`
+                        : appTheme === 'paper-specimen'
+                          ? 'bg-[#ede6d4]/50 hover:bg-[#ede6d3] border-[#e0d6be] text-neutral-700 font-semibold'
+                          : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300'
                     }`}
                   >
                     {cat.name} ({count})
@@ -717,6 +835,7 @@ export default function App() {
                       isEditable={isAuthorMode}
                       onSelectMedia={(p) => setActivePoemForLightbox(p)}
                       appTheme={appTheme}
+                      gridOverlayEnabled={gridOverlayEnabled}
                     />
                   </motion.div>
                 ))}

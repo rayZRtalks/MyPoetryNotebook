@@ -10,10 +10,20 @@ interface PoemCardProps {
   onDelete: (id: string) => void;
   isEditable?: boolean;
   onSelectMedia?: (poem: Poem) => void; // Triggered when the media thumbnail is clicked for lightbox
-  appTheme?: 'multicolor' | 'amber-eclipse';
+  appTheme?: 'multicolor' | 'amber-eclipse' | 'paper-specimen';
+  gridOverlayEnabled?: boolean;
 }
 
-const getMoodColor = (mood?: string, appTheme: 'multicolor' | 'amber-eclipse' = 'multicolor') => {
+const getMoodColor = (mood?: string, appTheme: 'multicolor' | 'amber-eclipse' | 'paper-specimen' = 'multicolor') => {
+  if (appTheme === 'paper-specimen') {
+    return {
+      badge: 'bg-[#ede9df] text-neutral-800 border-[#dad4c5] font-bold shadow-xs',
+      glow: 'hover:border-neutral-800 hover:shadow-[0_8px_30px_rgba(28,28,30,0.08)] hover:bg-[#fafaf9] focus-within:ring-neutral-900/10',
+      accentText: 'text-neutral-800',
+      accentBg: 'bg-[#ede9df]'
+    };
+  }
+
   if (appTheme === 'amber-eclipse') {
     return {
       badge: 'bg-amber-950/40 text-amber-400 border-amber-800/50 shadow-[0_0_10px_rgba(245,158,11,0.05)]',
@@ -92,6 +102,7 @@ export default function PoemCard({
   isEditable = true,
   onSelectMedia,
   appTheme = 'multicolor',
+  gridOverlayEnabled = false,
 }: PoemCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -119,14 +130,22 @@ export default function PoemCard({
   return (
     <div
       id={`poem-card-${poem.id}`}
-      className={`group relative flex flex-col justify-between min-h-[340px] h-full bg-[#111218]/95 border border-neutral-800/80 rounded-2xl p-6 shadow-2xl transition-all duration-300 backdrop-blur-md focus-within:ring-2 focus-within:ring-cyan-500/30 ${mColors.glow}`}
+      className={`group relative flex flex-col justify-between min-h-[340px] h-full transition-all duration-300 border rounded-2xl p-6 focus-within:ring-2 ${
+        appTheme === 'paper-specimen'
+          ? 'bg-white border-[#e0d6be] text-[#1b1c20] shadow-[0_4px_24px_rgba(28,28,30,0.04)] focus-within:ring-neutral-900/10'
+          : 'bg-[#111218]/95 border-neutral-800/80 text-[#e4e4e7] shadow-2xl backdrop-blur-md focus-within:ring-cyan-500/30'
+      } ${mColors.glow}`}
     >
       <div className="space-y-4">
         {/* Category & Mood Headings */}
         <div className="flex items-center justify-between gap-1 overflow-hidden">
           <span
             id={`card-cat-pill-${poem.id}`}
-            className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#181920] text-zinc-300 border border-[#272832] truncate flex-1 text-center font-display uppercase tracking-widest"
+            className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold truncate flex-1 text-center font-display uppercase tracking-widest border transition-colors ${
+              appTheme === 'paper-specimen'
+                ? 'bg-[#f4eee1] text-neutral-800 border-[#e0d6be]'
+                : 'bg-[#181920] text-zinc-300 border-[#272832]'
+            }`}
           >
             {category?.name || 'Uncategorized'}
           </span>
@@ -136,13 +155,21 @@ export default function PoemCard({
               <span
                 id={`card-attach-badge-${poem.id}`}
                 className={`text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-0.5 font-sans ${
-                  appTheme === 'amber-eclipse'
-                    ? 'text-amber-400 bg-amber-950/30 border-amber-850/40'
-                    : 'text-cyan-400 bg-cyan-950/30 border-cyan-850/40'
+                  appTheme === 'paper-specimen'
+                    ? 'text-neutral-700 bg-[#ede6d4] border-[#d8cdb8]'
+                    : appTheme === 'amber-eclipse'
+                      ? 'text-amber-400 bg-amber-950/30 border-amber-850/40'
+                      : 'text-cyan-400 bg-cyan-950/30 border-cyan-850/40'
                 }`}
                 title={`${poem.attachments.length} media items`}
               >
-                <Paperclip className={`w-3 h-3 ${appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />
+                <Paperclip className={`w-3 h-3 ${
+                  appTheme === 'paper-specimen'
+                    ? 'text-neutral-700'
+                    : appTheme === 'amber-eclipse'
+                      ? 'text-amber-400'
+                      : 'text-cyan-400'
+                }`} />
                 <span>{poem.attachments.length}</span>
               </span>
             )}
@@ -169,22 +196,32 @@ export default function PoemCard({
               onSelect(poem);
             }
           }}
-          className="relative w-full h-44 rounded-xl overflow-hidden border border-neutral-800/80 bg-neutral-950 shrink-0 cursor-pointer shadow-md group/thumb transition-all duration-300"
+          className={`relative w-full h-44 rounded-xl overflow-hidden shrink-0 cursor-pointer shadow-md group/thumb transition-all duration-300 border ${
+            appTheme === 'paper-specimen'
+              ? 'bg-[#14151b] border-[#e0d6be]'
+              : 'bg-neutral-950 border-neutral-800/80'
+          }`}
         >
           {/* Background Grid & Scanlines (Absolute Specimen Overlay) */}
           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:16px_16px] opacity-65 z-1 pointer-events-none" />
           
           {/* Subtle Ambient Radial Highlight */}
           <div className={`absolute inset-0 transition-all duration-500 z-1 pointer-events-none ${
-            appTheme === 'amber-eclipse'
-              ? 'bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.02)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.08)_0%,transparent_60%)]'
-              : 'bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.02)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.08)_0%,transparent_60%)]'
+            appTheme === 'paper-specimen'
+              ? 'bg-[radial-gradient(circle_at_center,rgba(224,214,190,0.05)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(224,214,190,0.15)_0%,transparent_60%)]'
+              : appTheme === 'amber-eclipse'
+                ? 'bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.02)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(245,158,11,0.08)_0%,transparent_60%)]'
+                : 'bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.02)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.08)_0%,transparent_60%)]'
           }`} />
 
           {/* Large Typographic Background Initial */}
           <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none z-1 overflow-hidden">
             <span className={`font-sans font-black text-[6.5rem] leading-none text-neutral-900/50 tracking-tighter uppercase transition-all duration-750 ease-out group-hover/thumb:scale-110 ${
-              appTheme === 'amber-eclipse' ? 'group-hover/thumb:text-amber-500/10' : 'group-hover/thumb:text-cyan-500/10'
+              appTheme === 'paper-specimen'
+                ? 'text-neutral-800/40 group-hover/thumb:text-orange-400/20'
+                : appTheme === 'amber-eclipse' 
+                  ? 'group-hover/thumb:text-amber-500/10' 
+                  : 'group-hover/thumb:text-cyan-500/10'
             }`}>
               {leadInitials}
             </span>
@@ -223,14 +260,31 @@ export default function PoemCard({
             </div>
           ) : (
             // Exquisite fallback CSS typography specimen grid item
-            <div className={`absolute inset-0 w-full h-full z-2 bg-[#0c0d14]/70 object-cover transition-all duration-500 ${
-              appTheme === 'amber-eclipse' ? 'group-hover/thumb:bg-amber-950/10' : 'group-hover/thumb:bg-cyan-950/10'
+            <div className={`absolute inset-0 w-full h-full z-2 object-cover transition-all duration-500 ${
+              appTheme === 'paper-specimen'
+                ? 'bg-[#12131a] group-hover/thumb:bg-[#161822]'
+                : appTheme === 'amber-eclipse'
+                  ? 'bg-[#0c0d14]/70 group-hover/thumb:bg-amber-950/10'
+                  : 'bg-[#0c0d14]/70 group-hover/thumb:bg-cyan-950/10'
             }`}>
               {/* Render dynamic background glyph grids typical of font spec sheets */}
-              <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between select-none pointer-events-none text-[8px] uppercase font-mono text-neutral-800/50 tracking-widest leading-loose">
+              <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between select-none pointer-events-none text-[8px] uppercase font-mono text-neutral-500/40 tracking-widest leading-loose">
                 <div>a b c d e f g h i j k l m</div>
                 <div>n o p q r s t u v w x y z</div>
               </div>
+            </div>
+          )}
+
+          {/* Technical Specimen Grid Alignment Overlay lines (Highly characteristic of ARS Type Foundry spec sheets) */}
+          {gridOverlayEnabled && (
+            <div className="absolute inset-0 z-2 pointer-events-none select-none">
+              <div className="absolute top-0 bottom-0 left-[25%] border-l border-dashed border-red-500/15" />
+              <div className="absolute top-0 bottom-0 left-[75%] border-l border-dashed border-red-500/15" />
+              <div className="absolute left-0 right-0 top-[38%] border-t border-dashed border-cyan-500/15" />
+              <div className="absolute left-0 right-0 top-[68%] border-t border-dashed border-cyan-500/15" />
+              <div className="absolute left-2.5 top-[32%] text-[6.5px] text-cyan-400/40 font-mono scale-90 uppercase">H-Height</div>
+              <div className="absolute left-2.5 top-[62%] text-[6.5px] text-cyan-400/40 font-mono scale-90 uppercase">Baseline</div>
+              <div className="absolute right-2.5 top-[5%] text-[6.5px] text-rose-400/40 font-mono scale-90 uppercase">Grid_16px</div>
             </div>
           )}
 
@@ -238,11 +292,19 @@ export default function PoemCard({
           <div className="absolute inset-0 z-3 p-3 flex flex-col justify-between pointer-events-none select-none">
             {/* Top Row: System identifiers & Media types */}
             <div className="flex items-start justify-between font-mono text-[8.5px] leading-none tracking-widest">
-              <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-900 px-2 py-1 rounded text-neutral-400 font-semibold uppercase">
+              <div className={`flex items-center gap-1.5 border px-2 py-1 rounded font-semibold uppercase ${
+                appTheme === 'paper-specimen'
+                  ? 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                  : 'bg-neutral-950/80 border-neutral-900 text-neutral-400'
+              }`}>
                 <span className={appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}>⊕</span>
                 <span>SYS_{poem.id.toUpperCase().slice(-5)}</span>
               </div>
-              <div className="bg-neutral-950/80 border border-neutral-900 px-2 py-1 rounded text-neutral-400 uppercase font-semibold">
+              <div className={`border px-2 py-1 rounded uppercase font-semibold ${
+                appTheme === 'paper-specimen'
+                  ? 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                  : 'bg-neutral-950/80 border-neutral-900 text-neutral-400'
+              }`}>
                 {poem.attachments && poem.attachments.length > 0 
                   ? `[SPEC // ${poem.attachments[0].type.toUpperCase()}]` 
                   : '[SPEC // TYPO]'}
@@ -252,35 +314,43 @@ export default function PoemCard({
             {/* Middle Focal Target Crosshair Box (only on hover) */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-all duration-500 scale-95 group-hover/thumb:scale-100 pointer-events-none">
               <div className={`w-12 h-12 border flex items-center justify-center relative bg-neutral-950/40 backdrop-blur-xs rounded-lg ${
-                appTheme === 'amber-eclipse' ? 'border-amber-500/30' : 'border-cyan-500/30'
+                appTheme === 'paper-specimen'
+                  ? 'border-orange-400/40'
+                  : appTheme === 'amber-eclipse' 
+                    ? 'border-amber-500/30' 
+                    : 'border-cyan-500/30'
               }`}>
-                <div className={`absolute top-0 left-0 w-2 h-[1px] ${appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute top-0 left-0 w-[1px] h-2 ${appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute top-0 right-0 w-2 h-[1px] ${appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute top-0 right-0 w-[1px] h-2 ${appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 left-0 w-2 h-[1px] ${appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 left-0 w-[1px] h-2 ${appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 right-0 w-2 h-[1px] ${appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 right-0 w-[1px] h-2 ${appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
-                {appTheme === 'amber-eclipse' ? (
-                  <Maximize2 className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                ) : (
-                  <Maximize2 className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                )}
+                <div className={`absolute top-0 left-0 w-2 h-[1px] ${appTheme === 'paper-specimen' ? 'bg-orange-400' : appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 left-0 w-[1px] h-2 ${appTheme === 'paper-specimen' ? 'bg-orange-400' : appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 right-0 w-2 h-[1px] ${appTheme === 'paper-specimen' ? 'bg-orange-400' : appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 right-0 w-[1px] h-2 ${appTheme === 'paper-specimen' ? 'bg-orange-400' : appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 left-0 w-2 h-[1px] ${appTheme === 'paper-specimen' ? 'bg-orange-400' : appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 left-0 w-[1px] h-2 ${appTheme === 'paper-specimen' ? 'bg-orange-400' : appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 right-0 w-2 h-[1px] ${appTheme === 'paper-specimen' ? 'bg-orange-400' : appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 right-0 w-[1px] h-2 ${appTheme === 'paper-specimen' ? 'bg-orange-400' : appTheme === 'amber-eclipse' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                <Maximize2 className={`w-3.5 h-3.5 animate-pulse ${
+                  appTheme === 'paper-specimen' ? 'text-orange-400' : appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'
+                }`} />
               </div>
             </div>
 
             {/* Bottom Row: Specs indicators */}
             <div className="flex items-end justify-between font-mono text-[8.5px] leading-none tracking-widest text-neutral-500">
-              <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-900 px-2 py-1 rounded text-neutral-400 font-semibold">
+              <div className={`flex items-center gap-1.5 border px-2 py-1 rounded font-semibold ${
+                appTheme === 'paper-specimen'
+                  ? 'bg-neutral-900 border-neutral-800 text-neutral-350'
+                  : 'bg-neutral-950/80 border-neutral-900 text-neutral-400'
+              }`}>
                 <span>STZ // 0{previewLines.length}</span>
                 <span className="text-neutral-800">|</span>
                 <span>CHR // {poem.body.length}</span>
               </div>
-              <div className={`flex items-center gap-1 font-bold border px-2 py-1 rounded backdrop-blur-xs transition-all duration-300 ${
-                appTheme === 'amber-eclipse'
-                  ? 'text-amber-400 bg-amber-950/60 border-amber-900/60 group-hover/thumb:bg-amber-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-amber-400'
-                  : 'text-cyan-400 bg-cyan-950/60 border-cyan-900/60 group-hover/thumb:bg-cyan-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-cyan-400'
+              <div className={`flex items-center gap-1 font-bold border px-2 py-1 rounded backdrop-blur-xs transition-colors duration-300 ${
+                appTheme === 'paper-specimen'
+                  ? 'text-orange-400 bg-neutral-900/90 border-[#e0d6be]/20 group-hover/thumb:bg-orange-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-orange-400'
+                  : appTheme === 'amber-eclipse'
+                    ? 'text-amber-400 bg-amber-950/60 border-amber-900/60 group-hover/thumb:bg-amber-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-amber-400'
+                    : 'text-cyan-400 bg-cyan-950/60 border-cyan-900/60 group-hover/thumb:bg-cyan-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-cyan-400'
               }`}>
                 <span>✦</span>
                 <span className="uppercase text-[7.5px] font-extrabold tracking-widest">Enlarge</span>
@@ -304,12 +374,14 @@ export default function PoemCard({
           <h4
             id={`card-title-${poem.id}`}
             onClick={() => onSelect(poem)}
-            className={`text-base font-bold text-neutral-100 tracking-tight group-hover:${mColors.accentText} cursor-pointer transition-colors leading-snug line-clamp-1`}
+            className={`text-base font-bold tracking-tight group-hover:${mColors.accentText} cursor-pointer transition-colors leading-snug line-clamp-1 ${
+              appTheme === 'paper-specimen' ? 'text-neutral-900' : 'text-neutral-100'
+            }`}
           >
             {poem.title}
           </h4>
           <span id={`card-author-${poem.id}`} className="text-xs text-neutral-400 font-mono tracking-tight block">
-            by <span className="text-neutral-200 font-medium">{poem.author || 'Anonymous'}</span>
+            by <span className={`font-medium ${appTheme === 'paper-specimen' ? 'text-neutral-700' : 'text-neutral-200'}`}>{poem.author || 'Anonymous'}</span>
           </span>
         </div>
 
@@ -318,7 +390,11 @@ export default function PoemCard({
           <div 
             id={`card-excerpt-${poem.id}`}
             onClick={() => onSelect(poem)}
-            className={`relative text-[13px] font-sans text-neutral-350 leading-relaxed cursor-pointer focus:outline-none pl-3 border-l-2 border-neutral-800/80 hover:border-l-current ${mColors.accentText} transition-all duration-300`}
+            className={`relative text-[13px] font-sans leading-relaxed cursor-pointer focus:outline-none pl-3 border-l-2 hover:border-l-current ${mColors.accentText} transition-all duration-300 ${
+              appTheme === 'paper-specimen'
+                ? 'border-[#e0d6be] text-neutral-600'
+                : 'border-neutral-800/80 text-neutral-350'
+            }`}
           >
             <div className="space-y-1">
               {previewLines.map((line, idx) => (
@@ -335,7 +411,9 @@ export default function PoemCard({
       </div>
 
       {/* Footer Details & Quick Action buttons */}
-      <div className="border-t border-neutral-800/80 pt-4 flex items-center justify-between mt-6">
+      <div className={`border-t pt-4 flex items-center justify-between mt-6 transition-colors ${
+        appTheme === 'paper-specimen' ? 'border-[#e0d6be]' : 'border-neutral-800/80'
+      }`}>
         {/* Creation Date indicator */}
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 font-mono tracking-wider uppercase">
           <Calendar className="w-3.5 h-3.5 text-neutral-500" />
@@ -347,9 +425,13 @@ export default function PoemCard({
           <button
             id={`btn-select-poem-${poem.id}`}
             onClick={() => onSelect(poem)}
-            className={`p-1.5 hover:bg-neutral-800 rounded-full text-neutral-400 ${
-              appTheme === 'amber-eclipse' ? 'hover:text-amber-400' : 'hover:text-cyan-400'
-            } transition-colors cursor-pointer`}
+            className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
+              appTheme === 'paper-specimen'
+                ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                : appTheme === 'amber-eclipse'
+                  ? 'text-neutral-400 hover:text-amber-400 hover:bg-neutral-800'
+                  : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
+            }`}
             title="Read Full Details"
           >
             <BookOpen className="w-4 h-4" />
@@ -360,30 +442,46 @@ export default function PoemCard({
               <button
                 id={`btn-edit-poem-${poem.id}`}
                 onClick={() => onEdit(poem)}
-                className={`p-1.5 hover:bg-neutral-800 rounded-full text-neutral-400 ${
-                  appTheme === 'amber-eclipse' ? 'hover:text-amber-400' : 'hover:text-cyan-400'
-                } transition-colors cursor-pointer`}
+                className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
+                  appTheme === 'paper-specimen'
+                    ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                    : appTheme === 'amber-eclipse'
+                      ? 'text-neutral-400 hover:text-amber-400 hover:bg-neutral-800'
+                      : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
+                }`}
                 title="Edit Entry"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
 
               {confirmDelete ? (
-                <div className="flex items-center gap-1 bg-red-950/40 border border-red-900/50 rounded-lg p-1 animate-pulse">
+                <div className={`flex items-center gap-1 rounded-lg p-1 animate-pulse border ${
+                  appTheme === 'paper-specimen'
+                    ? 'bg-red-50 border-red-200'
+                    : 'bg-red-950/40 border-red-900/50'
+                }`}>
                   <button
                     id={`btn-confirm-delete-${poem.id}`}
                     onClick={() => {
                       onDelete(poem.id);
                       setConfirmDelete(false);
                     }}
-                    className="text-[9px] font-extrabold text-red-400 px-2 py-0.5 hover:bg-red-900/40 rounded-md cursor-pointer uppercase font-mono tracking-widest"
+                    className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
+                      appTheme === 'paper-specimen'
+                        ? 'text-red-700 hover:bg-red-100'
+                        : 'text-red-400 hover:bg-red-900/40'
+                    }`}
                   >
                     Confirm
                   </button>
                   <button
                     id={`btn-cancel-delete-${poem.id}`}
                     onClick={() => setConfirmDelete(false)}
-                    className="text-[9px] font-extrabold text-neutral-400 px-2 py-0.5 hover:bg-neutral-800 rounded-md cursor-pointer uppercase font-mono tracking-widest"
+                    className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
+                      appTheme === 'paper-specimen'
+                        ? 'text-neutral-600 hover:bg-neutral-100'
+                        : 'text-neutral-400 hover:bg-neutral-800'
+                    }`}
                   >
                     Cancel
                   </button>
@@ -392,7 +490,11 @@ export default function PoemCard({
                 <button
                   id={`btn-trigger-delete-${poem.id}`}
                   onClick={() => setConfirmDelete(true)}
-                  className="p-1.5 hover:bg-red-950/40 rounded-full text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
+                  className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                    appTheme === 'paper-specimen'
+                      ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50'
+                      : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
+                  }`}
                   title="Delete Entry"
                 >
                   <Trash2 className="w-4 h-4" />
