@@ -291,8 +291,13 @@ export default function App() {
   const allUniqueTags = Array.from(new Set(poems.flatMap((p) => p.tags || []))).slice(0, 15);
 
   return (
-    <div id="app-root" className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col font-sans selection:bg-[#0071e3]/10 selection:text-[#0071e3] relative overflow-x-hidden">
-      {/* Clean layout - no celestial yellow glows */}
+    <div id="app-root" className="min-h-screen bg-[#07080d] text-[#e4e4e7] flex flex-col font-sans selection:bg-cyan-500/20 selection:text-cyan-300 relative overflow-x-hidden">
+      {/* Background Glowing Ambient Aura */}
+      <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-[150px] -left-[100px] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[130px]" />
+        <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-cyan-500/10 blur-[140px]" />
+        <div className="absolute top-[300px] left-[30%] w-[600px] h-[600px] rounded-full bg-purple-500/5 blur-[160px]" />
+      </div>
 
       {/* Interactive Toast Banner */}
       <AnimatePresence>
@@ -302,18 +307,18 @@ export default function App() {
             initial={{ opacity: 0, y: -24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -24 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4.5 py-3 h-12 bg-[#1d1d1f] text-white rounded-full shadow-lg border border-white/10 text-sm font-semibold font-sans"
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4.5 py-3 h-12 bg-[#0c0d14]/90 text-white rounded-full shadow-2xl border border-cyan-500/30 text-sm font-semibold font-sans backdrop-blur-md"
           >
-            <div className={`w-2 h-2 rounded-full ${
+            <div className={`w-2 h-2 rounded-full animate-pulse ${
               toast.type === 'success' ? 'bg-emerald-400' :
               toast.type === 'error' ? 'bg-rose-400' :
-              toast.type === 'warning' ? 'bg-yellow-400' : 'bg-sky-400'
+              toast.type === 'warning' ? 'bg-amber-400' : 'bg-cyan-400'
             }`} />
             <span>{toast.message}</span>
             <button
               id="toast-dismiss"
               onClick={() => setToast(null)}
-              className="ml-3 text-[#86868b] hover:text-white cursor-pointer"
+              className="ml-3 text-neutral-400 hover:text-white cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -322,60 +327,60 @@ export default function App() {
       </AnimatePresence>
 
       {/* Primary elegant header layout */}
-      <header id="primary-header" className="bg-white/90 border-b border-[#e8e8ed] py-5 px-4 md:px-8 sticky top-0 z-40 backdrop-blur-md">
+      <header id="primary-header" className="bg-[#0c0d14]/80 border-b border-neutral-850 py-5 px-4 md:px-8 sticky top-0 z-40 backdrop-blur-md shadow-lg shadow-black/25 relative">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           
           {/* Logo & Counter metrics */}
-          <div className="space-y-1">
+          <div className="space-y-1 z-10">
             <div className="flex items-center gap-3">
-              <div id="logo-icon-container" className="p-2.5 bg-[#f5f5f7] border border-[#e8e8ed] text-[#1d1d1f] rounded-xl shadow-xs">
-                <Feather className="w-5 h-5 rotate-45 transform text-[#0071e3]" />
+              <div id="logo-icon-container" className="p-2.5 bg-neutral-900 border border-neutral-800 text-cyan-400 rounded-xl shadow-md">
+                <Feather className="w-5 h-5 rotate-45 transform text-cyan-400" />
               </div>
               <div>
-                <h1 id="app-heading" className="text-xl md:text-2xl font-bold tracking-tight text-[#1d1d1f] font-sans">
+                <h1 id="app-heading" className="text-xl md:text-2xl font-bold tracking-tight font-display text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400">
                   Poetry Notebook
                 </h1>
-                <p id="app-subheading" className="text-xs text-[#86868b] font-medium font-sans">
-                  {poems.length} verses stored across {categories.length} categories
+                <p id="app-subheading" className="text-xs text-neutral-400 font-mono font-medium uppercase tracking-widest mt-0.5">
+                  {poems.length} verses in <span className="text-cyan-400">{categories.length} archives</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* Right Action buttons group */}
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 z-10">
             {isAuthorMode && (
               <>
                 {/* Session lock */}
                 <button
                   id="btn-lock-author"
                   onClick={handleLockAuthorMode}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#f5f5f7] border border-[#e8e8ed] text-[#1d1d1f] font-semibold hover:bg-[#e8e8ed] rounded-full transition-colors cursor-pointer font-sans"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-semibold hover:text-white rounded-full transition-all cursor-pointer font-mono tracking-wider"
                   title="Lock Author Mode and return to read-only"
                 >
                   <span>Writer Session</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0071e3] animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                 </button>
 
                 {/* Backup Export */}
                 <button
                   id="btn-export"
                   onClick={handleExportBackup}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-white border border-[#e8e8ed] hover:bg-[#f5f5f7] rounded-full text-[#1d1d1f] font-semibold transition-colors cursor-pointer font-sans"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#111218]/90 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 rounded-full text-neutral-200 font-semibold transition-all cursor-pointer font-mono tracking-wider"
                   title="Export writing ledger JSON"
                 >
-                  <Download className="w-3.5 h-3.5 text-[#86868b]" />
-                  <span>Export Ledger</span>
+                  <Download className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>Export Ledg</span>
                 </button>
 
                 {/* Backup Import */}
                 <label
                   id="lbl-import"
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-white border border-[#e8e8ed] hover:bg-[#f5f5f7] rounded-full text-[#1d1d1f] font-semibold cursor-pointer transition-colors font-sans"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#111218]/90 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 rounded-full text-neutral-200 font-semibold cursor-pointer transition-all font-mono tracking-wider"
                   title="Import backup file JSON"
                 >
-                  <Upload className="w-3.5 h-3.5 text-[#86868b]" />
-                  <span>Import Ledger</span>
+                  <Upload className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>Import Ledg</span>
                   <input
                     id="file-import"
                     type="file"
@@ -390,9 +395,9 @@ export default function App() {
                 <button
                   id="btn-manage-cats"
                   onClick={() => setIsCategoryManagerOpen(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-white border border-[#e8e8ed] hover:bg-[#f5f5f7] rounded-full text-[#1d1d1f] font-semibold transition-colors cursor-pointer font-sans"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#111218]/90 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 rounded-full text-neutral-200 font-semibold transition-all cursor-pointer font-mono tracking-wider"
                 >
-                  <Layers className="w-3.5 h-3.5 text-[#86868b]" />
+                  <Layers className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Categories</span>
                 </button>
 
@@ -400,7 +405,7 @@ export default function App() {
                 <button
                   id="btn-trigger-reset"
                   onClick={() => setIsResetConfirmOpen(true)}
-                  className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-[#f5f5f7] rounded-full border border-transparent hover:border-[#e8e8ed] transition-all cursor-pointer"
+                  className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-full border border-transparent hover:border-neutral-850 transition-all cursor-pointer"
                   title="Reset notebook state back to demo poems"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -413,9 +418,9 @@ export default function App() {
                     setActivePoemForEditing(null);
                     setIsFormOpen(true);
                   }}
-                  className="flex items-center gap-2 px-5 py-2.5 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white rounded-full text-xs font-bold transition-all ml-2 cursor-pointer shadow-xs font-sans"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 via-indigo-500 to-fuchsia-500 hover:from-cyan-400 hover:to-fuchsia-400 text-white font-display uppercase tracking-wider rounded-full text-xs font-bold transition-all ml-2 cursor-pointer shadow-lg hover:shadow-cyan-500/20"
                 >
-                  <Plus className="w-4 h-4 font-bold" />
+                  <Plus className="w-4 h-4 font-extrabold" />
                   <span>Inscribe Poem</span>
                 </button>
               </>
@@ -426,28 +431,28 @@ export default function App() {
       </header>
 
       {/* Main Single-Screen workspace */}
-      <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-8 space-y-8">
+      <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-8 space-y-8 z-10 relative">
         
         {/* Advanced elegant filter bar row */}
-        <section id="filters-panel" className="bg-white border border-[#e8e8ed] p-6 rounded-2xl shadow-xs space-y-4">
+        <section id="filters-panel" className="bg-[#0f111a]/80 border border-neutral-800/80 p-6 rounded-2xl shadow-xl backdrop-blur-md space-y-5 relative">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
             {/* Search Input */}
             <div className="relative flex-1 max-w-md font-sans">
-              <Search className="w-4 h-4 text-[#86868b] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4 h-4 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 id="search-input"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search poetry verses, titles, tags or poets..."
-                className="w-full pl-10 pr-4 py-2.5 bg-[#f5f5f7] border border-[#e8e8ed] rounded-xl text-sm text-[#1d1d1f] placeholder:text-[#86868b]/70 focus:outline-none focus:ring-4 focus:ring-[#0071e3]/10 focus:border-[#0071e3] focus:bg-white transition-all"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#141622] border border-neutral-800 rounded-xl text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500 focus:bg-[#181a28] transition-all font-sans"
               />
               {searchQuery && (
                 <button
                   id="btn-clear-search"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f] cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -458,69 +463,80 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Mood Selector label */}
               <div className="flex items-center gap-1.5 font-sans">
-                <span className="text-xs font-bold text-[#86868b] uppercase tracking-widest">Atmosphere:</span>
+                <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono">Atmosphere:</span>
                 <select
                   id="mood-filter-select"
                   value={selectedMood}
                   onChange={(e) => setSelectedMood(e.target.value)}
-                  className="bg-[#f5f5f7] border border-[#e8e8ed] text-xs text-[#1d1d1f] px-3 py-1.5 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#0071e3]/10 focus:border-[#0071e3] font-semibold cursor-pointer transition-all hover:bg-[#e8e8ed]"
+                  className="bg-[#141622] border border-neutral-800 text-xs text-neutral-200 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:border-cyan-500 font-mono font-bold uppercase tracking-wider cursor-pointer transition-all hover:bg-neutral-800"
                 >
-                  <option className="bg-white text-[#1d1d1f]" value="all">All Atmosphere</option>
-                  <option className="bg-white text-[#1d1d1f]" value="Reflective">Reflective</option>
-                  <option className="bg-white text-[#1d1d1f]" value="Melancholy">Melancholy</option>
-                  <option className="bg-white text-[#1d1d1f]" value="Romantic">Romantic</option>
-                  <option className="bg-white text-[#1d1d1f]" value="Hopeful">Hopeful</option>
-                  <option className="bg-white text-[#1d1d1f]" value="Whimsical">Whimsical</option>
-                  <option className="bg-white text-[#1d1d1f]" value="Mystical">Mystical</option>
-                  <option className="bg-white text-[#1d1d1f]" value="Free">Free</option>
+                  <option className="bg-[#141622] text-neutral-250 font-sans" value="all">🟢 All Atmosphere</option>
+                  <option className="bg-[#141622] text-cyan-400 font-sans" value="Reflective">Reflective</option>
+                  <option className="bg-[#141622] text-indigo-400 font-sans" value="Melancholy">Melancholy</option>
+                  <option className="bg-[#141622] text-rose-400 font-sans" value="Romantic">Romantic</option>
+                  <option className="bg-[#141622] text-teal-400 font-sans" value="Hopeful">Hopeful</option>
+                  <option className="bg-[#141622] text-amber-400 font-sans" value="Whimsical">Whimsical</option>
+                  <option className="bg-[#141622] text-fuchsia-400 font-sans" value="Mystical">Mystical</option>
+                  <option className="bg-[#141622] text-emerald-400 font-sans" value="Free">Free</option>
                 </select>
               </div>
 
               {/* Sort selector label */}
               <div className="flex items-center gap-1.5 font-sans">
-                <span className="text-xs font-bold text-[#86868b] uppercase tracking-widest">Sequence:</span>
+                <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono">Sequence:</span>
                 <button
                   id="btn-sort-chronology"
                   onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : sortBy === 'oldest' ? 'alphabetical' : 'newest')}
-                  className="flex items-center gap-1 px-3.5 py-1.5 bg-[#f5f5f7] hover:bg-[#e8e8ed] border border-[#e8e8ed] text-xs text-[#1d1d1f] rounded-lg font-semibold transition-all cursor-pointer"
+                  className="flex items-center gap-1 px-3.5 py-1.5 bg-[#141622] hover:bg-neutral-800 border border-neutral-800 text-xs text-neutral-200 rounded-lg font-mono font-bold uppercase tracking-wider transition-all cursor-pointer"
                 >
-                  {sortBy === 'newest' && <Clock className="w-3.5 h-3.5 text-[#0071e3]" />}
-                  {sortBy === 'oldest' && <Clock className="w-3.5 h-3.5 rotate-180 transform text-[#0071e3]" />}
-                  {sortBy === 'alphabetical' && <ArrowUpDown className="w-3.5 h-3.5 text-[#0071e3]" />}
-                  <span>{sortBy === 'newest' ? 'Newest First' : sortBy === 'oldest' ? 'Oldest First' : 'A to Z'}</span>
+                  {sortBy === 'newest' && <Clock className="w-3.5 h-3.5 text-cyan-400" />}
+                  {sortBy === 'oldest' && <Clock className="w-3.5 h-3.5 rotate-180 transform text-cyan-400" />}
+                  {sortBy === 'alphabetical' && <ArrowUpDown className="w-3.5 h-3.5 text-cyan-400" />}
+                  <span>{sortBy === 'newest' ? 'Newest' : sortBy === 'oldest' ? 'Oldest' : 'A to Z'}</span>
                 </button>
               </div>
             </div>
 
           </div>
 
-          <div className="border-t border-[#e8e8ed] pt-4 flex flex-col md:flex-row md:items-start gap-3">
-            <span className="text-xs font-bold text-[#86868b] uppercase tracking-widest font-sans mt-2">Category:</span>
+          <div className="border-t border-neutral-850 pt-4 flex flex-col md:flex-row md:items-start gap-4">
+            <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono mt-2">Category:</span>
             {/* Horizontal Categories Row */}
             <div id="category-scroller" className="flex flex-wrap items-center gap-2">
               <button
                 id="cat-pill-all"
                 onClick={() => setSelectedCatId('all')}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer border transition-all duration-200 ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold font-display cursor-pointer border transition-all duration-200 uppercase tracking-widest ${
                   selectedCatId === 'all'
-                    ? 'bg-[#1d1d1f] border-[#1d1d1f] text-white font-bold shadow-xs'
-                    : 'bg-[#f5f5f7] hover:bg-[#e8e8ed] border-[#e8e8ed] text-[#1d1d1f]'
+                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-white border-transparent'
+                    : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300'
                 }`}
               >
                 All Verses ({poems.length})
               </button>
-              {categories.map((cat) => {
+              {categories.map((cat, index) => {
                 const count = poems.filter((poem) => poem.categoryId === cat.id).length;
                 const isSelected = selectedCatId === cat.id;
+                
+                // Beautiful vibrant gradients for active category selection
+                const gradientColors = [
+                  'from-violet-500 to-fuchsia-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]',
+                  'from-emerald-400 to-teal-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]',
+                  'from-pink-500 to-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]',
+                  'from-amber-400 to-orange-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+                  'from-blue-500 to-cyan-500 shadow-[0_0_15px_rgba(59,130,246,0.3)]',
+                ];
+                const activeGrad = gradientColors[index % gradientColors.length];
+
                 return (
                   <button
                     id={`cat-pill-${cat.id}`}
                     key={cat.id}
                     onClick={() => setSelectedCatId(cat.id)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer border transition-all duration-200 ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold font-display cursor-pointer border transition-all duration-200 uppercase tracking-widest ${
                       isSelected
-                        ? 'bg-[#0071e3] border-[#0071e3] text-white font-bold shadow-xs'
-                        : 'bg-[#f5f5f7] hover:bg-[#e8e8ed] border-[#e8e8ed] text-[#1d1d1f]'
+                        ? `bg-gradient-to-r ${activeGrad} border-transparent text-white`
+                        : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300'
                     }`}
                   >
                     {cat.name} ({count})
@@ -534,14 +550,14 @@ export default function App() {
         {/* Content Section - Grid representing layout */}
         <section id="poetry-room-section" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 id="room-header" className="text-xs font-bold text-[#86868b] uppercase tracking-widest font-sans">
+            <h2 id="room-header" className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono">
               {filteredPoems.length === poems.length 
                 ? '✦ Notebook Records Archive' 
                 : `✦ ${filteredPoems.length} of ${poems.length} verses revealed`}
             </h2>
             {filteredPoems.length > 0 && (
-              <span id="filtered-indicator" className="text-xs font-sans text-[#86868b] font-medium">
-                Double click card to preview details
+              <span id="filtered-indicator" className="text-[10px] uppercase font-mono tracking-wider text-cyan-400 bg-cyan-950/20 border border-cyan-900/40 px-2.5 py-1 rounded-full animate-pulse">
+                ✦ Click a verse card below to read details
               </span>
             )}
           </div>
@@ -623,31 +639,31 @@ export default function App() {
       </main>
 
       {/* Minimal Footer */}
-      <footer id="primary-footer" className="bg-[#05060f] border-t border-slate-900 py-6 px-4 md:px-8 mt-auto relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium font-sans">
-          <p>© {new Date().getFullYear()} Poetry Notebook. Custom Midnight Celestial Theme.</p>
+      <footer id="primary-footer" className="bg-[#05060f] border-t border-neutral-900 py-6 px-4 md:px-8 mt-auto relative z-10">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-neutral-500 font-semibold font-mono uppercase tracking-widest">
+          <p>© {new Date().getFullYear()} Poetry Notebook. Styled with Webdorks accents.</p>
           <div className="flex items-center gap-4">
             {isAuthorMode ? (
               <div className="flex items-center gap-4">
-                <span className="text-amber-500/30">✦ Celestial Ledger Secured</span>
-                <span className="text-slate-600">|</span>
+                <span className="text-cyan-500/40">✦ Ledger Session Active</span>
+                <span className="text-neutral-800">|</span>
                 <button 
                   id="footer-lock"
                   onClick={handleLockAuthorMode}
-                  className="text-amber-400 hover:text-amber-300 font-semibold cursor-pointer select-none transition-colors"
+                  className="text-cyan-400 hover:text-cyan-300 font-bold cursor-pointer select-none transition-colors font-mono tracking-wider"
                   title="Lock author mode"
                 >
-                  Logout from Scribal Session 🔓
+                  Exit Writer Panel 🔓
                 </button>
               </div>
             ) : (
               <span 
                 id="footer-secret-unlock"
                 onClick={() => setIsPasscodeModalOpen(true)}
-                className="text-amber-500/15 hover:text-amber-500/40 cursor-pointer select-none transition-colors font-medium text-[11px]"
+                className="text-cyan-500/20 hover:text-cyan-400 cursor-pointer select-none transition-all duration-300 font-extrabold text-[10px] tracking-widest"
                 title="Scribal Portal"
               >
-                ✦ Celestial Ledger Secured
+                ✦ Scribal Portal Login
               </span>
             )}
           </div>
@@ -670,7 +686,7 @@ export default function App() {
                 setIsFormOpen(false);
                 setActivePoemForEditing(null);
               }}
-              className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
             />
             {/* Modal Sheet panel */}
             <motion.div
@@ -678,7 +694,7 @@ export default function App() {
               initial={{ scale: 0.95, y: 12, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 12, opacity: 0 }}
-              className="bg-[#FCFBF7] border border-amber-200/60 rounded-2xl p-6 sm:p-8 shadow-[0_10px_40px_rgba(139,92,26,0.12)] relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto text-stone-900"
+              className="bg-[#0c0d14] border border-neutral-800/80 rounded-2xl p-6 sm:p-8 shadow-[0_0_50px_rgba(6,182,212,0.15)] relative z-10 w-full max-w-3xl max-h-[90vh] overflow-y-auto text-neutral-200"
             >
               <PoemForm
                 poem={activePoemForEditing}
@@ -706,7 +722,7 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setActivePoemForReading(null)}
-              className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
             />
             {/* Content box */}
             <motion.div
@@ -714,7 +730,7 @@ export default function App() {
               initial={{ scale: 0.95, y: 12, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 12, opacity: 0 }}
-              className="bg-[#FCFBF7] border border-amber-200/60 rounded-2xl p-6 sm:p-8 shadow-[0_10px_40px_rgba(139,92,26,0.12)] relative z-10 w-full max-w-2xl text-stone-900"
+              className="bg-[#0c0d14] border border-neutral-800/80 rounded-2xl p-6 sm:p-8 shadow-[0_0_50px_rgba(6,182,212,0.15)] relative z-10 w-full max-w-2xl text-neutral-200"
             >
               <PoemReader
                 poem={activePoemForReading}
@@ -741,34 +757,34 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsCategoryManagerOpen(false)}
-              className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
             />
             <motion.div
               id="sheet-cat-mgr"
               initial={{ scale: 0.95, y: 12, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 12, opacity: 0 }}
-              className="bg-white border border-[#e8e8ed] rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 w-full max-w-md space-y-6 text-[#1d1d1f]"
+              className="bg-[#0c0d14] border border-neutral-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative z-10 w-full max-w-md space-y-6 text-neutral-200"
             >
-              <div className="flex items-center justify-between border-b pb-4 border-[#e8e8ed]">
+              <div className="flex items-center justify-between border-b pb-4 border-neutral-800">
                 <div className="flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-[#0071e3]" />
-                  <h3 id="cat-mgr-title" className="text-lg font-sans font-bold text-[#1d1d1f] tracking-tight">
+                  <Layers className="w-5 h-5 text-cyan-400" />
+                  <h3 id="cat-mgr-title" className="text-lg font-display font-bold text-neutral-100 tracking-tight">
                     Category Manager
                   </h3>
                 </div>
                 <button
                   id="btn-close-cat-mgr"
                   onClick={() => setIsCategoryManagerOpen(false)}
-                  className="text-[#86868b] hover:text-[#1d1d1f] rounded-full p-1.5 hover:bg-[#f5f5f7] transition-all cursor-pointer"
+                  className="text-neutral-400 hover:text-white rounded-full p-1.5 hover:bg-neutral-800 transition-all cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Add category box */}
-              <div className="space-y-2 font-sans">
-                <label className="text-xs font-bold text-[#86868b] uppercase tracking-wider block">
+              <div className="space-y-2 font-mono">
+                <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest block font-mono">
                   Add New Category
                 </label>
                 <div className="flex items-center gap-2">
@@ -778,7 +794,7 @@ export default function App() {
                     value={newCatNameInput}
                     onChange={(e) => setNewCatNameInput(e.target.value)}
                     placeholder="e.g., Space Travel"
-                    className="flex-1 px-3.5 py-2.5 bg-[#f5f5f7] border border-[#e8e8ed] rounded-xl text-sm text-[#1d1d1f] outline-none focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/10 transition-all"
+                    className="flex-1 px-3.5 py-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-sm text-neutral-100 outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const name = newCatNameInput.trim();
@@ -799,7 +815,7 @@ export default function App() {
                         setNewCatNameInput('');
                       }
                     }}
-                    className="bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+                    className="bg-cyan-500 hover:bg-cyan-400 text-neutral-950 font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1 transition-all cursor-pointer shadow-md font-mono uppercase tracking-wider"
                   >
                     <Plus className="w-3.5 h-3.5 font-bold" />
                     Add
@@ -809,10 +825,10 @@ export default function App() {
 
               {/* List of categories */}
               <div className="space-y-3 pt-2 font-sans">
-                <label className="text-xs font-bold text-[#86868b] uppercase tracking-wider block">
+                <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest block font-mono">
                   Current Categories & Count
                 </label>
-                <div id="mgr-cat-list" className="max-h-56 overflow-y-auto divide-y divide-[#e8e8ed] border border-[#e8e8ed] rounded-2xl px-3 bg-white">
+                <div id="mgr-cat-list" className="max-h-56 overflow-y-auto divide-y divide-neutral-800 border border-neutral-800 rounded-2xl px-3 bg-[#111218]">
                   {categories.map((cat) => {
                     const count = poems.filter((p) => p.categoryId === cat.id).length;
                     return (
@@ -822,16 +838,16 @@ export default function App() {
                         className="flex items-center justify-between py-2.5"
                       >
                         <div className="flex items-center gap-2 font-sans">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#0071e3]" />
-                          <span className="text-sm text-[#1d1d1f] font-semibold">{cat.name}</span>
-                          <span className="text-[11px] text-[#86868b] font-semibold">({count} {count === 1 ? 'poem' : 'poems'})</span>
+                          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                          <span className="text-sm text-neutral-200 font-semibold">{cat.name}</span>
+                          <span className="text-[11px] text-neutral-400 font-mono">({count} {count === 1 ? 'poem' : 'poems'})</span>
                         </div>
                         <button
                           id={`btn-mgr-delete-cat-${cat.id}`}
                           onClick={() => handleDeleteCategory(cat.id)}
                           disabled={categories.length <= 1}
-                          className="text-[#86868b] hover:text-red-650 disabled:opacity-30 disabled:hover:text-[#86868b] p-1.5 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
-                          title="Delete category (affected poems will be rerouted)"
+                          className="text-neutral-400 hover:text-red-400 disabled:opacity-30 disabled:hover:text-neutral-400 p-1.5 rounded-full hover:bg-neutral-800 transition-colors cursor-pointer"
+                          title="Delete category (affected poems will be repurposed)"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -839,16 +855,16 @@ export default function App() {
                     );
                   })}
                 </div>
-                <p className="text-[11px] text-[#86868b] leading-relaxed font-medium">
-                  Note: Deleting a category will safelist the affected poems to the first remaining category.
+                <p className="text-[11px] text-neutral-400 leading-relaxed font-mono italic">
+                  Note: Deleting a category will safe-transfer columns to the first remaining segment.
                 </p>
               </div>
 
-              <div className="border-t border-[#e8e8ed] pt-4 flex items-center justify-end">
+              <div className="border-t border-neutral-850 pt-4 flex items-center justify-end">
                 <button
                   id="btn-close-cat-mgr-footer"
                   onClick={() => setIsCategoryManagerOpen(false)}
-                  className="px-4.5 py-2 bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f] border border-[#e8e8ed] text-xs font-bold rounded-full transition-colors cursor-pointer"
+                  className="px-4.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-800 text-xs font-bold rounded-full transition-colors cursor-pointer font-mono tracking-wider uppercase"
                 >
                   Done
                 </button>
@@ -868,38 +884,38 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsResetConfirmOpen(false)}
-              className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
             />
             <motion.div
               id="sheet-reset-confirm"
               initial={{ scale: 0.95, y: 12, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 12, opacity: 0 }}
-              className="bg-white border border-[#e8e8ed] rounded-3xl p-6 shadow-2xl relative z-10 w-full max-w-sm space-y-4 text-[#1d1d1f]"
+              className="bg-[#0c0d14] border border-[#ff0055]/30 rounded-2xl p-6 shadow-2xl relative z-10 w-full max-w-sm space-y-4 text-neutral-200"
             >
-              <div className="flex items-center gap-3 text-red-650">
-                <AlertCircle className="w-6 h-6 shrink-0 text-red-500" />
-                <h3 id="reset-confirm-heading" className="text-lg font-sans font-bold text-[#1d1d1f] tracking-tight">
+              <div className="flex items-center gap-3 text-red-400">
+                <AlertCircle className="w-6 h-6 shrink-0 text-red-400" />
+                <h3 id="reset-confirm-heading" className="text-lg font-display font-bold text-neutral-100 tracking-tight">
                   Revert to Demo?
                 </h3>
               </div>
-              <p className="text-[#86868b] text-sm leading-relaxed font-sans font-medium">
+              <p className="text-neutral-400 text-xs leading-relaxed font-mono">
                 This will overwrite current storage entries with the Frost, Burns, and Dickinson classical demo verses.
               </p>
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   id="btn-cancel-reset"
                   onClick={() => setIsResetConfirmOpen(false)}
-                  className="px-4.5 py-2 border border-[#e8e8ed] text-[#86868b] hover:bg-[#f5f5f7] text-xs font-bold rounded-full transition-colors cursor-pointer"
+                  className="px-4.5 py-2 border border-neutral-800 text-neutral-400 hover:bg-neutral-800 hover:text-white text-xs font-bold rounded-full transition-colors cursor-pointer font-mono tracking-widest uppercase"
                 >
                   Cancel
                 </button>
                 <button
                   id="btn-confirm-reset"
                   onClick={handleRevertToDemo}
-                  className="px-4.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full shadow-xs transition-colors cursor-pointer"
+                  className="px-4.5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-full shadow-md transition-colors cursor-pointer font-mono tracking-widest uppercase"
                 >
-                  Revert Notebook
+                  Revert
                 </button>
               </div>
             </motion.div>
@@ -921,36 +937,36 @@ export default function App() {
                 setEnteredPasscode('');
                 setPasscodeError(false);
               }}
-              className="absolute inset-0 bg-stone-900/60 backdrop-blur-xs"
+              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
             />
             <motion.div
               id="sheet-passcode"
               initial={{ scale: 0.95, y: 12, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 12, opacity: 0 }}
-              className="bg-white border border-[#e8e8ed] rounded-3xl p-6 shadow-2xl relative z-10 w-full max-w-sm space-y-5 text-[#1d1d1f]"
+              className="bg-[#0c0d14] border border-neutral-800 rounded-2xl p-6 shadow-2xl relative z-10 w-full max-w-sm space-y-5 text-neutral-200"
             >
               <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-[#f5f5f7] border border-[#e8e8ed] rounded-xl text-[#0071e3]">
+                <div className="p-2.5 bg-neutral-900 border border-neutral-800 rounded-xl text-cyan-400">
                   <Sparkles className="w-5 h-5 animate-pulse" />
                 </div>
                 <div>
-                  <h3 id="passcode-heading" className="text-lg font-sans font-bold text-[#1d1d1f] tracking-tight leading-tight">
+                  <h3 id="passcode-heading" className="text-lg font-display font-bold text-neutral-100 tracking-tight leading-tight">
                     Author Verification
                   </h3>
-                  <p className="text-[10px] text-[#86868b] font-sans tracking-wide font-extrabold uppercase">
+                  <p className="text-[9px] text-cyan-400 font-mono tracking-widest font-extrabold uppercase">
                     Enter Verification Key
                   </p>
                 </div>
               </div>
 
-              <p className="text-[#86868b] text-xs leading-relaxed font-sans font-medium">
+              <p className="text-neutral-400 text-xs leading-relaxed font-mono">
                 To enable writer mode, please authorize using the notebook validation password.
               </p>
 
               <form onSubmit={handleVerifyPasscode} className="space-y-4">
-                <div className="space-y-1.5 font-sans">
-                  <label className="text-[11px] font-bold text-[#86868b] uppercase tracking-wider block">
+                <div className="space-y-1.5 font-mono">
+                  <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest block">
                     Verification Passcode
                   </label>
                   <input
@@ -963,21 +979,21 @@ export default function App() {
                       if (passcodeError) setPasscodeError(false);
                     }}
                     placeholder="Enter journal key..."
-                    className={`w-full px-3.5 py-2.5 bg-[#f5f5f7] border ${
-                      passcodeError ? 'border-red-400 focus:ring-4 focus:ring-red-100' : 'border-[#e8e8ed] focus:ring-4 focus:ring-[#0071e3]/10 focus:border-[#0071e3]'
-                    } rounded-xl text-sm text-[#1d1d1f] outline-none transition-all font-mono`}
+                    className={`w-full px-3.5 py-2.5 bg-[#141622] border ${
+                      passcodeError ? 'border-red-500 focus:ring-2 focus:ring-red-500/20' : 'border-neutral-800 focus:ring-2 focus:ring-cyan-500/30 focus:border-cyan-500'
+                    } rounded-xl text-sm text-neutral-100 outline-none transition-all font-mono`}
                     autoFocus
                   />
                   {passcodeError && (
-                    <p className="text-[11px] text-red-600 font-bold flex items-center gap-1 mt-1">
+                    <p className="text-[11px] text-red-400 font-bold flex items-center gap-1 mt-1 font-mono">
                       ⚠️ Incorrect access token. Please verify and retry.
                     </p>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
-                  <div className="text-[10px] text-[#86868b] font-sans font-semibold">
-                    Default key is: <span className="font-mono text-[#1d1d1f] not-italic font-bold">nature</span>
+                  <div className="text-[10px] text-neutral-500 font-mono">
+                    Default key: <span className="font-mono text-cyan-400 not-italic font-bold">nature</span>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -988,14 +1004,14 @@ export default function App() {
                         setEnteredPasscode('');
                         setPasscodeError(false);
                       }}
-                      className="px-4 py-1.5 border border-[#e8e8ed] text-[#86868b] hover:bg-[#f5f5f7] text-xs font-bold rounded-full transition-colors cursor-pointer"
+                      className="px-4 py-1.5 border border-neutral-800 text-neutral-400 hover:bg-neutral-800 hover:text-white text-xs font-bold rounded-full transition-colors cursor-pointer font-mono uppercase tracking-wider"
                     >
                       Close
                     </button>
                     <button
                       id="btn-confirm-passcode"
                       type="submit"
-                      className="px-4 py-1.5 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold text-xs rounded-full shadow-xs transition-colors cursor-pointer"
+                      className="px-4 py-1.5 bg-cyan-500 hover:bg-cyan-400 text-neutral-950 font-bold text-xs rounded-full shadow-md transition-colors cursor-pointer font-mono uppercase tracking-wider"
                     >
                       Authorize
                     </button>

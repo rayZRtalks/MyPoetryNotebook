@@ -11,6 +11,67 @@ interface PoemCardProps {
   isEditable?: boolean;
 }
 
+const getMoodColor = (mood?: string) => {
+  switch (mood) {
+    case 'Reflective':
+      return {
+        badge: 'bg-cyan-950/40 text-cyan-400 border-cyan-800/50',
+        glow: 'hover:border-cyan-500/60 hover:shadow-[0_0_25px_rgba(6,182,212,0.18)] hover:bg-cyan-950/20',
+        accentText: 'text-cyan-400',
+        accentBg: 'bg-cyan-500/10'
+      };
+    case 'Melancholy':
+      return {
+        badge: 'bg-indigo-950/40 text-indigo-400 border-indigo-800/50',
+        glow: 'hover:border-indigo-500/60 hover:shadow-[0_0_25px_rgba(99,102,241,0.18)] hover:bg-indigo-950/20',
+        accentText: 'text-indigo-400',
+        accentBg: 'bg-indigo-500/10'
+      };
+    case 'Romantic':
+      return {
+        badge: 'bg-rose-950/40 text-rose-400 border-rose-800/50',
+        glow: 'hover:border-rose-500/60 hover:shadow-[0_0_25px_rgba(244,63,94,0.18)] hover:bg-rose-950/20',
+        accentText: 'text-rose-400',
+        accentBg: 'bg-rose-500/10'
+      };
+    case 'Hopeful':
+      return {
+        badge: 'bg-teal-950/40 text-teal-400 border-teal-800/50',
+        glow: 'hover:border-teal-500/60 hover:shadow-[0_0_25px_rgba(20,184,166,0.18)] hover:bg-teal-950/20',
+        accentText: 'text-teal-400',
+        accentBg: 'bg-teal-500/10'
+      };
+    case 'Whimsical':
+      return {
+        badge: 'bg-amber-950/40 text-amber-400 border-amber-800/50',
+        glow: 'hover:border-amber-500/60 hover:shadow-[0_0_25px_rgba(245,158,11,0.18)] hover:bg-amber-950/20',
+        accentText: 'text-amber-400',
+        accentBg: 'bg-amber-500/10'
+      };
+    case 'Mystical':
+      return {
+        badge: 'bg-fuchsia-950/40 text-fuchsia-400 border-fuchsia-800/50',
+        glow: 'hover:border-fuchsia-500/60 hover:shadow-[0_0_25px_rgba(217,70,239,0.18)] hover:bg-fuchsia-950/20',
+        accentText: 'text-fuchsia-400',
+        accentBg: 'bg-fuchsia-500/10'
+      };
+    case 'Free':
+      return {
+        badge: 'bg-emerald-950/40 text-emerald-400 border-emerald-800/50',
+        glow: 'hover:border-emerald-500/60 hover:shadow-[0_0_25px_rgba(16,185,129,0.18)] hover:bg-emerald-950/20',
+        accentText: 'text-emerald-400',
+        accentBg: 'bg-emerald-500/10'
+      };
+    default:
+      return {
+        badge: 'bg-neutral-900/40 text-neutral-400 border-neutral-800/50',
+        glow: 'hover:border-neutral-700/60 hover:shadow-[0_0_25px_rgba(163,163,163,0.15)] hover:bg-neutral-900/10',
+        accentText: 'text-neutral-300',
+        accentBg: 'bg-neutral-500/10'
+      };
+  }
+};
+
 export default function PoemCard({
   poem,
   categories,
@@ -36,17 +97,20 @@ export default function PoemCard({
   const previewLines = lines.slice(0, 3);
   const hasMoreLines = lines.length > 3;
 
+  // Active theme based colors
+  const mColors = getMoodColor(poem.mood);
+
   return (
     <div
       id={`poem-card-${poem.id}`}
-      className="group relative flex flex-col justify-between min-h-[340px] h-full bg-white border border-[#e8e8ed] rounded-2xl p-6 shadow-[0_4px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.05)] hover:border-[#d2d2d7] transition-all duration-300 backdrop-blur-md focus-within:ring-2 focus-within:ring-[#0071e3]/20"
+      className={`group relative flex flex-col justify-between min-h-[340px] h-full bg-[#111218]/90 border border-neutral-800/80 rounded-2xl p-6 shadow-2xl transition-all duration-300 backdrop-blur-md focus-within:ring-2 focus-within:ring-cyan-500/30 ${mColors.glow}`}
     >
       <div className="space-y-4">
         {/* Category & Mood Headings */}
         <div className="flex items-center justify-between gap-1 overflow-hidden">
           <span
             id={`card-cat-pill-${poem.id}`}
-            className="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[#f5f5f7] text-[#1d1d1f] border border-[#e8e8ed] truncate flex-1 text-center font-sans uppercase tracking-wider"
+            className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#181920] text-zinc-300 border border-[#272832] truncate flex-1 text-center font-display uppercase tracking-widest"
           >
             {category?.name || 'Uncategorized'}
           </span>
@@ -55,10 +119,10 @@ export default function PoemCard({
             {poem.attachments && poem.attachments.length > 0 && (
               <span
                 id={`card-attach-badge-${poem.id}`}
-                className="text-[10px] font-semibold text-[#1d1d1f] bg-[#f5f5f7] px-2 py-1 rounded-full border border-[#e8e8ed] flex items-center gap-0.5 font-sans"
+                className="text-[10px] font-bold text-cyan-400 bg-cyan-950/30 px-2.5 py-1 rounded-full border border-cyan-850/40 flex items-center gap-0.5 font-sans"
                 title={`${poem.attachments.length} media items`}
               >
-                <Paperclip className="w-3 h-3 text-[#86868b]" />
+                <Paperclip className="w-3 h-3 text-cyan-400" />
                 <span>{poem.attachments.length}</span>
               </span>
             )}
@@ -66,7 +130,7 @@ export default function PoemCard({
             {poem.mood && (
               <span
                 id={`card-mood-pill-${poem.id}`}
-                className="text-[10px] font-semibold text-[#515154] capitalize bg-[#f5f5f7] px-2.5 py-1 rounded-full border border-[#e8e8ed] font-sans"
+                className={`text-[10px] font-extrabold capitalize px-2.5 py-1 rounded-full border font-mono tracking-wider ${mColors.badge}`}
               >
                 {poem.mood}
               </span>
@@ -82,7 +146,7 @@ export default function PoemCard({
               e.stopPropagation();
               onSelect(poem);
             }}
-            className="relative w-full h-36 rounded-xl overflow-hidden border border-[#e8e8ed] bg-[#f5f5f7] shrink-0 cursor-pointer shadow-sm group-hover:border-[#d2d2d7] transition-all duration-300"
+            className="relative w-full h-36 rounded-xl overflow-hidden border border-neutral-800/85 bg-neutral-950 shrink-0 cursor-pointer shadow-md group-hover:border-neutral-700/80 transition-all duration-300"
           >
             {poem.attachments[0].type === 'image' ? (
               <img
@@ -101,9 +165,9 @@ export default function PoemCard({
                   autoPlay
                   playsInline
                 />
-                <div className="absolute inset-0 bg-[#1d1d1f]/10 flex items-center justify-center">
-                  <span className="p-1 px-2.5 rounded-full text-[9px] bg-[#1d1d1f]/95 text-[#f5f5f7] flex items-center gap-1 backdrop-blur-sm font-sans font-semibold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#0071e3] animate-pulse" />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <span className="p-1 px-2.5 rounded-full text-[9px] bg-neutral-900/95 text-white border border-neutral-800 flex items-center gap-1 backdrop-blur-xs font-mono font-bold tracking-wider uppercase">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                     Video Reading
                   </span>
                 </div>
@@ -113,16 +177,16 @@ export default function PoemCard({
         )}
 
         {/* Title & Poet */}
-        <div className="space-y-0.5">
+        <div className="space-y-1 font-display">
           <h4
             id={`card-title-${poem.id}`}
             onClick={() => onSelect(poem)}
-            className="text-base font-sans font-bold text-[#1d1d1f] tracking-tight group-hover:text-[#0071e3] cursor-pointer transition-colors leading-snug line-clamp-1"
+            className={`text-base font-bold text-neutral-100 tracking-tight group-hover:${mColors.accentText} cursor-pointer transition-colors leading-snug line-clamp-1`}
           >
             {poem.title}
           </h4>
-          <span id={`card-author-${poem.id}`} className="text-xs text-[#86868b] block font-sans tracking-tight">
-            by {poem.author || 'Anonymous'}
+          <span id={`card-author-${poem.id}`} className="text-xs text-neutral-400 font-mono tracking-tight block">
+            by <span className="text-neutral-200 font-medium">{poem.author || 'Anonymous'}</span>
           </span>
         </div>
 
@@ -131,15 +195,15 @@ export default function PoemCard({
           <div 
             id={`card-excerpt-${poem.id}`}
             onClick={() => onSelect(poem)}
-            className="relative text-[13px] font-sans text-[#515154] leading-relaxed cursor-pointer focus:outline-none pl-3 border-l-2 border-[#e8e8ed] hover:border-[#0071e3]/45 transition-colors"
+            className={`relative text-[13px] font-sans text-neutral-350 leading-relaxed cursor-pointer focus:outline-none pl-3 border-l-2 border-neutral-800/80 hover:border-l-current ${mColors.accentText} transition-all duration-300`}
           >
             <div className="space-y-1">
               {previewLines.map((line, idx) => (
-                <p key={idx} className="truncate tracking-tight font-medium">{line}</p>
+                <p key={idx} className="truncate tracking-tight font-sans italic">{line}</p>
               ))}
               {hasMoreLines && (
-                <p className="text-[10px] text-[#0071e3] font-semibold tracking-tight font-sans mt-2">
-                  → Read complete details ({lines.length - 3} more lines)
+                <p className={`text-[10px] ${mColors.accentText} font-bold tracking-widest font-mono mt-2.5 uppercase`}>
+                  → Review full verse ({lines.length - 3} lines more)
                 </p>
               )}
             </div>
@@ -148,10 +212,10 @@ export default function PoemCard({
       </div>
 
       {/* Footer Details & Quick Action buttons */}
-      <div className="border-t border-[#e8e8ed] pt-4 flex items-center justify-between mt-6">
+      <div className="border-t border-neutral-800/80 pt-4 flex items-center justify-between mt-6">
         {/* Creation Date indicator */}
-        <div className="flex items-center gap-1.5 text-[10px] font-medium text-[#86868b] font-sans tracking-tight">
-          <Calendar className="w-3.5 h-3.5 text-[#86868b]/70" />
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 font-mono tracking-wider uppercase">
+          <Calendar className="w-3.5 h-3.5 text-neutral-500" />
           <span>{formattedDate}</span>
         </div>
 
@@ -160,7 +224,7 @@ export default function PoemCard({
           <button
             id={`btn-select-poem-${poem.id}`}
             onClick={() => onSelect(poem)}
-            className="p-1.5 hover:bg-[#f5f5f7] rounded-full text-[#86868b] hover:text-[#0071e3] transition-colors cursor-pointer"
+            className="p-1.5 hover:bg-neutral-800 rounded-full text-neutral-400 hover:text-cyan-400 transition-colors cursor-pointer"
             title="Read Full Details"
           >
             <BookOpen className="w-4 h-4" />
@@ -171,28 +235,28 @@ export default function PoemCard({
               <button
                 id={`btn-edit-poem-${poem.id}`}
                 onClick={() => onEdit(poem)}
-                className="p-1.5 hover:bg-[#f5f5f7] rounded-full text-[#86868b] hover:text-[#0071e3] transition-colors cursor-pointer"
+                className="p-1.5 hover:bg-neutral-800 rounded-full text-neutral-400 hover:text-cyan-400 transition-colors cursor-pointer"
                 title="Edit Entry"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
 
               {confirmDelete ? (
-                <div className="flex items-center gap-1 bg-red-50 border border-red-100 rounded-lg p-0.5">
+                <div className="flex items-center gap-1 bg-red-950/40 border border-red-900/50 rounded-lg p-1 animate-pulse">
                   <button
                     id={`btn-confirm-delete-${poem.id}`}
                     onClick={() => {
                       onDelete(poem.id);
                       setConfirmDelete(false);
                     }}
-                    className="text-[10px] font-bold text-red-600 px-2 py-0.5 hover:bg-red-100 rounded-md cursor-pointer"
+                    className="text-[9px] font-extrabold text-red-400 px-2 py-0.5 hover:bg-red-900/40 rounded-md cursor-pointer uppercase font-mono tracking-widest"
                   >
-                    Delete
+                    Confirm
                   </button>
                   <button
                     id={`btn-cancel-delete-${poem.id}`}
                     onClick={() => setConfirmDelete(false)}
-                    className="text-[10px] font-medium text-[#86868b] px-2 py-0.5 hover:bg-[#f5f5f7] rounded-md cursor-pointer"
+                    className="text-[9px] font-extrabold text-neutral-400 px-2 py-0.5 hover:bg-neutral-800 rounded-md cursor-pointer uppercase font-mono tracking-widest"
                   >
                     Cancel
                   </button>
@@ -201,7 +265,7 @@ export default function PoemCard({
                 <button
                   id={`btn-trigger-delete-${poem.id}`}
                   onClick={() => setConfirmDelete(true)}
-                  className="p-1.5 hover:bg-red-50 rounded-full text-[#86868b] hover:text-red-600 transition-colors cursor-pointer"
+                  className="p-1.5 hover:bg-red-950/40 rounded-full text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
                   title="Delete Entry"
                 >
                   <Trash2 className="w-4 h-4" />
