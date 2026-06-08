@@ -48,6 +48,15 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newCatNameInput, setNewCatNameInput] = useState('');
 
+  // --- Author Mode & Passcode Verification States ---
+  const [isAuthorMode, setIsAuthorMode] = useState<boolean>(() => {
+    const saved = localStorage.getItem('poetry_notebook_is_author_authenticated');
+    return saved === 'true';
+  });
+  const [isPasscodeModalOpen, setIsPasscodeModalOpen] = useState(false);
+  const [enteredPasscode, setEnteredPasscode] = useState('');
+  const [passcodeError, setPasscodeError] = useState(false);
+
   // --- Toast helper ---
   const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'success') => {
     setToast({ message, type });
@@ -220,6 +229,29 @@ export default function App() {
     showToast('Reverted notebook to demo poems.', 'info');
   };
 
+  // --- Author Mode Handlers ---
+  const handleVerifyPasscode = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const correctPasscode = (import.meta as any).env?.VITE_AUTHOR_PASSCODE || 'nature';
+    if (enteredPasscode === correctPasscode) {
+      setIsAuthorMode(true);
+      localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
+      setIsPasscodeModalOpen(false);
+      setEnteredPasscode('');
+      setPasscodeError(false);
+      showToast('Welcome, Author. Your inkwell is prepared.', 'success');
+    } else {
+      setPasscodeError(true);
+      showToast('Passcode incorrect. The quill remains locked.', 'error');
+    }
+  };
+
+  const handleLockAuthorMode = () => {
+    setIsAuthorMode(false);
+    localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
+    showToast('Securely returned to viewer-only mode.', 'info');
+  };
+
   // --- Pure Search & Filter logic computation ---
   const filteredPoems = poems.filter((poem) => {
     const searchString = searchQuery.toLowerCase().trim();
@@ -307,68 +339,91 @@ export default function App() {
 
           {/* Right Action buttons group */}
           <div className="flex flex-wrap items-center gap-2">
-            
-            {/* Backup Export */}
-            <button
-              id="btn-export"
-              onClick={handleExportBackup}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs bg-slate-950 border border-slate-900 hover:border-slate-800 hover:bg-slate-900 rounded-lg text-slate-300 hover:text-amber-200 font-medium transition-colors"
-              title="Export writing ledger JSON"
-            >
-              <Download className="w-3.5 h-3.5" />
-              <span>Export Ledger</span>
-            </button>
+            {!isAuthorMode ? (
+              <button
+                id="btn-author-login"
+                onClick={() => setIsPasscodeModalOpen(true)}
+                className="flex items-center gap-1.5 px-4.5 py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-amber-500/30 text-xs text-slate-300 hover:text-amber-200 font-semibold rounded-lg transition-all cursor-pointer font-sans"
+              >
+                <span>Author Portal</span>
+                <span className="text-[10px] text-amber-500/60 bg-amber-500/5 px-1.5 py-0.5 rounded border border-amber-500/10">🔒 Locked</span>
+              </button>
+            ) : (
+              <>
+                {/* Session lock */}
+                <button
+                  id="btn-lock-author"
+                  onClick={handleLockAuthorMode}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs bg-amber-500/10 border border-amber-500/30 text-amber-200 hover:bg-amber-500/15 rounded-lg font-medium transition-colors cursor-pointer font-sans"
+                  title="Lock Author Mode and return to read-only"
+                >
+                  <span>Writer Session</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                </button>
 
-            {/* Backup Import */}
-            <label
-              id="lbl-import"
-              className="flex items-center gap-1.5 px-3 py-2 text-xs bg-slate-950 border border-slate-900 hover:border-slate-800 hover:bg-slate-900 rounded-lg text-slate-300 hover:text-amber-200 font-medium cursor-pointer transition-colors"
-              title="Import backup file JSON"
-            >
-              <Upload className="w-3.5 h-3.5" />
-              <span>Import Ledger</span>
-              <input
-                id="file-import"
-                type="file"
-                ref={fileInputRef}
-                accept=".json"
-                onChange={handleImportBackup}
-                className="hidden"
-              />
-            </label>
+                {/* Backup Export */}
+                <button
+                  id="btn-export"
+                  onClick={handleExportBackup}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs bg-slate-950 border border-slate-900 hover:border-slate-800 hover:bg-slate-900 rounded-lg text-slate-300 hover:text-amber-200 font-medium transition-colors cursor-pointer"
+                  title="Export writing ledger JSON"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export Ledger</span>
+                </button>
 
-            {/* Manage categories button */}
-            <button
-              id="btn-manage-cats"
-              onClick={() => setIsCategoryManagerOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs bg-slate-950 border border-slate-900 hover:border-slate-800 hover:bg-slate-900 rounded-lg text-slate-300 hover:text-amber-200 font-medium transition-colors"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Manage Categories</span>
-            </button>
+                {/* Backup Import */}
+                <label
+                  id="lbl-import"
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs bg-slate-950 border border-slate-900 hover:border-slate-800 hover:bg-slate-900 rounded-lg text-slate-300 hover:text-amber-200 font-medium cursor-pointer transition-colors"
+                  title="Import backup file JSON"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Import Ledger</span>
+                  <input
+                    id="file-import"
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".json"
+                    onChange={handleImportBackup}
+                    className="hidden"
+                  />
+                </label>
 
-            {/* Revert to demo */}
-            <button
-              id="btn-trigger-reset"
-              onClick={() => setIsResetConfirmOpen(true)}
-              className="p-2 text-slate-400 hover:text-amber-300 hover:bg-slate-900/60 rounded-lg border border-transparent hover:border-slate-800 transition-all"
-              title="Reset notebook state back to demo poems"
-            >
-              <RotateCcw className="w-4 h-4" />
-            </button>
+                {/* Manage categories button */}
+                <button
+                  id="btn-manage-cats"
+                  onClick={() => setIsCategoryManagerOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs bg-slate-950 border border-slate-900 hover:border-slate-800 hover:bg-slate-900 rounded-lg text-slate-300 hover:text-amber-200 font-medium transition-colors cursor-pointer"
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Categories</span>
+                </button>
 
-            {/* Write New Poem main trigger */}
-            <button
-              id="btn-trigger-new-poem"
-              onClick={() => {
-                setActivePoemForEditing(null);
-                setIsFormOpen(true);
-              }}
-              className="flex items-center gap-2 px-4.5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg text-xs font-semibold shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all ml-2 duration-300 cursor-pointer"
-            >
-              <Plus className="w-4 h-4 font-bold" />
-              <span>Inscribe Poem</span>
-            </button>
+                {/* Revert to demo */}
+                <button
+                  id="btn-trigger-reset"
+                  onClick={() => setIsResetConfirmOpen(true)}
+                  className="p-2 text-slate-400 hover:text-amber-300 hover:bg-slate-900/60 rounded-lg border border-transparent hover:border-slate-800 transition-all cursor-pointer"
+                  title="Reset notebook state back to demo poems"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+
+                {/* Write New Poem main trigger */}
+                <button
+                  id="btn-trigger-new-poem"
+                  onClick={() => {
+                    setActivePoemForEditing(null);
+                    setIsFormOpen(true);
+                  }}
+                  className="flex items-center gap-2 px-4.5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg text-xs font-semibold shadow-[0_0_15px_rgba(245,158,11,0.2)] hover:shadow-[0_0_20px_rgba(245,158,11,0.4)] transition-all ml-2 duration-300 cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 font-bold" />
+                  <span>Inscribe Poem</span>
+                </button>
+              </>
+            )}
           </div>
 
         </div>
@@ -512,18 +567,26 @@ export default function App() {
                   Silence reigns in this sky
                 </h3>
                 <p className="text-slate-400 text-sm max-w-sm">
-                  No classical verses aligned with your current search. Grab the golden quill and inscribe a new verse!
+                  {isAuthorMode
+                    ? "No classical verses aligned with your current search. Grab the golden quill and inscribe a new verse!"
+                    : "No classical verses aligned with your current search. Feel free to clear the search criteria or switch categories."}
                 </p>
-                <button
-                  id="btn-empty-inscribe"
-                  onClick={() => {
-                    setActivePoemForEditing(null);
-                    setIsFormOpen(true);
-                  }}
-                  className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
-                >
-                  Begin Writing
-                </button>
+                {isAuthorMode ? (
+                  <button
+                    id="btn-empty-inscribe"
+                    onClick={() => {
+                      setActivePoemForEditing(null);
+                      setIsFormOpen(true);
+                    }}
+                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
+                  >
+                    Begin Writing
+                  </button>
+                ) : (
+                  <p className="text-[11px] text-amber-500/50 italic font-medium tracking-wider">
+                    ✦ Secure Reader Ledger ✦
+                  </p>
+                )}
               </motion.div>
             ) : (
               <motion.div
@@ -552,6 +615,7 @@ export default function App() {
                         setIsFormOpen(true);
                       }}
                       onDelete={handleDeletePoem}
+                      isEditable={isAuthorMode}
                     />
                   </motion.div>
                 ))}
@@ -564,10 +628,30 @@ export default function App() {
 
       {/* Minimal Footer */}
       <footer id="primary-footer" className="bg-[#05060f] border-t border-slate-900 py-6 px-4 md:px-8 mt-auto relative z-10">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500 font-medium font-sans">
           <p>© {new Date().getFullYear()} Poetry Notebook. Custom Midnight Celestial Theme.</p>
           <div className="flex items-center gap-4">
-            <span className="text-amber-500/50">✦ Durable Client Ledger Engaged</span>
+            <span className="text-amber-500/30">✦ Celestial Ledger Secured</span>
+            <span className="text-slate-600">|</span>
+            {isAuthorMode ? (
+              <button 
+                id="footer-lock"
+                onClick={handleLockAuthorMode}
+                className="text-amber-400 hover:text-amber-300 font-semibold cursor-pointer select-none transition-colors"
+                title="Lock author mode"
+              >
+                Logout from Scribal Session 🔓
+              </button>
+            ) : (
+              <button 
+                id="footer-unlock"
+                onClick={() => setIsPasscodeModalOpen(true)}
+                className="text-slate-500 hover:text-amber-400 transition-colors font-medium cursor-pointer"
+                title="Authorize dashboard editing"
+              >
+                Author Unlock 🔒
+              </button>
+            )}
           </div>
         </div>
       </footer>
@@ -642,6 +726,7 @@ export default function App() {
                   setActivePoemForEditing(p);
                   setIsFormOpen(true);
                 }}
+                isEditable={isAuthorMode}
               />
             </motion.div>
           </div>
@@ -825,6 +910,106 @@ export default function App() {
                   Revert Notebook
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 5. Author Portal Passcode Entry Modal */}
+      <AnimatePresence>
+        {isPasscodeModalOpen && (
+          <div id="modal-container-passcode" className="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans">
+            <motion.div
+              id="backdrop-passcode"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setIsPasscodeModalOpen(false);
+                setEnteredPasscode('');
+                setPasscodeError(false);
+              }}
+              className="absolute inset-0 bg-slate-950/85 backdrop-blur-sm"
+            />
+            <motion.div
+              id="sheet-passcode"
+              initial={{ scale: 0.95, y: 12, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 12, opacity: 0 }}
+              className="bg-[#0b0e22] border border-slate-800 rounded-2xl p-6 shadow-2xl relative z-10 w-full max-w-sm space-y-5 text-slate-100"
+            >
+              <div className="flex items-center gap-3 text-amber-400">
+                <div className="p-2 bg-slate-900 border border-slate-800 rounded-lg text-amber-400">
+                  <Sparkles className="w-5 h-5 animate-pulse" />
+                </div>
+                <div>
+                  <h3 id="passcode-heading" className="text-lg font-serif font-semibold text-slate-200 leading-tight">
+                    Author Verification
+                  </h3>
+                  <p className="text-[10px] text-slate-450 font-sans tracking-wide">
+                    INSCRIBE SECRET ACCESS KEY
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-slate-400 text-xs leading-relaxed font-serif italic">
+                “With key in hand, the locked garden of verses opens to the keeper of the quill.”
+              </p>
+
+              <form onSubmit={handleVerifyPasscode} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block font-sans">
+                    Verification Passcode
+                  </label>
+                  <input
+                    id="input-author-passcode"
+                    type="password"
+                    required
+                    value={enteredPasscode}
+                    onChange={(e) => {
+                      setEnteredPasscode(e.target.value);
+                      if (passcodeError) setPasscodeError(false);
+                    }}
+                    placeholder="Enter journal key..."
+                    className={`w-full px-3 py-2.5 bg-slate-950 border ${
+                      passcodeError ? 'border-rose-500/50 focus:border-rose-500 shadow-sm shadow-rose-500/5' : 'border-slate-800 focus:border-amber-500/50'
+                    } rounded-lg text-sm text-slate-100 outline-none transition-all font-mono`}
+                    autoFocus
+                  />
+                  {passcodeError && (
+                    <p className="text-[11px] text-rose-400 font-medium flex items-center gap-1 animate-bounce">
+                      ⚠️ Incorrect access token. Please verify and retry.
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-2">
+                  <div className="text-[10px] text-slate-500 font-serif italic">
+                    Unlock key default is: <span className="font-mono text-slate-400 not-italic">nature</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      id="btn-cancel-passcode"
+                      type="button"
+                      onClick={() => {
+                        setIsPasscodeModalOpen(false);
+                        setEnteredPasscode('');
+                        setPasscodeError(false);
+                      }}
+                      className="px-3.5 py-1.5 border border-slate-800 text-slate-400 hover:bg-slate-900 hover:text-slate-300 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                    >
+                      Close
+                    </button>
+                    <button
+                      id="btn-confirm-passcode"
+                      type="submit"
+                      className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg shadow-sm transition-colors cursor-pointer"
+                    >
+                      Authorize
+                    </button>
+                  </div>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

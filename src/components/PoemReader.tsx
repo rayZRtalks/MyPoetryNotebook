@@ -7,6 +7,7 @@ interface PoemReaderProps {
   categories: Category[];
   onClose: () => void;
   onEdit: (poem: Poem) => void;
+  isEditable?: boolean;
 }
 
 export default function PoemReader({
@@ -14,6 +15,7 @@ export default function PoemReader({
   categories,
   onClose,
   onEdit,
+  isEditable = true,
 }: PoemReaderProps) {
   const [copied, setCopied] = useState(false);
   const category = categories.find((c) => c.id === poem.categoryId);
@@ -68,17 +70,19 @@ export default function PoemReader({
           </button>
 
           {/* Edit Button */}
-          <button
-            id="btn-edit-from-reader"
-            onClick={() => {
-              onEdit(poem);
-              onClose();
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-900 bg-slate-950 rounded-lg border border-slate-800 transition-all font-medium cursor-pointer"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-slate-450" />
-            <span>Edit</span>
-          </button>
+          {isEditable && (
+            <button
+              id="btn-edit-from-reader"
+              onClick={() => {
+                onEdit(poem);
+                onClose();
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-900 bg-slate-950 rounded-lg border border-slate-800 transition-all font-medium cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-slate-450" />
+              <span>Edit</span>
+            </button>
+          )}
 
           {/* Close Modal button */}
           <button

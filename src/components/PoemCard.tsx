@@ -8,6 +8,7 @@ interface PoemCardProps {
   onSelect: (poem: Poem) => void;
   onEdit: (poem: Poem) => void;
   onDelete: (id: string) => void;
+  isEditable?: boolean;
 }
 
 export default function PoemCard({
@@ -16,6 +17,7 @@ export default function PoemCard({
   onSelect,
   onEdit,
   onDelete,
+  isEditable = true,
 }: PoemCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -138,44 +140,48 @@ export default function PoemCard({
             <BookOpen className="w-4 h-4" />
           </button>
           
-          <button
-            id={`btn-edit-poem-${poem.id}`}
-            onClick={() => onEdit(poem)}
-            className="p-1.5 hover:bg-slate-900 rounded-md text-slate-400 hover:text-amber-400 transition-colors"
-            title="Edit Poem"
-          >
-            <Edit3 className="w-4 h-4" />
-          </button>
+          {isEditable && (
+            <>
+              <button
+                id={`btn-edit-poem-${poem.id}`}
+                onClick={() => onEdit(poem)}
+                className="p-1.5 hover:bg-slate-900 rounded-md text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
+                title="Edit Poem"
+              >
+                <Edit3 className="w-4 h-4" />
+              </button>
 
-          {confirmDelete ? (
-            <div className="flex items-center gap-1 bg-[#1a0f1d] border border-rose-950 rounded-md p-0.5">
-              <button
-                id={`btn-confirm-delete-${poem.id}`}
-                onClick={() => {
-                  onDelete(poem.id);
-                  setConfirmDelete(false);
-                }}
-                className="text-[10px] font-bold text-rose-400 px-1.5 py-0.5 hover:bg-rose-900/40 rounded"
-              >
-                Delete?
-              </button>
-              <button
-                id={`btn-cancel-delete-${poem.id}`}
-                onClick={() => setConfirmDelete(false)}
-                className="text-[10px] font-medium text-slate-400 px-1.5 py-0.5 hover:bg-slate-900 rounded"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              id={`btn-trigger-delete-${poem.id}`}
-              onClick={() => setConfirmDelete(true)}
-              className="p-1.5 hover:bg-rose-950/40 rounded-md text-slate-500 hover:text-rose-400 transition-colors"
-              title="Delete Poem"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
+              {confirmDelete ? (
+                <div className="flex items-center gap-1 bg-[#1a0f1d] border border-rose-950 rounded-md p-0.5">
+                  <button
+                    id={`btn-confirm-delete-${poem.id}`}
+                    onClick={() => {
+                      onDelete(poem.id);
+                      setConfirmDelete(false);
+                    }}
+                    className="text-[10px] font-bold text-rose-400 px-1.5 py-0.5 hover:bg-rose-900/40 rounded cursor-pointer"
+                  >
+                    Delete?
+                  </button>
+                  <button
+                    id={`btn-cancel-delete-${poem.id}`}
+                    onClick={() => setConfirmDelete(false)}
+                    className="text-[10px] font-medium text-slate-400 px-1.5 py-0.5 hover:bg-slate-900 rounded cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  id={`btn-trigger-delete-${poem.id}`}
+                  onClick={() => setConfirmDelete(true)}
+                  className="p-1.5 hover:bg-rose-950/40 rounded-md text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                  title="Delete Poem"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>
