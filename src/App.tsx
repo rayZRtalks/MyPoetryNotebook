@@ -256,7 +256,7 @@ export default function App() {
   // --- Author Mode Handlers ---
   const handleVerifyPasscode = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const correctPasscode = import.meta.env.VITE_AUTHOR_PASSCODE || 'nature';
+    const correctPasscode = import.meta.env.VITE_AUTHOR_PASSCODE;
     if (enteredPasscode === correctPasscode) {
       setIsAuthorMode(true);
       localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
