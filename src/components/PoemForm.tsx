@@ -96,10 +96,7 @@ export default function PoemForm({
         return;
       }
 
-      // Check size. Warn about localStorage space limits (e.g. recommend files under 3MB)
-      if (file.size > 3 * 1024 * 1024) {
-        setErrorMsg('To save browser storage, we recommend uploading compressed media (under 3MB).');
-      }
+      // No upload limit is enforced
 
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -323,7 +320,7 @@ export default function PoemForm({
           >
             <Paperclip className="w-6 h-6 text-[#86868b] group-hover:text-[#0071e3] mb-2 transition-colors" />
             <span className="text-xs font-bold text-[#1d1d1f] group-hover:text-[#0071e3] transition-colors font-sans">Direct Upload Media</span>
-            <span className="text-[10px] text-[#86868b] mt-1 max-w-[150px] font-sans font-medium">JPEG, PNG, MP4 (Recommended under 3MB)</span>
+            <span className="text-[10px] text-[#86868b] mt-1 max-w-[150px] font-sans font-medium">JPEG, PNG, MP4</span>
             <input
               id="file-attachment-input"
               ref={fileInputRef}
