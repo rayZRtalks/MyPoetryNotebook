@@ -291,11 +291,8 @@ export default function App() {
   const allUniqueTags = Array.from(new Set(poems.flatMap((p) => p.tags || []))).slice(0, 15);
 
   return (
-    <div id="app-root" className="min-h-screen bg-[#FAF7F0] text-stone-900 flex flex-col font-sans selection:bg-amber-500/20 selection:text-amber-950 relative overflow-x-hidden">
-      {/* Decorative Celestial Ambient Glows */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-amber-400/5 rounded-full filter blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-yellow-600/5 rounded-full filter blur-3xl pointer-events-none -z-10" />
-      <div className="absolute bottom-10 left-10 w-[500px] h-[500px] bg-amber-500/5 rounded-full filter blur-3xl pointer-events-none -z-10" />
+    <div id="app-root" className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] flex flex-col font-sans selection:bg-[#0071e3]/10 selection:text-[#0071e3] relative overflow-x-hidden">
+      {/* Clean layout - no celestial yellow glows */}
 
       {/* Interactive Toast Banner */}
       <AnimatePresence>
@@ -305,7 +302,7 @@ export default function App() {
             initial={{ opacity: 0, y: -24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -24 }}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4.5 py-3 h-12 bg-amber-950 text-amber-50 rounded-xl shadow-lg border border-amber-900/20 text-sm font-medium"
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4.5 py-3 h-12 bg-[#1d1d1f] text-white rounded-full shadow-lg border border-white/10 text-sm font-semibold font-sans"
           >
             <div className={`w-2 h-2 rounded-full ${
               toast.type === 'success' ? 'bg-emerald-400' :
@@ -316,7 +313,7 @@ export default function App() {
             <button
               id="toast-dismiss"
               onClick={() => setToast(null)}
-              className="ml-3 text-amber-250 hover:text-white cursor-pointer"
+              className="ml-3 text-[#86868b] hover:text-white cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -325,20 +322,20 @@ export default function App() {
       </AnimatePresence>
 
       {/* Primary elegant header layout */}
-      <header id="primary-header" className="bg-white/80 border-b border-amber-200/50 pt-8 pb-6 px-4 md:px-8 shadow-sm sticky top-0 z-10 backdrop-blur-md">
+      <header id="primary-header" className="bg-white/90 border-b border-[#e8e8ed] py-5 px-4 md:px-8 sticky top-0 z-40 backdrop-blur-md">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           
           {/* Logo & Counter metrics */}
           <div className="space-y-1">
             <div className="flex items-center gap-3">
-              <div id="logo-icon-container" className="p-2.5 bg-amber-50 border border-amber-200 text-amber-600 rounded-xl shadow-[0_0_15px_rgba(217,119,6,0.1)]">
-                <Feather className="w-6 h-6 rotate-45 transform" />
+              <div id="logo-icon-container" className="p-2.5 bg-[#f5f5f7] border border-[#e8e8ed] text-[#1d1d1f] rounded-xl shadow-xs">
+                <Feather className="w-5 h-5 rotate-45 transform text-[#0071e3]" />
               </div>
               <div>
-                <h1 id="app-heading" className="text-2xl md:text-3xl font-serif font-black tracking-tight text-amber-950">
+                <h1 id="app-heading" className="text-xl md:text-2xl font-bold tracking-tight text-[#1d1d1f] font-sans">
                   Poetry Notebook
                 </h1>
-                <p id="app-subheading" className="text-xs text-amber-800/70 font-semibold font-sans">
+                <p id="app-subheading" className="text-xs text-[#86868b] font-medium font-sans">
                   {poems.length} verses stored across {categories.length} categories
                 </p>
               </div>
@@ -353,31 +350,31 @@ export default function App() {
                 <button
                   id="btn-lock-author"
                   onClick={handleLockAuthorMode}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs bg-amber-100/60 border border-amber-300 text-amber-950 font-semibold hover:bg-amber-100 rounded-lg transition-colors cursor-pointer font-sans"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#f5f5f7] border border-[#e8e8ed] text-[#1d1d1f] font-semibold hover:bg-[#e8e8ed] rounded-full transition-colors cursor-pointer font-sans"
                   title="Lock Author Mode and return to read-only"
                 >
                   <span>Writer Session</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0071e3] animate-pulse" />
                 </button>
 
                 {/* Backup Export */}
                 <button
                   id="btn-export"
                   onClick={handleExportBackup}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs bg-white border border-amber-200/80 hover:border-amber-300 hover:bg-amber-50/50 rounded-lg text-stone-700 hover:text-amber-950 font-medium transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-white border border-[#e8e8ed] hover:bg-[#f5f5f7] rounded-full text-[#1d1d1f] font-semibold transition-colors cursor-pointer font-sans"
                   title="Export writing ledger JSON"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-3.5 h-3.5 text-[#86868b]" />
                   <span>Export Ledger</span>
                 </button>
 
                 {/* Backup Import */}
                 <label
                   id="lbl-import"
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs bg-white border border-amber-200/80 hover:border-amber-300 hover:bg-amber-50/50 rounded-lg text-stone-700 hover:text-amber-950 font-medium cursor-pointer transition-colors"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-white border border-[#e8e8ed] hover:bg-[#f5f5f7] rounded-full text-[#1d1d1f] font-semibold cursor-pointer transition-colors font-sans"
                   title="Import backup file JSON"
                 >
-                  <Upload className="w-3.5 h-3.5" />
+                  <Upload className="w-3.5 h-3.5 text-[#86868b]" />
                   <span>Import Ledger</span>
                   <input
                     id="file-import"
@@ -393,9 +390,9 @@ export default function App() {
                 <button
                   id="btn-manage-cats"
                   onClick={() => setIsCategoryManagerOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs bg-white border border-amber-200/80 hover:border-amber-300 hover:bg-amber-50/50 rounded-lg text-stone-700 hover:text-amber-950 font-medium transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-white border border-[#e8e8ed] hover:bg-[#f5f5f7] rounded-full text-[#1d1d1f] font-semibold transition-colors cursor-pointer font-sans"
                 >
-                  <Layers className="w-3.5 h-3.5" />
+                  <Layers className="w-3.5 h-3.5 text-[#86868b]" />
                   <span>Categories</span>
                 </button>
 
@@ -403,7 +400,7 @@ export default function App() {
                 <button
                   id="btn-trigger-reset"
                   onClick={() => setIsResetConfirmOpen(true)}
-                  className="p-2 text-stone-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg border border-transparent hover:border-amber-200 transition-all cursor-pointer"
+                  className="p-2 text-[#86868b] hover:text-[#1d1d1f] hover:bg-[#f5f5f7] rounded-full border border-transparent hover:border-[#e8e8ed] transition-all cursor-pointer"
                   title="Reset notebook state back to demo poems"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -416,7 +413,7 @@ export default function App() {
                     setActivePoemForEditing(null);
                     setIsFormOpen(true);
                   }}
-                  className="flex items-center gap-2 px-4.5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-lg text-xs font-semibold shadow-[0_2px_10px_rgba(217,119,6,0.15)] hover:shadow-[0_4px_15px_rgba(217,119,6,0.25)] transition-all ml-2 duration-300 cursor-pointer"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white rounded-full text-xs font-bold transition-all ml-2 cursor-pointer shadow-xs font-sans"
                 >
                   <Plus className="w-4 h-4 font-bold" />
                   <span>Inscribe Poem</span>
@@ -432,25 +429,25 @@ export default function App() {
       <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-8 space-y-8">
         
         {/* Advanced elegant filter bar row */}
-        <section id="filters-panel" className="bg-white/95 border border-amber-200/40 p-6 rounded-2xl shadow-sm space-y-4 backdrop-blur-md">
+        <section id="filters-panel" className="bg-white border border-[#e8e8ed] p-6 rounded-2xl shadow-xs space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             
             {/* Search Input */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="relative flex-1 max-w-md font-sans">
+              <Search className="w-4 h-4 text-[#86868b] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 id="search-input"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search poetry verses, titles, tags or poets..."
-                className="w-full pl-10 pr-4 py-2 bg-[#FCFAF2] border border-amber-200/70 rounded-xl text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 focus:bg-white transition-all font-sans"
+                className="w-full pl-10 pr-4 py-2.5 bg-[#f5f5f7] border border-[#e8e8ed] rounded-xl text-sm text-[#1d1d1f] placeholder:text-[#86868b]/70 focus:outline-none focus:ring-4 focus:ring-[#0071e3]/10 focus:border-[#0071e3] focus:bg-white transition-all"
               />
               {searchQuery && (
                 <button
                   id="btn-clear-search"
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-700 cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#86868b] hover:text-[#1d1d1f] cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -460,36 +457,36 @@ export default function App() {
             {/* Right details: Sort & Mood Dropdown */}
             <div className="flex flex-wrap items-center gap-3">
               {/* Mood Selector label */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-widest font-sans">Atmosphere:</span>
+              <div className="flex items-center gap-1.5 font-sans">
+                <span className="text-xs font-bold text-[#86868b] uppercase tracking-widest">Atmosphere:</span>
                 <select
                   id="mood-filter-select"
                   value={selectedMood}
                   onChange={(e) => setSelectedMood(e.target.value)}
-                  className="bg-white border border-amber-200/80 text-xs text-stone-700 px-2.5 py-1.5 rounded-lg focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/20 font-medium cursor-pointer transition-all hover:bg-stone-50"
+                  className="bg-[#f5f5f7] border border-[#e8e8ed] text-xs text-[#1d1d1f] px-3 py-1.5 rounded-lg focus:outline-none focus:ring-4 focus:ring-[#0071e3]/10 focus:border-[#0071e3] font-semibold cursor-pointer transition-all hover:bg-[#e8e8ed]"
                 >
-                  <option className="bg-[#FAF7F0] text-stone-800" value="all">All Atmosphere</option>
-                  <option className="bg-[#FAF7F0] text-stone-800" value="Reflective">Reflective</option>
-                  <option className="bg-[#FAF7F0] text-stone-800" value="Melancholy">Melancholy</option>
-                  <option className="bg-[#FAF7F0] text-stone-800" value="Romantic">Romantic</option>
-                  <option className="bg-[#FAF7F0] text-stone-800" value="Hopeful">Hopeful</option>
-                  <option className="bg-[#FAF7F0] text-stone-800" value="Whimsical">Whimsical</option>
-                  <option className="bg-[#FAF7F0] text-stone-800" value="Mystical">Mystical</option>
-                  <option className="bg-[#FAF7F0] text-stone-800" value="Free">Free</option>
+                  <option className="bg-white text-[#1d1d1f]" value="all">All Atmosphere</option>
+                  <option className="bg-white text-[#1d1d1f]" value="Reflective">Reflective</option>
+                  <option className="bg-white text-[#1d1d1f]" value="Melancholy">Melancholy</option>
+                  <option className="bg-white text-[#1d1d1f]" value="Romantic">Romantic</option>
+                  <option className="bg-white text-[#1d1d1f]" value="Hopeful">Hopeful</option>
+                  <option className="bg-white text-[#1d1d1f]" value="Whimsical">Whimsical</option>
+                  <option className="bg-white text-[#1d1d1f]" value="Mystical">Mystical</option>
+                  <option className="bg-white text-[#1d1d1f]" value="Free">Free</option>
                 </select>
               </div>
 
               {/* Sort selector label */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-stone-500 uppercase tracking-widest font-sans">Sequence:</span>
+              <div className="flex items-center gap-1.5 font-sans">
+                <span className="text-xs font-bold text-[#86868b] uppercase tracking-widest">Sequence:</span>
                 <button
                   id="btn-sort-chronology"
                   onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : sortBy === 'oldest' ? 'alphabetical' : 'newest')}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-stone-50 border border-amber-200/80 text-xs text-stone-700 rounded-lg font-medium transition-all cursor-pointer"
+                  className="flex items-center gap-1 px-3.5 py-1.5 bg-[#f5f5f7] hover:bg-[#e8e8ed] border border-[#e8e8ed] text-xs text-[#1d1d1f] rounded-lg font-semibold transition-all cursor-pointer"
                 >
-                  {sortBy === 'newest' && <Clock className="w-3.5 h-3.5 text-amber-600" />}
-                  {sortBy === 'oldest' && <Clock className="w-3.5 h-3.5 rotate-180 transform text-amber-600" />}
-                  {sortBy === 'alphabetical' && <ArrowUpDown className="w-3.5 h-3.5 text-amber-600" />}
+                  {sortBy === 'newest' && <Clock className="w-3.5 h-3.5 text-[#0071e3]" />}
+                  {sortBy === 'oldest' && <Clock className="w-3.5 h-3.5 rotate-180 transform text-[#0071e3]" />}
+                  {sortBy === 'alphabetical' && <ArrowUpDown className="w-3.5 h-3.5 text-[#0071e3]" />}
                   <span>{sortBy === 'newest' ? 'Newest First' : sortBy === 'oldest' ? 'Oldest First' : 'A to Z'}</span>
                 </button>
               </div>
@@ -497,17 +494,17 @@ export default function App() {
 
           </div>
 
-          <div className="border-t border-amber-100 pt-4 flex flex-col md:flex-row md:items-start gap-3">
-            <span className="text-xs font-semibold text-stone-500 uppercase tracking-widest font-sans mt-2.5">Category:</span>
+          <div className="border-t border-[#e8e8ed] pt-4 flex flex-col md:flex-row md:items-start gap-3">
+            <span className="text-xs font-bold text-[#86868b] uppercase tracking-widest font-sans mt-2">Category:</span>
             {/* Horizontal Categories Row */}
             <div id="category-scroller" className="flex flex-wrap items-center gap-2">
               <button
                 id="cat-pill-all"
                 onClick={() => setSelectedCatId('all')}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-medium cursor-pointer border transition-all duration-300 ${
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer border transition-all duration-200 ${
                   selectedCatId === 'all'
-                    ? 'bg-amber-500 border-amber-500 text-white font-bold shadow-[0_2px_8px_rgba(217,119,6,0.15)]'
-                    : 'bg-white hover:bg-amber-50/50 border-amber-200/80 text-stone-700'
+                    ? 'bg-[#1d1d1f] border-[#1d1d1f] text-white font-bold shadow-xs'
+                    : 'bg-[#f5f5f7] hover:bg-[#e8e8ed] border-[#e8e8ed] text-[#1d1d1f]'
                 }`}
               >
                 All Verses ({poems.length})
@@ -520,10 +517,10 @@ export default function App() {
                     id={`cat-pill-${cat.id}`}
                     key={cat.id}
                     onClick={() => setSelectedCatId(cat.id)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium cursor-pointer border transition-all duration-300 ${
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer border transition-all duration-200 ${
                       isSelected
-                        ? 'bg-amber-100 border-amber-400 text-amber-950 font-semibold shadow-xs'
-                        : 'bg-white hover:bg-amber-50/50 border-amber-200/80 text-stone-700'
+                        ? 'bg-[#0071e3] border-[#0071e3] text-white font-bold shadow-xs'
+                        : 'bg-[#f5f5f7] hover:bg-[#e8e8ed] border-[#e8e8ed] text-[#1d1d1f]'
                     }`}
                   >
                     {cat.name} ({count})
@@ -537,14 +534,14 @@ export default function App() {
         {/* Content Section - Grid representing layout */}
         <section id="poetry-room-section" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 id="room-header" className="text-xs font-bold text-stone-500 uppercase tracking-widest font-sans">
+            <h2 id="room-header" className="text-xs font-bold text-[#86868b] uppercase tracking-widest font-sans">
               {filteredPoems.length === poems.length 
-                ? '✦ Celestial Ledger Records' 
+                ? '✦ Notebook Records Archive' 
                 : `✦ ${filteredPoems.length} of ${poems.length} verses revealed`}
             </h2>
             {filteredPoems.length > 0 && (
-              <span id="filtered-indicator" className="text-xs font-serif italic text-amber-900/60 font-medium">
-                Double click card to focus stanzas
+              <span id="filtered-indicator" className="text-xs font-sans text-[#86868b] font-medium">
+                Double click card to preview details
               </span>
             )}
           </div>
@@ -557,17 +554,17 @@ export default function App() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0 }}
-                className="bg-[#0b0e22]/50 border border-slate-900 rounded-2xl p-12 text-center max-w-xl mx-auto shadow-xl flex flex-col items-center justify-center space-y-4 backdrop-blur-xs"
+                className="bg-white border border-[#e8e8ed] rounded-3xl p-12 text-center max-w-xl mx-auto shadow-xs flex flex-col items-center justify-center space-y-4"
               >
-                <div className="w-16 h-16 bg-slate-900 border border-slate-850 rounded-full flex items-center justify-center text-amber-500/30">
-                  <Feather className="w-8 h-8 rotate-12 transform" />
+                <div className="w-16 h-16 bg-[#f5f5f7] border border-[#e8e8ed] rounded-full flex items-center justify-center text-[#86868b]">
+                  <Feather className="w-8 h-8 rotate-12 transform text-[#0071e3]" />
                 </div>
-                <h3 className="text-xl font-serif font-semibold text-slate-200">
-                  Silence reigns in this sky
+                <h3 className="text-xl font-sans font-bold text-[#1d1d1f] tracking-tight">
+                  No Poetry Entries Found
                 </h3>
-                <p className="text-slate-400 text-sm max-w-sm">
+                <p className="text-[#86868b] text-sm max-w-sm font-sans font-medium leading-relaxed">
                   {isAuthorMode
-                    ? "No classical verses aligned with your current search. Grab the golden quill and inscribe a new verse!"
+                    ? "No classical verses aligned with your current search. Grab the quill and save a new entry!"
                     : "No classical verses aligned with your current search. Feel free to clear the search criteria or switch categories."}
                 </p>
                 {isAuthorMode ? (
@@ -577,12 +574,12 @@ export default function App() {
                       setActivePoemForEditing(null);
                       setIsFormOpen(true);
                     }}
-                    className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-bold rounded-lg shadow-sm transition-all cursor-pointer"
+                    className="px-5 py-2.5 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white text-xs font-bold rounded-full shadow-xs transition-all cursor-pointer font-sans"
                   >
                     Begin Writing
                   </button>
                 ) : (
-                  <p className="text-[11px] text-amber-500/50 italic font-medium tracking-wider">
+                  <p className="text-[10px] text-[#86868b] font-bold tracking-wider uppercase font-sans">
                     ✦ Secure Reader Ledger ✦
                   </p>
                 )}
@@ -751,27 +748,27 @@ export default function App() {
               initial={{ scale: 0.95, y: 12, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 12, opacity: 0 }}
-              className="bg-[#FCFBF7] border border-amber-200/60 rounded-2xl p-6 sm:p-8 shadow-[0_10px_40px_rgba(139,92,26,0.12)] relative z-10 w-full max-w-md space-y-6 text-stone-900"
+              className="bg-white border border-[#e8e8ed] rounded-3xl p-6 sm:p-8 shadow-2xl relative z-10 w-full max-w-md space-y-6 text-[#1d1d1f]"
             >
-              <div className="flex items-center justify-between border-b pb-4 border-amber-100">
+              <div className="flex items-center justify-between border-b pb-4 border-[#e8e8ed]">
                 <div className="flex items-center gap-2">
-                  <Layers className="w-5 h-5 text-amber-600" />
-                  <h3 id="cat-mgr-title" className="text-lg font-serif font-bold text-amber-950">
+                  <Layers className="w-5 h-5 text-[#0071e3]" />
+                  <h3 id="cat-mgr-title" className="text-lg font-sans font-bold text-[#1d1d1f] tracking-tight">
                     Category Manager
                   </h3>
                 </div>
                 <button
                   id="btn-close-cat-mgr"
                   onClick={() => setIsCategoryManagerOpen(false)}
-                  className="text-stone-400 hover:text-stone-700 rounded-full p-1.5 hover:bg-stone-100 transition-colors cursor-pointer"
+                  className="text-[#86868b] hover:text-[#1d1d1f] rounded-full p-1.5 hover:bg-[#f5f5f7] transition-all cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Add category box */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider block font-sans">
+              <div className="space-y-2 font-sans">
+                <label className="text-xs font-bold text-[#86868b] uppercase tracking-wider block">
                   Add New Category
                 </label>
                 <div className="flex items-center gap-2">
@@ -781,7 +778,7 @@ export default function App() {
                     value={newCatNameInput}
                     onChange={(e) => setNewCatNameInput(e.target.value)}
                     placeholder="e.g., Space Travel"
-                    className="flex-1 px-3 py-2 bg-white border border-amber-200 rounded-lg text-sm text-stone-900 outline-none focus:border-amber-500 transition-all font-sans"
+                    className="flex-1 px-3.5 py-2.5 bg-[#f5f5f7] border border-[#e8e8ed] rounded-xl text-sm text-[#1d1d1f] outline-none focus:border-[#0071e3] focus:ring-4 focus:ring-[#0071e3]/10 transition-all"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') {
                         const name = newCatNameInput.trim();
@@ -802,7 +799,7 @@ export default function App() {
                         setNewCatNameInput('');
                       }
                     }}
-                    className="bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs px-3.5 py-2.5 rounded-lg flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+                    className="bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1 transition-all cursor-pointer shadow-xs"
                   >
                     <Plus className="w-3.5 h-3.5 font-bold" />
                     Add
@@ -811,11 +808,11 @@ export default function App() {
               </div>
 
               {/* List of categories */}
-              <div className="space-y-3 pt-2">
-                <label className="text-xs font-semibold text-stone-500 uppercase tracking-wider block font-sans">
+              <div className="space-y-3 pt-2 font-sans">
+                <label className="text-xs font-bold text-[#86868b] uppercase tracking-wider block">
                   Current Categories & Count
                 </label>
-                <div id="mgr-cat-list" className="max-h-56 overflow-y-auto divide-y divide-amber-100 border border-amber-200/65 rounded-xl px-3 bg-white">
+                <div id="mgr-cat-list" className="max-h-56 overflow-y-auto divide-y divide-[#e8e8ed] border border-[#e8e8ed] rounded-2xl px-3 bg-white">
                   {categories.map((cat) => {
                     const count = poems.filter((p) => p.categoryId === cat.id).length;
                     return (
@@ -825,21 +822,15 @@ export default function App() {
                         className="flex items-center justify-between py-2.5"
                       >
                         <div className="flex items-center gap-2 font-sans">
-                          <span className={`w-2.5 h-2.5 rounded-full ${
-                            cat.color.includes('indigo') ? 'bg-indigo-450' :
-                            cat.color.includes('emerald') ? 'bg-emerald-500' :
-                            cat.color.includes('rose') ? 'bg-rose-500' :
-                            cat.color.includes('amber') ? 'bg-amber-500' :
-                            cat.color.includes('sky') ? 'bg-sky-500' : 'bg-teal-500'
-                          }`} />
-                          <span className="text-sm text-stone-800 font-medium">{cat.name}</span>
-                          <span className="text-[11px] text-stone-500 font-semibold">({count} {count === 1 ? 'poem' : 'poems'})</span>
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#0071e3]" />
+                          <span className="text-sm text-[#1d1d1f] font-semibold">{cat.name}</span>
+                          <span className="text-[11px] text-[#86868b] font-semibold">({count} {count === 1 ? 'poem' : 'poems'})</span>
                         </div>
                         <button
                           id={`btn-mgr-delete-cat-${cat.id}`}
                           onClick={() => handleDeleteCategory(cat.id)}
                           disabled={categories.length <= 1}
-                          className="text-stone-400 hover:text-rose-600 disabled:opacity-30 disabled:hover:text-stone-450 p-1 rounded-md transition-colors cursor-pointer"
+                          className="text-[#86868b] hover:text-red-650 disabled:opacity-30 disabled:hover:text-[#86868b] p-1.5 rounded-full hover:bg-neutral-50 transition-colors cursor-pointer"
                           title="Delete category (affected poems will be rerouted)"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -848,16 +839,16 @@ export default function App() {
                     );
                   })}
                 </div>
-                <p className="text-[11px] text-stone-500 italic">
+                <p className="text-[11px] text-[#86868b] leading-relaxed font-medium">
                   Note: Deleting a category will safelist the affected poems to the first remaining category.
                 </p>
               </div>
 
-              <div className="border-t border-amber-100 pt-4 flex items-center justify-end">
+              <div className="border-t border-[#e8e8ed] pt-4 flex items-center justify-end">
                 <button
                   id="btn-close-cat-mgr-footer"
                   onClick={() => setIsCategoryManagerOpen(false)}
-                  className="px-4 py-2 bg-white hover:bg-stone-50 text-stone-700 hover:text-amber-950 border border-amber-200 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                  className="px-4.5 py-2 bg-[#f5f5f7] hover:bg-[#e8e8ed] text-[#1d1d1f] border border-[#e8e8ed] text-xs font-bold rounded-full transition-colors cursor-pointer"
                 >
                   Done
                 </button>
@@ -884,29 +875,29 @@ export default function App() {
               initial={{ scale: 0.95, y: 12, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 12, opacity: 0 }}
-              className="bg-[#FCFBF7] border border-amber-200/60 rounded-2xl p-6 shadow-xl relative z-10 w-full max-w-sm space-y-4 text-stone-900"
+              className="bg-white border border-[#e8e8ed] rounded-3xl p-6 shadow-2xl relative z-10 w-full max-w-sm space-y-4 text-[#1d1d1f]"
             >
-              <div className="flex items-center gap-3 text-amber-600">
-                <AlertCircle className="w-6 h-6 shrink-0" />
-                <h3 id="reset-confirm-heading" className="text-lg font-serif font-bold text-amber-950">
+              <div className="flex items-center gap-3 text-red-650">
+                <AlertCircle className="w-6 h-6 shrink-0 text-red-500" />
+                <h3 id="reset-confirm-heading" className="text-lg font-sans font-bold text-[#1d1d1f] tracking-tight">
                   Revert to Demo?
                 </h3>
               </div>
-              <p className="text-stone-600 text-sm leading-relaxed">
+              <p className="text-[#86868b] text-sm leading-relaxed font-sans font-medium">
                 This will overwrite current storage entries with the Frost, Burns, and Dickinson classical demo verses.
               </p>
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
                   id="btn-cancel-reset"
                   onClick={() => setIsResetConfirmOpen(false)}
-                  className="px-4 py-2 border border-amber-200 text-stone-500 hover:bg-stone-50 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                  className="px-4.5 py-2 border border-[#e8e8ed] text-[#86868b] hover:bg-[#f5f5f7] text-xs font-bold rounded-full transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   id="btn-confirm-reset"
                   onClick={handleRevertToDemo}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow-sm transition-colors cursor-pointer"
+                  className="px-4.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-full shadow-xs transition-colors cursor-pointer"
                 >
                   Revert Notebook
                 </button>
@@ -937,29 +928,29 @@ export default function App() {
               initial={{ scale: 0.95, y: 12, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 12, opacity: 0 }}
-              className="bg-[#FCFBF7] border border-amber-200/60 rounded-2xl p-6 shadow-xl relative z-10 w-full max-w-sm space-y-5 text-stone-900"
+              className="bg-white border border-[#e8e8ed] rounded-3xl p-6 shadow-2xl relative z-10 w-full max-w-sm space-y-5 text-[#1d1d1f]"
             >
-              <div className="flex items-center gap-3 text-amber-600">
-                <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-amber-600">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#f5f5f7] border border-[#e8e8ed] rounded-xl text-[#0071e3]">
                   <Sparkles className="w-5 h-5 animate-pulse" />
                 </div>
                 <div>
-                  <h3 id="passcode-heading" className="text-lg font-serif font-bold text-amber-950 leading-tight">
+                  <h3 id="passcode-heading" className="text-lg font-sans font-bold text-[#1d1d1f] tracking-tight leading-tight">
                     Author Verification
                   </h3>
-                  <p className="text-[10px] text-amber-850/70 font-sans tracking-wide font-semibold">
-                    INSCRIBE SECRET ACCESS KEY
+                  <p className="text-[10px] text-[#86868b] font-sans tracking-wide font-extrabold uppercase">
+                    Enter Verification Key
                   </p>
                 </div>
               </div>
 
-              <p className="text-stone-600 text-xs leading-relaxed font-serif italic">
-                “With key in hand, the locked garden of verses opens to the keeper of the quill.”
+              <p className="text-[#86868b] text-xs leading-relaxed font-sans font-medium">
+                To enable writer mode, please authorize using the notebook validation password.
               </p>
 
               <form onSubmit={handleVerifyPasscode} className="space-y-4">
                 <div className="space-y-1.5 font-sans">
-                  <label className="text-[11px] font-semibold text-stone-550 uppercase tracking-wider block">
+                  <label className="text-[11px] font-bold text-[#86868b] uppercase tracking-wider block">
                     Verification Passcode
                   </label>
                   <input
@@ -972,21 +963,21 @@ export default function App() {
                       if (passcodeError) setPasscodeError(false);
                     }}
                     placeholder="Enter journal key..."
-                    className={`w-full px-3 py-2.5 bg-white border ${
-                      passcodeError ? 'border-rose-400 focus:border-rose-500 shadow-xs shadow-rose-500/5' : 'border-amber-200 focus:border-amber-500'
-                    } rounded-lg text-sm text-stone-900 outline-none transition-all font-mono`}
+                    className={`w-full px-3.5 py-2.5 bg-[#f5f5f7] border ${
+                      passcodeError ? 'border-red-400 focus:ring-4 focus:ring-red-100' : 'border-[#e8e8ed] focus:ring-4 focus:ring-[#0071e3]/10 focus:border-[#0071e3]'
+                    } rounded-xl text-sm text-[#1d1d1f] outline-none transition-all font-mono`}
                     autoFocus
                   />
                   {passcodeError && (
-                    <p className="text-[11px] text-rose-600 font-medium flex items-center gap-1 animate-bounce">
+                    <p className="text-[11px] text-red-600 font-bold flex items-center gap-1 mt-1">
                       ⚠️ Incorrect access token. Please verify and retry.
                     </p>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
-                  <div className="text-[10px] text-stone-500 font-serif italic">
-                    Unlock key default is: <span className="font-mono text-stone-600 not-italic font-bold">nature</span>
+                  <div className="text-[10px] text-[#86868b] font-sans font-semibold">
+                    Default key is: <span className="font-mono text-[#1d1d1f] not-italic font-bold">nature</span>
                   </div>
                   <div className="flex gap-2">
                     <button
@@ -997,14 +988,14 @@ export default function App() {
                         setEnteredPasscode('');
                         setPasscodeError(false);
                       }}
-                      className="px-3.5 py-1.5 border border-amber-200 text-stone-500 hover:bg-stone-50 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+                      className="px-4 py-1.5 border border-[#e8e8ed] text-[#86868b] hover:bg-[#f5f5f7] text-xs font-bold rounded-full transition-colors cursor-pointer"
                     >
                       Close
                     </button>
                     <button
                       id="btn-confirm-passcode"
                       type="submit"
-                      className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow-sm transition-colors cursor-pointer"
+                      className="px-4 py-1.5 bg-[#0071e3] hover:bg-[#0071e3]/90 text-white font-bold text-xs rounded-full shadow-xs transition-colors cursor-pointer"
                     >
                       Authorize
                     </button>

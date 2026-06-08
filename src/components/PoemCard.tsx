@@ -32,34 +32,21 @@ export default function PoemCard({
   });
 
   // Extract a preview of the body (first 3 stanzas/lines)
-  const lines = poem.body.split('\n').filter(line => line.trim() !== '');
+  const lines = (poem.body || '').split('\n').filter(line => line.trim() !== '');
   const previewLines = lines.slice(0, 3);
   const hasMoreLines = lines.length > 3;
 
   return (
     <div
       id={`poem-card-${poem.id}`}
-      className="group relative flex flex-col justify-between min-h-[365px] h-full bg-white border border-amber-250/40 rounded-xl p-5 shadow-[0_2px_12px_rgba(139,92,26,0.03)] hover:shadow-[0_8px_30px_rgba(139,92,26,0.08)] hover:border-amber-400/80 hover:-translate-y-1 transition-all duration-300 backdrop-blur-md focus-within:ring-2 focus-within:ring-amber-500/10"
+      className="group relative flex flex-col justify-between min-h-[340px] h-full bg-white border border-[#e8e8ed] rounded-2xl p-6 shadow-[0_4px_30px_rgba(0,0,0,0.015)] hover:shadow-[0_12px_40px_rgba(0,0,0,0.05)] hover:border-[#d2d2d7] transition-all duration-300 backdrop-blur-md focus-within:ring-2 focus-within:ring-[#0071e3]/20"
     >
-      {/* Decorative vertical colored pill line corresponding to the category */}
-      <div 
-        id={`card-dec-${poem.id}`}
-        className="absolute top-6 left-0 w-1 h-12 rounded-r-full opacity-60 group-hover:opacity-100 transition-opacity"
-        style={{
-          backgroundColor: category?.color?.includes('emerald') ? '#10b981' : 
-                          category?.color?.includes('rose') ? '#f43f5e' : 
-                          category?.color?.includes('violet') ? '#c084fc' : 
-                          category?.color?.includes('amber') ? '#f59e0b' : 
-                          category?.color?.includes('sky') ? '#38bdf8' : '#8b5cf6'
-        }}
-      />
-
       <div className="space-y-4">
         {/* Category & Mood Headings */}
         <div className="flex items-center justify-between gap-1 overflow-hidden">
           <span
             id={`card-cat-pill-${poem.id}`}
-            className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${category?.color || 'bg-amber-50 text-amber-800 border-amber-200/50'} truncate flex-1 text-center`}
+            className="inline-block px-2.5 py-1 rounded-full text-[10px] font-semibold bg-[#f5f5f7] text-[#1d1d1f] border border-[#e8e8ed] truncate flex-1 text-center font-sans uppercase tracking-wider"
           >
             {category?.name || 'Uncategorized'}
           </span>
@@ -68,10 +55,10 @@ export default function PoemCard({
             {poem.attachments && poem.attachments.length > 0 && (
               <span
                 id={`card-attach-badge-${poem.id}`}
-                className="text-[10px] font-bold text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/50 flex items-center gap-0.5 font-sans"
+                className="text-[10px] font-semibold text-[#1d1d1f] bg-[#f5f5f7] px-2 py-1 rounded-full border border-[#e8e8ed] flex items-center gap-0.5 font-sans"
                 title={`${poem.attachments.length} media items`}
               >
-                <Paperclip className="w-3 h-3 text-amber-700" />
+                <Paperclip className="w-3 h-3 text-[#86868b]" />
                 <span>{poem.attachments.length}</span>
               </span>
             )}
@@ -79,9 +66,9 @@ export default function PoemCard({
             {poem.mood && (
               <span
                 id={`card-mood-pill-${poem.id}`}
-                className="text-[10px] font-medium text-amber-950 capitalize bg-amber-50/70 px-2 py-0.5 rounded-md border border-amber-200/50 font-sans"
+                className="text-[10px] font-semibold text-[#515154] capitalize bg-[#f5f5f7] px-2.5 py-1 rounded-full border border-[#e8e8ed] font-sans"
               >
-                🌿 {poem.mood}
+                {poem.mood}
               </span>
             )}
           </div>
@@ -92,34 +79,32 @@ export default function PoemCard({
           <div 
             id={`card-media-pvw-${poem.id}`}
             onClick={(e) => {
-              // Let parent handle clicking if they want to read
-              // Just trigger onSelect
               e.stopPropagation();
               onSelect(poem);
             }}
-            className="relative w-full h-36 rounded-lg overflow-hidden border border-amber-200/60 bg-amber-50/50 shrink-0 cursor-pointer shadow-inner group-hover:border-amber-300 transition-colors"
+            className="relative w-full h-36 rounded-xl overflow-hidden border border-[#e8e8ed] bg-[#f5f5f7] shrink-0 cursor-pointer shadow-sm group-hover:border-[#d2d2d7] transition-all duration-300"
           >
             {poem.attachments[0].type === 'image' ? (
               <img
                 src={poem.attachments[0].url}
                 alt={poem.attachments[0].name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500 ease-out"
                 referrerPolicy="no-referrer"
               />
             ) : (
               <div className="w-full h-full relative">
                 <video
                   src={poem.attachments[0].url}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500 ease-out"
                   muted
                   loop
                   autoPlay
                   playsInline
                 />
-                <div className="absolute inset-0 bg-stone-900/10 flex items-center justify-center">
-                  <span className="p-1 px-2.5 rounded-full text-[9px] bg-amber-950 text-amber-50 flex items-center gap-1 backdrop-blur-xs font-sans font-semibold">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    Video Verse
+                <div className="absolute inset-0 bg-[#1d1d1f]/10 flex items-center justify-center">
+                  <span className="p-1 px-2.5 rounded-full text-[9px] bg-[#1d1d1f]/95 text-[#f5f5f7] flex items-center gap-1 backdrop-blur-sm font-sans font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#0071e3] animate-pulse" />
+                    Video Reading
                   </span>
                 </div>
               </div>
@@ -128,54 +113,55 @@ export default function PoemCard({
         )}
 
         {/* Title & Poet */}
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           <h4
             id={`card-title-${poem.id}`}
             onClick={() => onSelect(poem)}
-            className="text-lg font-serif font-bold text-stone-900 group-hover:text-amber-800 group-hover:underline cursor-pointer transition-colors leading-tight line-clamp-1"
+            className="text-base font-sans font-bold text-[#1d1d1f] tracking-tight group-hover:text-[#0071e3] cursor-pointer transition-colors leading-snug line-clamp-1"
           >
             {poem.title}
           </h4>
-          <span id={`card-author-${poem.id}`} className="text-xs text-amber-900/70 block italic font-serif">
-            by {poem.author || 'Anonymous Poet'}
+          <span id={`card-author-${poem.id}`} className="text-xs text-[#86868b] block font-sans tracking-tight">
+            by {poem.author || 'Anonymous'}
           </span>
         </div>
 
         {/* Poem Excerpt Preview */}
-        <div 
-          id={`card-excerpt-${poem.id}`}
-          onClick={() => onSelect(poem)}
-          className="relative text-[13px] font-serif text-stone-700 whitespace-pre-line leading-relaxed italic cursor-pointer focus:outline-none"
-        >
-          <Quote className="w-8 h-8 absolute -left-1.5 -top-3 text-amber-200/20 -z-[1] pointer-events-none" />
-          <div className="pl-2">
-            {previewLines.map((line, idx) => (
-              <p key={idx} className="truncate">{line}</p>
-            ))}
-            {hasMoreLines && (
-              <p className="text-[11px] text-amber-700 font-semibold tracking-wide font-sans mt-1.5 not-italic">
-                ✦ {lines.length - 3} more verses...
-              </p>
-            )}
+        {previewLines.length > 0 && (
+          <div 
+            id={`card-excerpt-${poem.id}`}
+            onClick={() => onSelect(poem)}
+            className="relative text-[13px] font-sans text-[#515154] leading-relaxed cursor-pointer focus:outline-none pl-3 border-l-2 border-[#e8e8ed] hover:border-[#0071e3]/45 transition-colors"
+          >
+            <div className="space-y-1">
+              {previewLines.map((line, idx) => (
+                <p key={idx} className="truncate tracking-tight font-medium">{line}</p>
+              ))}
+              {hasMoreLines && (
+                <p className="text-[10px] text-[#0071e3] font-semibold tracking-tight font-sans mt-2">
+                  → Read complete details ({lines.length - 3} more lines)
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Footer Details & Quick Action buttons */}
-      <div className="border-t border-amber-100 pt-4 flex items-center justify-between mt-auto">
+      <div className="border-t border-[#e8e8ed] pt-4 flex items-center justify-between mt-6">
         {/* Creation Date indicator */}
-        <div className="flex items-center gap-1.5 text-[10px] uppercase font-semibold text-stone-500 font-sans">
-          <Calendar className="w-3.5 h-3.5 text-amber-700/60" />
+        <div className="flex items-center gap-1.5 text-[10px] font-medium text-[#86868b] font-sans tracking-tight">
+          <Calendar className="w-3.5 h-3.5 text-[#86868b]/70" />
           <span>{formattedDate}</span>
         </div>
 
         {/* Action Triggers */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
           <button
             id={`btn-select-poem-${poem.id}`}
             onClick={() => onSelect(poem)}
-            className="p-1.5 hover:bg-amber-50 rounded-md text-stone-400 hover:text-amber-700 transition-colors cursor-pointer"
-            title="Read Full Poem"
+            className="p-1.5 hover:bg-[#f5f5f7] rounded-full text-[#86868b] hover:text-[#0071e3] transition-colors cursor-pointer"
+            title="Read Full Details"
           >
             <BookOpen className="w-4 h-4" />
           </button>
@@ -185,28 +171,28 @@ export default function PoemCard({
               <button
                 id={`btn-edit-poem-${poem.id}`}
                 onClick={() => onEdit(poem)}
-                className="p-1.5 hover:bg-amber-50 rounded-md text-stone-400 hover:text-amber-700 transition-colors cursor-pointer"
-                title="Edit Poem"
+                className="p-1.5 hover:bg-[#f5f5f7] rounded-full text-[#86868b] hover:text-[#0071e3] transition-colors cursor-pointer"
+                title="Edit Entry"
               >
                 <Edit3 className="w-4 h-4" />
               </button>
 
               {confirmDelete ? (
-                <div className="flex items-center gap-1 bg-rose-50 border border-rose-100 rounded-md p-0.5">
+                <div className="flex items-center gap-1 bg-red-50 border border-red-100 rounded-lg p-0.5">
                   <button
                     id={`btn-confirm-delete-${poem.id}`}
                     onClick={() => {
                       onDelete(poem.id);
                       setConfirmDelete(false);
                     }}
-                    className="text-[10px] font-bold text-rose-600 px-1.5 py-0.5 hover:bg-rose-100 rounded cursor-pointer"
+                    className="text-[10px] font-bold text-red-600 px-2 py-0.5 hover:bg-red-100 rounded-md cursor-pointer"
                   >
-                    Delete?
+                    Delete
                   </button>
                   <button
                     id={`btn-cancel-delete-${poem.id}`}
                     onClick={() => setConfirmDelete(false)}
-                    className="text-[10px] font-medium text-stone-500 px-1.5 py-0.5 hover:bg-amber-50 rounded cursor-pointer"
+                    className="text-[10px] font-medium text-[#86868b] px-2 py-0.5 hover:bg-[#f5f5f7] rounded-md cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -215,8 +201,8 @@ export default function PoemCard({
                 <button
                   id={`btn-trigger-delete-${poem.id}`}
                   onClick={() => setConfirmDelete(true)}
-                  className="p-1.5 hover:bg-rose-50 rounded-md text-stone-400 hover:text-rose-600 transition-colors cursor-pointer"
-                  title="Delete Poem"
+                  className="p-1.5 hover:bg-red-50 rounded-full text-[#86868b] hover:text-red-600 transition-colors cursor-pointer"
+                  title="Delete Entry"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

@@ -41,10 +41,10 @@ export default function PoemReader({
   return (
     <div id="poem-reader-modal" className="space-y-6">
       {/* Header and top buttons */}
-      <div className="flex items-center justify-between border-b pb-4 border-amber-100">
+      <div className="flex items-center justify-between border-b pb-4 border-[#e8e8ed]">
         <div className="flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-amber-600" />
-          <span id="reader-heading" className="text-xs uppercase font-bold text-stone-500 tracking-widest font-sans">
+          <BookOpen className="w-5 h-5 text-[#0071e3]" />
+          <span id="reader-heading" className="text-xs uppercase font-bold text-[#86868b] tracking-widest font-sans">
             Reading Vault
           </span>
         </div>
@@ -53,8 +53,8 @@ export default function PoemReader({
           <button
             id="btn-copy-poem"
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-stone-700 hover:text-amber-950 hover:bg-amber-50 bg-white rounded-lg border border-amber-200 transition-all font-medium cursor-pointer"
-            title="Copy entire poem to clipboard"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-[#1d1d1f] hover:bg-[#e8e8ed] bg-[#f5f5f7] rounded-full border border-[#e8e8ed] transition-all font-semibold cursor-pointer font-sans"
+            title="Copy entry details to clipboard"
           >
             {copied ? (
               <>
@@ -63,7 +63,7 @@ export default function PoemReader({
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5 text-stone-400" />
+                <Copy className="w-3.5 h-3.5 text-[#86868b]" />
                 <span>Copy Text</span>
               </>
             )}
@@ -77,9 +77,9 @@ export default function PoemReader({
                 onEdit(poem);
                 onClose();
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-stone-700 hover:text-amber-950 hover:bg-amber-50 bg-white rounded-lg border border-amber-200 transition-all font-medium cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-[#1d1d1f] hover:bg-[#e8e8ed] bg-[#f5f5f7] rounded-full border border-[#e8e8ed] transition-all font-semibold cursor-pointer font-sans"
             >
-              <Edit3 className="w-3.5 h-3.5 text-stone-500" />
+              <Edit3 className="w-3.5 h-3.5 text-[#86868b]" />
               <span>Edit</span>
             </button>
           )}
@@ -88,7 +88,7 @@ export default function PoemReader({
           <button
             id="btn-close-reader"
             onClick={onClose}
-            className="text-stone-400 hover:text-stone-700 rounded-full p-1.5 hover:bg-amber-50 transition-colors cursor-pointer"
+            className="text-[#86868b] hover:text-[#1d1d1f] rounded-full p-1.5 hover:bg-[#f5f5f7] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -98,70 +98,71 @@ export default function PoemReader({
       {/* Styled Poem Parchment */}
       <div 
         id="poem-parchment"
-        className="bg-[#FCFAF2] border border-amber-200/50 p-8 sm:p-12 rounded-2xl shadow-inner max-h-[60vh] overflow-y-auto"
-        style={{
-          boxShadow: 'inset 0 2px 10px rgba(139,92,26,0.03), 0 1px 2px rgba(139,92,26,0.01)',
-        }}
+        className="bg-white border border-[#e8e8ed] p-8 sm:p-12 rounded-2xl shadow-sm max-h-[60vh] overflow-y-auto"
       >
         <div className="text-center space-y-4 max-w-xl mx-auto">
           {/* Category Pill centered */}
           <div>
             <span
               id="reader-cat"
-              className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold border tracking-wider uppercase ${category?.color || 'bg-amber-50 text-amber-800 border-amber-200/50'}`}
+              className="inline-block px-3 py-1 rounded-full text-[10px] font-bold border tracking-wider uppercase bg-[#f5f5f7] text-[#1d1d1f] border-[#e8e8ed] font-sans"
             >
               {category?.name || 'Uncategorized'}
             </span>
           </div>
 
           {/* Title */}
-          <h2 id="reader-title" className="text-2xl sm:text-3xl font-serif font-black tracking-tight leading-snug text-amber-950">
+          <h2 id="reader-title" className="text-2xl sm:text-3xl font-sans font-black tracking-tight leading-snug text-[#1d1d1f]">
             {poem.title}
           </h2>
 
           {/* Author/Poet line */}
-          <p id="reader-author" className="text-sm font-serif italic text-stone-500">
-            composed by {poem.author || 'Anonymous'}
+          <p id="reader-author" className="text-sm font-sans text-[#86868b] tracking-tight">
+            composed by <span className="font-semibold text-[#515154]">{poem.author || 'Anonymous'}</span>
           </p>
 
-          <div className="w-12 h-[1px] bg-amber-500/20 mx-auto my-6" />
+          {poem.body && poem.body.trim() && (
+            <>
+              <div className="w-12 h-[1px] bg-[#e8e8ed] mx-auto my-6" />
 
-          {/* Body Block */}
-          <div 
-            id="reader-body"
-            className="font-serif text-[15px] sm:text-base text-stone-900 leading-8 whitespace-pre-wrap text-left inline-block pl-4 sm:pl-8 border-l-2 border-amber-500/30 max-w-full font-medium"
-          >
-            {poem.body}
-          </div>
+              {/* Body Block */}
+              <div 
+                id="reader-body"
+                className="font-serif text-[15px] sm:text-base text-[#1d1d1f] leading-8 whitespace-pre-wrap text-left inline-block pl-4 sm:pl-8 border-l-2 border-[#0071e3]/30 max-w-full font-medium"
+              >
+                {poem.body}
+              </div>
+            </>
+          )}
 
           {/* Direct Media Presentation (Directly integrated on parchment) */}
           {poem.attachments && poem.attachments.length > 0 && (
-            <div id="reader-media-gallery" className="mt-10 text-left space-y-6 max-w-xl mx-auto border-t border-amber-150/40 pt-8">
+            <div id="reader-media-gallery" className="mt-10 text-left space-y-6 max-w-xl mx-auto border-t border-[#e8e8ed] pt-8">
               {poem.attachments.map((attach) => (
                 <div
                   id={`reader-attach-card-${attach.id}`}
                   key={attach.id}
-                  className="border border-amber-200 rounded-xl overflow-hidden bg-white shadow-sm relative group"
+                  className="border border-[#e8e8ed] rounded-2xl overflow-hidden bg-[#f5f5f7] shadow-xs relative group"
                 >
-                  <div className="p-3 bg-amber-50/20 flex justify-center items-center">
+                  <div className="p-3 flex justify-center items-center">
                     {attach.type === 'image' ? (
                       <img
                         src={attach.url}
                         alt={attach.name}
-                        className="max-h-[300px] object-contain rounded-lg border border-amber-100 shadow-xs"
+                        className="max-h-[300px] object-contain rounded-xl border border-[#e8e8ed] bg-white w-full"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
                       <video
                         src={attach.url}
                         controls
-                        className="max-h-[300px] rounded-lg border border-amber-150 shadow-xs bg-amber-950"
+                        className="max-h-[300px] rounded-xl border border-[#e8e8ed] w-full bg-[#1d1d1f]"
                         playsInline
                       />
                     )}
                   </div>
                   {/* Subtle info tag inside the reader container */}
-                  <div className="absolute right-3.5 bottom-3.5 px-2 py-1 bg-amber-950 text-amber-50 rounded text-[9px] font-semibold uppercase tracking-wider font-sans shadow-xs">
+                  <div className="absolute right-4 bottom-4 px-2.5 py-1 bg-[#1d1d1f]/95 text-white rounded-full text-[9px] font-semibold uppercase tracking-wider font-sans shadow-md">
                     {attach.type === 'image' ? '✦ Verse Illustration' : '✦ Video Reading'}
                   </div>
                 </div>
@@ -172,24 +173,24 @@ export default function PoemReader({
       </div>
 
       {/* Details & tags bottom */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t pt-4 border-amber-100 mt-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t pt-4 border-[#e8e8ed] mt-4">
         {/* Date line */}
-        <div className="flex items-center gap-2 text-xs text-stone-550">
-          <Calendar className="w-4 h-4 text-amber-700/60" />
+        <div className="flex items-center gap-2 text-xs text-[#86868b] font-sans">
+          <Calendar className="w-4 h-4 text-[#86868b]/70" />
           <span>Catalogued on {formattedDate}</span>
         </div>
 
         {/* Tags */}
         {poem.tags && poem.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 items-center">
-            <span className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider flex items-center gap-1 mr-1">
-              <Tag className="w-3 h-3 text-amber-700/60" /> Motifs:
+            <span className="text-[11px] font-bold text-[#86868b] uppercase tracking-wider flex items-center gap-1 mr-1 font-sans">
+              <Tag className="w-3 h-3 text-[#86868b]/70" /> Motifs:
             </span>
             {poem.tags.map((tag, idx) => (
               <span
                 id={`reader-tag-pill-${idx}`}
                 key={idx}
-                className="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 font-medium text-[11px] px-2.5 py-0.5 rounded-full transition-colors"
+                className="bg-[#f5f5f7] hover:bg-[#e8e8ed] border border-[#e8e8ed] text-[#1d1d1f] font-semibold text-[11px] px-3 py-1 rounded-full transition-colors font-sans"
               >
                 #{tag}
               </span>
