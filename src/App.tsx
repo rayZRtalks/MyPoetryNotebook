@@ -37,6 +37,7 @@ export default function App() {
   // --- Modal States ---
   const [activePoemForReading, setActivePoemForReading] = useState<Poem | null>(null);
   const [activePoemForEditing, setActivePoemForEditing] = useState<Poem | null>(null);
+  const [activePoemForLightbox, setActivePoemForLightbox] = useState<Poem | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
@@ -286,6 +287,25 @@ export default function App() {
     // Alphabetical
     return a.title.localeCompare(b.title);
   });
+
+  // Lightbox navigation controls to browse items sequentially
+  const handleNextLightbox = () => {
+    if (!activePoemForLightbox) return;
+    const currentIndex = sortedPoems.findIndex(p => p.id === activePoemForLightbox.id);
+    if (currentIndex !== -1) {
+      const nextIndex = (currentIndex + 1) % sortedPoems.length;
+      setActivePoemForLightbox(sortedPoems[nextIndex]);
+    }
+  };
+
+  const handlePrevLightbox = () => {
+    if (!activePoemForLightbox) return;
+    const currentIndex = sortedPoems.findIndex(p => p.id === activePoemForLightbox.id);
+    if (currentIndex !== -1) {
+      const prevIndex = (currentIndex - 1 + sortedPoems.length) % sortedPoems.length;
+      setActivePoemForLightbox(sortedPoems[prevIndex]);
+    }
+  };
 
   // Extract all unique tags for supplementary tags filters if wished
   const allUniqueTags = Array.from(new Set(poems.flatMap((p) => p.tags || []))).slice(0, 15);
@@ -628,6 +648,7 @@ export default function App() {
                       }}
                       onDelete={handleDeletePoem}
                       isEditable={isAuthorMode}
+                      onSelectMedia={(p) => setActivePoemForLightbox(p)}
                     />
                   </motion.div>
                 ))}
@@ -745,6 +766,186 @@ export default function App() {
             </motion.div>
           </div>
         )}
+       </AnimatePresence>
+
+       {/* 2b. ARS Type Foundry Inspired Cinematic Media Lightbox */}
+       <AnimatePresence>
+         {activePoemForLightbox && (
+           <div id="modal-container-lightbox" className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+             {/* Backdrop */}
+             <motion.div
+               id="backdrop-lightbox"
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               onClick={() => setActivePoemForLightbox(null)}
+               className="absolute inset-0 bg-neutral-950/98 backdrop-blur-md"
+             />
+
+             {/* Cinematic Frame Container */}
+             <motion.div
+               id="lightbox-frame"
+               initial={{ scale: 0.95, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               exit={{ scale: 0.95, opacity: 0 }}
+               transition={{ type: 'spring', damping: 26, stiffness: 170 }}
+               className="bg-neutral-950 border border-neutral-800/80 rounded-2xl w-full max-w-6xl h-[85vh] md:h-[80vh] flex flex-col md:flex-row overflow-hidden relative z-10 shadow-[0_0_80px_rgba(6,182,212,0.18)]"
+             >
+               {/* 1. Primary Widescreen Media Display Area */}
+               <div className="flex-1 bg-black relative flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-neutral-900 group">
+                 {/* Blueprint coordinate matrix background */}
+                 <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:24px_24px] opacity-40 pointer-events-none" />
+                 
+                 {activePoemForLightbox.attachments && activePoemForLightbox.attachments.length > 0 ? (
+                   activePoemForLightbox.attachments[0].type === 'image' ? (
+                     <div className="w-full h-full p-6 md:p-12 flex items-center justify-center relative font-sans">
+                       <img
+                         src={activePoemForLightbox.attachments[0].url}
+                         alt={activePoemForLightbox.attachments[0].name}
+                         className="max-w-full max-h-full object-contain shadow-[0_0_50px_rgba(0,0,0,0.9)] rounded-lg transition-transform duration-700 hover:scale-103"
+                         referrerPolicy="no-referrer"
+                       />
+                     </div>
+                   ) : (
+                     <div className="w-full h-full flex items-center justify-center p-6 bg-neutral-950">
+                       <video
+                         src={activePoemForLightbox.attachments[0].url}
+                         className="max-w-full max-h-full shadow-[0_0_50px_rgba(0,0,0,0.9)] rounded-lg border border-neutral-900"
+                         controls
+                         autoPlay
+                         loop
+                         playsInline
+                       />
+                     </div>
+                   )
+                 ) : (
+                   /* Colossal Fallback CSS Typography Specimen Screen */
+                   <div className="absolute inset-0 flex flex-col items-center justify-center p-8 select-none text-center">
+                     <span className="font-sans font-black text-[12vw] leading-none text-neutral-900/60 tracking-tighter uppercase mb-2 animate-pulse">
+                       {activePoemForLightbox.title.split(' ').map(w => w ? w[0] : '').join('').slice(0, 2).toUpperCase() || activePoemForLightbox.title.slice(0, 2).toUpperCase()}
+                     </span>
+                     <p className="font-mono text-xs text-neutral-600 uppercase tracking-widest leading-relaxed max-w-xs">
+                       [ TYPOGRAPHIC SPECIMEN GRAPHIC // NO COVER MEDIA ASSOCIATED ]
+                     </p>
+                   </div>
+                 )}
+
+                 {/* Left / Right Slider Arrows */}
+                 <button
+                   id="lightbox-btn-prev"
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     handlePrevLightbox();
+                   }}
+                   className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-full border border-neutral-800 bg-neutral-950/90 text-neutral-400 hover:text-white hover:border-cyan-400 hover:bg-neutral-900 transition-all cursor-pointer z-10 backdrop-blur-xs shadow-md font-mono text-lg font-bold"
+                   title="Previous media specimen"
+                 >
+                   ←
+                 </button>
+                 <button
+                   id="lightbox-btn-next"
+                   onClick={(e) => {
+                     e.stopPropagation();
+                     handleNextLightbox();
+                   }}
+                   className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-12 h-12 rounded-full border border-neutral-800 bg-neutral-950/90 text-neutral-400 hover:text-white hover:border-cyan-400 hover:bg-neutral-900 transition-all cursor-pointer z-10 backdrop-blur-xs shadow-md font-mono text-lg font-bold"
+                   title="Next media specimen"
+                 >
+                   →
+                 </button>
+
+                 {/* Corner Blueprint Target Markers */}
+                 <div className="absolute top-4 left-4 w-4 h-[1px] bg-neutral-800" />
+                 <div className="absolute top-4 left-4 w-[1px] h-4 bg-neutral-800" />
+                 <div className="absolute top-4 right-4 w-4 h-[1px] bg-neutral-800" />
+                 <div className="absolute top-4 right-4 w-[1px] h-4 bg-neutral-800" />
+                 <div className="absolute bottom-4 left-4 w-4 h-[1px] bg-neutral-800" />
+                 <div className="absolute bottom-4 left-4 w-[1px] h-4 bg-neutral-800" />
+                 <div className="absolute bottom-4 right-4 w-4 h-[1px] bg-neutral-800" />
+                 <div className="absolute bottom-4 right-4 w-[1px] h-4 bg-neutral-800" />
+               </div>
+
+               {/* 2. Side Metadata Ledger Panel & Scrollable Excerpt */}
+               <div className="w-full md:w-96 p-6 sm:p-8 flex flex-col justify-between bg-[#08090f] border-t md:border-t-0 md:border-l border-neutral-900 relative">
+                 <div>
+                   {/* Ledger Header: Micro specs */}
+                   <div className="flex items-center justify-between border-b border-neutral-900 pb-4 mb-6">
+                     <span className="font-mono text-[9.5px] font-bold text-cyan-400 tracking-widest uppercase flex items-center gap-1.5">
+                       <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                       SPECIMEN SHEET
+                     </span>
+                     <span className="font-mono text-[9.5px] font-bold text-neutral-500 uppercase">
+                       REF_{activePoemForLightbox.id.toUpperCase().slice(-5)}
+                     </span>
+                   </div>
+
+                   {/* Title and author block */}
+                   <div className="space-y-4 font-sans">
+                     <div className="space-y-1">
+                       <span className="text-[10px] font-extrabold uppercase font-mono tracking-widest bg-cyan-950/40 text-cyan-400 border border-cyan-900/50 px-2.5 py-1 rounded inline-block">
+                         {categories.find(c => c.id === activePoemForLightbox.categoryId)?.name || 'Uncategorized'}
+                       </span>
+                       <h3 className="text-2xl font-sans font-black tracking-tight text-white leading-tight mt-3">
+                         {activePoemForLightbox.title}
+                       </h3>
+                       <p className="text-xs font-mono text-neutral-400 uppercase tracking-wider mt-1">
+                         COMPOSED BY <span className="text-neutral-200 font-semibold">{activePoemForLightbox.author || 'Anonymous'}</span>
+                       </p>
+                     </div>
+
+                     {/* Divider line */}
+                     <div className="w-full h-[1px] bg-neutral-900" />
+
+                     {/* Scrollable verse segment */}
+                     <div className="space-y-2.5">
+                       <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono font-bold block">
+                         PREVIEW VERSE CAPTURE:
+                       </span>
+                       <div className="bg-[#0b0c13] border border-neutral-900 p-4 rounded-xl max-h-48 overflow-y-auto">
+                         <p className="font-serif text-[14px] text-neutral-200 leading-relaxed whitespace-pre-wrap italic pl-3 border-l-2 border-cyan-500/40">
+                           {activePoemForLightbox.body.split('\n').slice(0, 5).join('\n') || 'No textual content available.'}
+                           {activePoemForLightbox.body.split('\n').length > 5 && "\n..."}
+                         </p>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+
+                 {/* Action controls */}
+                 <div className="space-y-3 mt-8 font-sans">
+                   <button
+                     id="lightbox-btn-full-read"
+                     onClick={() => {
+                       setActivePoemForReading(activePoemForLightbox);
+                       setActivePoemForLightbox(null);
+                     }}
+                     className="w-full py-4 px-4 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-neutral-950 font-bold text-xs uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(6,182,212,0.2)] hover:shadow-[0_0_30px_rgba(6,182,212,0.3)] cursor-pointer flex items-center justify-center gap-2"
+                   >
+                     <span>✦</span>
+                     <span>DEEP READING PROTOCOL</span>
+                   </button>
+                   
+                   <button
+                     id="lightbox-btn-cancel"
+                     onClick={() => setActivePoemForLightbox(null)}
+                     className="w-full py-3.5 px-4 rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-400 hover:text-white hover:bg-neutral-900 hover:border-neutral-700 font-bold text-xs uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center"
+                   >
+                     CLOSE SPECIMEN
+                   </button>
+                 </div>
+               </div>
+
+               {/* Absolute close hover option (mobile-friendly floating cross) */}
+               <button
+                 id="lightbox-btn-abs-close"
+                 onClick={() => setActivePoemForLightbox(null)}
+                 className="absolute top-4 right-4 z-20 text-neutral-500 hover:text-white bg-neutral-950/80 p-2.5 border border-neutral-900 rounded-full cursor-pointer hover:bg-neutral-900 transition-all md:hidden animate-sans"
+               >
+                 ✕
+               </button>
+             </motion.div>
+           </div>
+         )}
        </AnimatePresence>
 
        {/* 3. Category Manager Modal */}

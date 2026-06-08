@@ -40,6 +40,14 @@ And that has made all the difference.`,
     mood: 'Reflective',
     author: 'Robert Frost',
     createdAt: new Date('1916-08-01T12:00:00Z').toISOString(),
+    attachments: [
+      {
+        id: 'road-img',
+        name: 'forest_trail_woods.jpg',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&q=80&w=800'
+      }
+    ]
   },
   {
     id: 'poem-2',
@@ -68,6 +76,14 @@ Though it were ten thousand mile.`,
     mood: 'Romantic',
     author: 'Robert Burns',
     createdAt: new Date('1794-01-01T12:00:00Z').toISOString(),
+    attachments: [
+      {
+        id: 'rose-img',
+        name: 'crimson_rose_blossom.jpg',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&q=80&w=1200'
+      }
+    ]
   },
   {
     id: 'poem-3',
@@ -91,5 +107,13 @@ It asked a crumb - of me.`,
     mood: 'Hopeful',
     author: 'Emily Dickinson',
     createdAt: new Date('1861-01-01T12:00:00Z').toISOString(),
+    attachments: [
+      {
+        id: 'hope-img',
+        name: 'songbird_sky_wings.jpg',
+        type: 'image',
+        url: 'https://images.unsplash.com/photo-1452570053594-1b985d6ea890?auto=format&fit=crop&q=80&w=800'
+      }
+    ]
   }
 ];

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Poem, Category } from '../types';
-import { Edit3, Trash2, Calendar, BookOpen, Quote, Tag, Paperclip } from 'lucide-react';
+import { Edit3, Trash2, Calendar, BookOpen, Quote, Tag, Paperclip, Maximize2, Play, Eye } from 'lucide-react';
 
 interface PoemCardProps {
   poem: Poem;
@@ -9,6 +9,7 @@ interface PoemCardProps {
   onEdit: (poem: Poem) => void;
   onDelete: (id: string) => void;
   isEditable?: boolean;
+  onSelectMedia?: (poem: Poem) => void; // Triggered when the media thumbnail is clicked for lightbox
 }
 
 const getMoodColor = (mood?: string) => {
@@ -79,6 +80,7 @@ export default function PoemCard({
   onEdit,
   onDelete,
   isEditable = true,
+  onSelectMedia,
 }: PoemCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -100,10 +102,13 @@ export default function PoemCard({
   // Active theme based colors
   const mColors = getMoodColor(poem.mood);
 
+  // Extract letter specimens for foundry asset representation
+  const leadInitials = poem.title.split(' ').map(w => w ? w[0] : '').join('').slice(0, 2).toUpperCase() || poem.title.slice(0, 2).toUpperCase();
+
   return (
     <div
       id={`poem-card-${poem.id}`}
-      className={`group relative flex flex-col justify-between min-h-[340px] h-full bg-[#111218]/90 border border-neutral-800/80 rounded-2xl p-6 shadow-2xl transition-all duration-300 backdrop-blur-md focus-within:ring-2 focus-within:ring-cyan-500/30 ${mColors.glow}`}
+      className={`group relative flex flex-col justify-between min-h-[340px] h-full bg-[#111218]/95 border border-neutral-800/80 rounded-2xl p-6 shadow-2xl transition-all duration-300 backdrop-blur-md focus-within:ring-2 focus-within:ring-cyan-500/30 ${mColors.glow}`}
     >
       <div className="space-y-4">
         {/* Category & Mood Headings */}
@@ -138,43 +143,126 @@ export default function PoemCard({
           </div>
         </div>
 
-        {/* Media Block (Directly viewable on the tile) */}
-        {poem.attachments && poem.attachments.length > 0 && (
-          <div 
-            id={`card-media-pvw-${poem.id}`}
-            onClick={(e) => {
-              e.stopPropagation();
+        {/* ARS Type Foundry Inspired Typography & Media Specimen Section */}
+        <div 
+          id={`card-specimen-tile-${poem.id}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onSelectMedia) {
+              onSelectMedia(poem);
+            } else {
               onSelect(poem);
-            }}
-            className="relative w-full h-36 rounded-xl overflow-hidden border border-neutral-800/85 bg-neutral-950 shrink-0 cursor-pointer shadow-md group-hover:border-neutral-700/80 transition-all duration-300"
-          >
-            {poem.attachments[0].type === 'image' ? (
-              <img
-                src={poem.attachments[0].url}
-                alt={poem.attachments[0].name}
-                className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500 ease-out"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-full h-full relative">
-                <video
-                  src={poem.attachments[0].url}
-                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500 ease-out"
-                  muted
-                  loop
-                  autoPlay
-                  playsInline
-                />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <span className="p-1 px-2.5 rounded-full text-[9px] bg-neutral-900/95 text-white border border-neutral-800 flex items-center gap-1 backdrop-blur-xs font-mono font-bold tracking-wider uppercase">
-                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                    Video Reading
-                  </span>
-                </div>
-              </div>
-            )}
+            }
+          }}
+          className="relative w-full h-44 rounded-xl overflow-hidden border border-neutral-800/80 bg-neutral-950 shrink-0 cursor-pointer shadow-md group/thumb transition-all duration-300"
+        >
+          {/* Background Grid & Scanlines (Absolute Specimen Overlay) */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.015)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.015)_1px,transparent_1px)] bg-[size:16px_16px] opacity-65 z-1 pointer-events-none" />
+          
+          {/* Subtle Ambient Radial Highlight */}
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.02)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.08)_0%,transparent_60%)] transition-all duration-500 z-1 pointer-events-none" />
+
+          {/* Large Typographic Background Initial */}
+          <div className="absolute inset-0 flex items-center justify-center select-none pointer-events-none z-1 overflow-hidden">
+            <span className="font-sans font-black text-[6.5rem] leading-none text-neutral-900/50 tracking-tighter uppercase transition-all duration-750 ease-out group-hover/thumb:scale-110 group-hover/thumb:text-cyan-500/10">
+              {leadInitials}
+            </span>
           </div>
-        )}
+
+          {/* Actual Media Content if attached */}
+          {poem.attachments && poem.attachments.length > 0 ? (
+            <div className="absolute inset-0 w-full h-full z-2 overflow-hidden bg-neutral-950">
+              {poem.attachments[0].type === 'image' ? (
+                <img
+                  src={poem.attachments[0].url}
+                  alt={poem.attachments[0].name}
+                  className="w-full h-full object-cover grayscale opacity-55 contrast-[1.05] brightness-[1.02] group-hover/thumb:opacity-90 group-hover/thumb:grayscale-0 group-hover/thumb:scale-105 transition-all duration-750 ease-out"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-full h-full relative">
+                  <video
+                    src={poem.attachments[0].url}
+                    className="w-full h-full object-cover grayscale opacity-55 group-hover/thumb:opacity-90 group-hover/thumb:grayscale-0 group-hover/thumb:scale-105 transition-all duration-750 ease-out"
+                    muted
+                    loop
+                    autoPlay
+                    playsInline
+                  />
+                  <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 bg-neutral-950/80 px-2 py-0.5 rounded-md border border-neutral-800 text-[8px] uppercase tracking-wider text-cyan-400 font-mono">
+                    <span className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+                    Live Motion
+                  </div>
+                </div>
+              )}
+              {/* Vignette Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-neutral-950/95 via-neutral-950/10 to-neutral-950/40 opacity-70 group-hover/thumb:opacity-40 transition-all duration-500" />
+            </div>
+          ) : (
+            // Exquisite fallback CSS typography specimen grid item
+            <div className="absolute inset-0 w-full h-full z-2 bg-[#0c0d14]/70 object-cover group-hover/thumb:bg-cyan-950/10 transition-all duration-500">
+              {/* Render dynamic background glyph grids typical of font spec sheets */}
+              <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between select-none pointer-events-none text-[8px] uppercase font-mono text-neutral-800/50 tracking-widest leading-loose">
+                <div>a b c d e f g h i j k l m</div>
+                <div>n o p q r s t u v w x y z</div>
+              </div>
+            </div>
+          )}
+
+          {/* Front-Facing Fine-Line Metadata Blueprint Overlays */}
+          <div className="absolute inset-0 z-3 p-3 flex flex-col justify-between pointer-events-none select-none">
+            {/* Top Row: System identifiers & Media types */}
+            <div className="flex items-start justify-between font-mono text-[8.5px] leading-none tracking-widest">
+              <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-900 px-2 py-1 rounded text-neutral-400 font-semibold uppercase">
+                <span className="text-cyan-400">⊕</span>
+                <span>SYS_{poem.id.toUpperCase().slice(-5)}</span>
+              </div>
+              <div className="bg-neutral-950/80 border border-neutral-900 px-2 py-1 rounded text-neutral-400 uppercase font-semibold">
+                {poem.attachments && poem.attachments.length > 0 
+                  ? `[SPEC // ${poem.attachments[0].type.toUpperCase()}]` 
+                  : '[SPEC // TYPO]'}
+              </div>
+            </div>
+
+            {/* Middle Focal Target Crosshair Box (only on hover) */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-all duration-500 scale-95 group-hover/thumb:scale-100 pointer-events-none">
+              <div className="w-12 h-12 border border-cyan-500/30 flex items-center justify-center relative bg-neutral-950/40 backdrop-blur-xs rounded-lg">
+                <div className="absolute top-0 left-0 w-2 h-[1px] bg-cyan-400" />
+                <div className="absolute top-0 left-0 w-[1px] h-2 bg-cyan-400" />
+                <div className="absolute top-0 right-0 w-2 h-[1px] bg-cyan-400" />
+                <div className="absolute top-0 right-0 w-[1px] h-2 bg-cyan-400" />
+                <div className="absolute bottom-0 left-0 w-2 h-[1px] bg-cyan-400" />
+                <div className="absolute bottom-0 left-0 w-[1px] h-2 bg-cyan-400" />
+                <div className="absolute bottom-0 right-0 w-2 h-[1px] bg-cyan-400" />
+                <div className="absolute bottom-0 right-0 w-[1px] h-2 bg-cyan-400" />
+                <Maximize2 className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+              </div>
+            </div>
+
+            {/* Bottom Row: Specs indicators */}
+            <div className="flex items-end justify-between font-mono text-[8.5px] leading-none tracking-widest text-neutral-500">
+              <div className="flex items-center gap-1.5 bg-neutral-950/80 border border-neutral-900 px-2 py-1 rounded text-neutral-400 font-semibold">
+                <span>STZ // 0{previewLines.length}</span>
+                <span className="text-neutral-800">|</span>
+                <span>CHR // {poem.body.length}</span>
+              </div>
+              <div className="flex items-center gap-1 text-cyan-400 font-bold bg-cyan-950/60 border border-cyan-900/60 px-2 py-1 rounded backdrop-blur-xs group-hover/thumb:bg-cyan-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-cyan-400 transition-all duration-300">
+                <span>✦</span>
+                <span className="uppercase text-[7.5px] font-extrabold tracking-widest">Enlarge</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Corner Crosshair Coordinates Marker Deco */}
+          <div className="absolute top-0 left-0 w-1 h-[1px] bg-neutral-800 z-10" />
+          <div className="absolute top-0 left-0 w-[1px] h-1 bg-neutral-800 z-10" />
+          <div className="absolute top-0 right-0 w-1 h-[1px] bg-neutral-800 z-10" />
+          <div className="absolute top-0 right-0 w-[1px] h-1 bg-neutral-800 z-10" />
+          <div className="absolute bottom-0 left-0 w-1 h-[1px] bg-neutral-800 z-10" />
+          <div className="absolute bottom-0 left-0 w-[1px] h-1 bg-neutral-800 z-10" />
+          <div className="absolute bottom-0 right-0 w-1 h-[1px] bg-neutral-800 z-10" />
+          <div className="absolute bottom-0 right-0 w-[1px] h-1 bg-neutral-800 z-10" />
+        </div>
 
         {/* Title & Poet */}
         <div className="space-y-1 font-display">
