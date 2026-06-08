@@ -1,0 +1,6 @@
+{
+  "name": "Poetry Notebook",
+  "description": "Store and categorize personal poems in a sleek, elegant single-screen workspace.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
