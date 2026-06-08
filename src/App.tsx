@@ -28,6 +28,11 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
   });
 
+  const [appTheme, setAppTheme] = useState<'multicolor' | 'amber-eclipse'>(() => {
+    const saved = localStorage.getItem('poetry_notebook_theme');
+    return (saved === 'multicolor' || saved === 'amber-eclipse') ? saved : 'amber-eclipse';
+  });
+
   // --- Filtering & Sorting States ---
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<string>('all');
@@ -353,22 +358,69 @@ export default function App() {
           {/* Logo & Counter metrics */}
           <div className="space-y-1 z-10">
             <div className="flex items-center gap-3">
-              <div id="logo-icon-container" className="p-2.5 bg-neutral-900 border border-neutral-800 text-cyan-400 rounded-xl shadow-md">
-                <Feather className="w-5 h-5 rotate-45 transform text-cyan-400" />
+              <div 
+                id="logo-icon-container" 
+                className={`p-2.5 bg-neutral-900 border border-neutral-800 rounded-xl shadow-md transition-all ${
+                  appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'
+                }`}
+              >
+                <Feather className={`w-5 h-5 rotate-45 transform transition-all ${
+                  appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'
+                }`} />
               </div>
               <div>
-                <h1 id="app-heading" className="text-xl md:text-2xl font-bold tracking-tight font-display text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400">
+                <h1 id="app-heading" className={`text-xl md:text-2xl font-bold tracking-tight font-display text-transparent bg-clip-text bg-gradient-to-r transition-all ${
+                  appTheme === 'amber-eclipse'
+                    ? 'from-amber-400 via-yellow-250 to-orange-500'
+                    : 'from-cyan-400 via-indigo-300 to-fuchsia-400'
+                }`}>
                   Poetry Notebook
                 </h1>
                 <p id="app-subheading" className="text-xs text-neutral-400 font-mono font-medium uppercase tracking-widest mt-0.5">
-                  {poems.length} verses in <span className="text-cyan-400">{categories.length} archives</span>
+                  {poems.length} verses in <span className={appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}>{categories.length} archives</span>
                 </p>
               </div>
             </div>
           </div>
 
           {/* Right Action buttons group */}
-          <div className="flex flex-wrap items-center gap-2 z-10">
+          <div className="flex flex-wrap items-center gap-2.5 z-10">
+            {/* Theme Selector Segmented Control (Always Visible) */}
+            <div id="theme-selector-group" className="flex items-center gap-0.5 bg-neutral-900/90 border border-neutral-850 p-1 rounded-full text-[9px] font-mono tracking-wider font-extrabold uppercase mr-1.5 shadow-inner select-none transition-all">
+              <button
+                id="theme-btn-multicolor"
+                onClick={() => {
+                  setAppTheme('multicolor');
+                  localStorage.setItem('poetry_notebook_theme', 'multicolor');
+                  showToast('Theme set to Multicolor system.', 'info');
+                }}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap ${
+                  appTheme === 'multicolor'
+                    ? 'bg-neutral-800 text-cyan-400 font-black shadow-[0_0_10px_rgba(6,182,212,0.12)]'
+                    : 'text-neutral-500 hover:text-neutral-300'
+                }`}
+                title="Switch to original multicolor theme"
+              >
+                🌈 Multicolor
+              </button>
+              <button
+                id="theme-btn-amber-eclipse"
+                onClick={() => {
+                  setAppTheme('amber-eclipse');
+                  localStorage.setItem('poetry_notebook_theme', 'amber-eclipse');
+                  showToast('Theme set to Amber Eclipse system.', 'info');
+                }}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap ${
+                  appTheme === 'amber-eclipse'
+                    ? 'bg-amber-950/40 text-amber-400 font-black border border-amber-900/40 shadow-[0_0_10px_rgba(245,158,11,0.12)]'
+                    : 'text-neutral-500 hover:text-neutral-300'
+                }`}
+                title="Switch to dynamic amber eclipse theme"
+              >
+                🌗 Amber Eclipse
+              </button>
+            </div>
+
             {isAuthorMode && (
               <>
                 {/* Session lock */}
@@ -509,9 +561,9 @@ export default function App() {
                   onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : sortBy === 'oldest' ? 'alphabetical' : 'newest')}
                   className="flex items-center gap-1 px-3.5 py-1.5 bg-[#141622] hover:bg-neutral-800 border border-neutral-800 text-xs text-neutral-200 rounded-lg font-mono font-bold uppercase tracking-wider transition-all cursor-pointer"
                 >
-                  {sortBy === 'newest' && <Clock className="w-3.5 h-3.5 text-cyan-400" />}
-                  {sortBy === 'oldest' && <Clock className="w-3.5 h-3.5 rotate-180 transform text-cyan-400" />}
-                  {sortBy === 'alphabetical' && <ArrowUpDown className="w-3.5 h-3.5 text-cyan-400" />}
+                  {sortBy === 'newest' && <Clock className={`w-3.5 h-3.5 ${appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />}
+                  {sortBy === 'oldest' && <Clock className={`w-3.5 h-3.5 rotate-180 transform ${appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />}
+                  {sortBy === 'alphabetical' && <ArrowUpDown className={`w-3.5 h-3.5 ${appTheme === 'amber-eclipse' ? 'text-amber-400' : 'text-cyan-400'}`} />}
                   <span>{sortBy === 'newest' ? 'Newest' : sortBy === 'oldest' ? 'Oldest' : 'A to Z'}</span>
                 </button>
               </div>
@@ -528,8 +580,10 @@ export default function App() {
                 onClick={() => setSelectedCatId('all')}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold font-display cursor-pointer border transition-all duration-200 uppercase tracking-widest ${
                   selectedCatId === 'all'
-                    ? 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-white border-transparent'
-                    : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300'
+                    ? appTheme === 'amber-eclipse'
+                      ? 'bg-gradient-to-r from-amber-500 via-amber-600 to-orange-500 text-white border-transparent shadow-[0_0_15px_rgba(245,158,11,0.25)] font-extrabold'
+                      : 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-white border-transparent shadow-[0_0_15px_rgba(6,182,212,0.25)] font-extrabold'
+                    : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300 font-semibold'
                 }`}
               >
                 All Verses ({poems.length})
@@ -539,7 +593,13 @@ export default function App() {
                 const isSelected = selectedCatId === cat.id;
                 
                 // Beautiful vibrant gradients for active category selection
-                const gradientColors = [
+                const gradientColors = appTheme === 'amber-eclipse' ? [
+                  'from-amber-500 to-orange-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+                  'from-amber-600 to-amber-500 shadow-[0_0_15px_rgba(217,119,6,0.3)]',
+                  'from-yellow-500 to-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.25)]',
+                  'from-amber-600 to-orange-600 shadow-[0_0_15px_rgba(234,88,12,0.35)]',
+                  'from-yellow-400 to-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]',
+                ] : [
                   'from-violet-500 to-fuchsia-500 shadow-[0_0_15px_rgba(168,85,247,0.3)]',
                   'from-emerald-400 to-teal-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]',
                   'from-pink-500 to-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.3)]',
@@ -576,7 +636,14 @@ export default function App() {
                 : `✦ ${filteredPoems.length} of ${poems.length} verses revealed`}
             </h2>
             {filteredPoems.length > 0 && (
-              <span id="filtered-indicator" className="text-[10px] uppercase font-mono tracking-wider text-cyan-400 bg-cyan-950/20 border border-cyan-900/40 px-2.5 py-1 rounded-full animate-pulse">
+              <span 
+                id="filtered-indicator" 
+                className={`text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-full animate-pulse border ${
+                  appTheme === 'amber-eclipse'
+                    ? 'text-amber-400 bg-amber-950/20 border-amber-900/40'
+                    : 'text-cyan-400 bg-cyan-950/20 border-cyan-900/40'
+                }`}
+              >
                 ✦ Click a verse card below to read details
               </span>
             )}
@@ -649,6 +716,7 @@ export default function App() {
                       onDelete={handleDeletePoem}
                       isEditable={isAuthorMode}
                       onSelectMedia={(p) => setActivePoemForLightbox(p)}
+                      appTheme={appTheme}
                     />
                   </motion.div>
                 ))}
@@ -662,16 +730,22 @@ export default function App() {
       {/* Minimal Footer */}
       <footer id="primary-footer" className="bg-[#05060f] border-t border-neutral-900 py-6 px-4 md:px-8 mt-auto relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-neutral-500 font-semibold font-mono uppercase tracking-widest">
-          <p>© {new Date().getFullYear()} Poetry Notebook. Styled with Webdorks accents.</p>
+          <p>© {new Date().getFullYear()} Poetry Notebook. Styled with {
+            appTheme === 'amber-eclipse' ? 'Amber Eclipse' : 'Multicolor'
+          } accents.</p>
           <div className="flex items-center gap-4">
             {isAuthorMode ? (
               <div className="flex items-center gap-4">
-                <span className="text-cyan-500/40">✦ Ledger Session Active</span>
+                <span className={appTheme === 'amber-eclipse' ? 'text-amber-500/40' : 'text-cyan-500/40'}>
+                  ✦ Ledger Session Active
+                </span>
                 <span className="text-neutral-800">|</span>
                 <button 
                   id="footer-lock"
                   onClick={handleLockAuthorMode}
-                  className="text-cyan-400 hover:text-cyan-300 font-bold cursor-pointer select-none transition-colors font-mono tracking-wider"
+                  className={`font-bold cursor-pointer select-none transition-colors font-mono tracking-wider ${
+                    appTheme === 'amber-eclipse' ? 'text-amber-400 hover:text-amber-300' : 'text-cyan-400 hover:text-cyan-300'
+                  }`}
                   title="Lock author mode"
                 >
                   Exit Writer Panel 🔓
@@ -681,7 +755,11 @@ export default function App() {
               <span 
                 id="footer-secret-unlock"
                 onClick={() => setIsPasscodeModalOpen(true)}
-                className="text-cyan-500/20 hover:text-cyan-400 cursor-pointer select-none transition-all duration-300 font-extrabold text-[10px] tracking-widest"
+                className={`cursor-pointer select-none transition-all duration-300 font-extrabold text-[10px] tracking-widest ${
+                  appTheme === 'amber-eclipse'
+                    ? 'text-amber-500/20 hover:text-amber-400'
+                    : 'text-cyan-500/20 hover:text-cyan-400'
+                }`}
                 title="Scribal Portal"
               >
                 ✦ Scribal Portal Login
