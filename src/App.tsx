@@ -71,7 +71,7 @@ export default function App() {
   // --- Author Mode & Passcode Verification States ---
   const [isAuthorMode, setIsAuthorMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('poetry_notebook_is_author_authenticated');
-    return saved === 'true';
+    return saved !== 'false';
   });
   const [isPasscodeModalOpen, setIsPasscodeModalOpen] = useState(false);
   const [enteredPasscode, setEnteredPasscode] = useState('');
