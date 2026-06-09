@@ -146,6 +146,20 @@ export default function App() {
   const [enteredPasscode, setEnteredPasscode] = useState('');
   const [passcodeError, setPasscodeError] = useState(false);
 
+  // --- Lightbox Verse Editing States ---
+  const [isEditingVerse, setIsEditingVerse] = useState(false);
+  const [editedVerseText, setEditedVerseText] = useState('');
+
+  // Auto-sync lightbox editable verse when selected poem changes
+  useEffect(() => {
+    if (activePoemForLightbox) {
+      setEditedVerseText(activePoemForLightbox.body || '');
+      setIsEditingVerse(false);
+    } else {
+      setIsEditingVerse(false);
+    }
+  }, [activePoemForLightbox?.id]);
+
   // --- Toast helper ---
   const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'success') => {
     setToast({ message, type });
@@ -349,6 +363,35 @@ export default function App() {
     setIsAuthorMode(false);
     localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
     showToast('Securely returned to viewer-only mode.', 'info');
+  };
+
+  const handleSaveLightboxVerseChange = () => {
+    if (!activePoemForLightbox) return;
+    
+    // Update the poem in the master poems array
+    setPoems((prev) =>
+      prev.map((p) =>
+        p.id === activePoemForLightbox.id
+          ? {
+              ...p,
+              body: editedVerseText,
+              updatedAt: new Date().toISOString(),
+            }
+          : p
+      )
+    );
+
+    // Update active poem inside lightbox too!
+    setActivePoemForLightbox((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        body: editedVerseText,
+      };
+    });
+
+    setIsEditingVerse(false);
+    showToast('Verse text updated and catalogued successfully.', 'success');
   };
 
   // --- Pure Search & Filter logic computation ---
@@ -1033,7 +1076,9 @@ export default function App() {
                        <img
                          src={activePoemForLightbox.attachments[0].url}
                          alt={activePoemForLightbox.attachments[0].name}
-                         className="max-w-full max-h-full object-contain shadow-[0_0_50px_rgba(0,0,0,0.9)] rounded-lg transition-transform duration-700 hover:scale-103"
+                         className="max-w-full max-h-full object-contain shadow-[0_0_50px_rgba(0,0,0,0.9)] rounded-lg transition-transform duration-700 hover:scale-103 select-none"
+                          onContextMenu={(e) => { if (!isAuthorMode) e.preventDefault(); }}
+                          onDragStart={(e) => { if (!isAuthorMode) e.preventDefault(); }}
                          referrerPolicy="no-referrer"
                        />
                      </div>
@@ -1041,7 +1086,7 @@ export default function App() {
                      <div className="w-full h-full flex items-center justify-center p-6 bg-neutral-950">
                        <video
                          src={activePoemForLightbox.attachments[0].url}
-                         className="max-w-full max-h-full shadow-[0_0_50px_rgba(0,0,0,0.9)] rounded-lg border border-neutral-900"
+                         className="max-w-full max-h-full shadow-[0_0_50px_rgba(0,0,0,0.9)] rounded-lg border border-neutral-900 select-none" controlsList={!isAuthorMode ? "nodownload nofullscreen noremoteplayback" : undefined} onContextMenu={(e) => { if (!isAuthorMode) e.preventDefault(); }}
                          controls
                          autoPlay
                          loop
@@ -1129,15 +1174,70 @@ export default function App() {
 
                      {/* Scrollable verse segment */}
                      <div className="space-y-2.5">
-                       <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono font-bold block">
-                         PREVIEW VERSE CAPTURE:
-                       </span>
-                       <div className="bg-[#0b0c13] border border-neutral-900 p-4 rounded-xl max-h-48 overflow-y-auto">
-                         <p className="font-serif text-[14px] text-neutral-200 leading-relaxed whitespace-pre-wrap italic pl-3 border-l-2 border-cyan-500/40">
-                           {activePoemForLightbox.body.split('\n').slice(0, 5).join('\n') || 'No textual content available.'}
-                           {activePoemForLightbox.body.split('\n').length > 5 && "\n..."}
-                         </p>
+                       <div className="flex items-center justify-between">
+                         <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-mono font-bold block">
+                           PREVIEW VERSE CAPTURE:
+                         </span>
+                         {isAuthorMode && (
+                           <div className="flex gap-2">
+                             {isEditingVerse ? (
+                               <>
+                                 <button
+                                   id="btn-apply-lightbox-verse"
+                                   onClick={handleSaveLightboxVerseChange}
+                                   className="text-[9px] uppercase font-mono px-2 py-0.5 rounded bg-cyan-600 hover:bg-cyan-500 border border-cyan-500 text-neutral-950 transition-colors font-bold cursor-pointer"
+                                 >
+                                   Apply
+                                 </button>
+                                 <button
+                                   id="btn-cancel-lightbox-verse"
+                                   onClick={() => {
+                                     setEditedVerseText(activePoemForLightbox.body || '');
+                                     setIsEditingVerse(false);
+                                   }}
+                                   className="text-[9px] uppercase font-mono px-2 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-neutral-300 transition-colors cursor-pointer"
+                                 >
+                                   Cancel
+                                 </button>
+                               </>
+                             ) : (
+                               <button
+                                 id="btn-edit-lightbox-verse"
+                                 onClick={() => setIsEditingVerse(true)}
+                                 className="text-[9px] uppercase font-mono px-2 py-0.5 rounded bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-cyan-400 hover:text-cyan-300 transition-colors font-bold cursor-pointer"
+                               >
+                                 ✏️ Edit
+                               </button>
+                             )}
+                           </div>
+                         )}
                        </div>
+
+                       {isEditingVerse ? (
+                         <div className="bg-[#0b0c13] border border-cyan-900/60 p-3 rounded-xl">
+                           <textarea
+                             id="lightbox-verse-editor"
+                             className="w-full h-32 bg-neutral-950 text-neutral-200 font-serif text-[13.5px] p-2 border border-neutral-800 rounded-lg focus:outline-none focus:border-cyan-500/50 resize-none leading-relaxed"
+                             value={editedVerseText}
+                             onChange={(e) => setEditedVerseText(e.target.value)}
+                             placeholder="Type or paste the verse capture text here..."
+                           />
+                           <p className="text-[8.5px] text-neutral-500 font-mono mt-1 text-right uppercase">
+                             *Changes propagate to deep reading immediately
+                           </p>
+                         </div>
+                       ) : (
+                         <div 
+                           className={`bg-[#0b0c13] border border-neutral-900 p-4 rounded-xl max-h-48 overflow-y-auto ${!isAuthorMode ? 'select-none' : ''}`}
+                           onContextMenu={(e) => { if (!isAuthorMode) e.preventDefault(); }}
+                           onCopy={(e) => { if (!isAuthorMode) e.preventDefault(); }}
+                         >
+                           <p className="font-serif text-[14px] text-neutral-200 leading-relaxed whitespace-pre-wrap italic pl-3 border-l-2 border-cyan-500/40">
+                             {activePoemForLightbox.body.split('\n').slice(0, 5).join('\n') || 'No textual content available.'}
+                             {activePoemForLightbox.body.split('\n').length > 5 && "\n..."}
+                           </p>
+                         </div>
+                       )}
                      </div>
                    </div>
                  </div>

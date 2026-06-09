@@ -41,7 +41,15 @@ export default function PoemReader({
   });
 
   return (
-    <div id="poem-reader-modal" className="space-y-6 text-neutral-200">
+    <div 
+      id="poem-reader-modal" 
+      className={`space-y-6 text-neutral-200 ${!isEditable ? 'select-none' : ''}`}
+      onCopy={(e) => {
+        if (!isEditable) {
+          e.preventDefault();
+        }
+      }}
+    >
       {/* Header and top buttons */}
       <div className="flex items-center justify-between border-b pb-4 border-neutral-800">
         <div className="flex items-center gap-2">
@@ -52,24 +60,26 @@ export default function PoemReader({
         </div>
         <div className="flex items-center gap-2">
           {/* Copy Button */}
-          <button
-            id="btn-copy-poem"
-            onClick={handleCopy}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800 hover:text-white bg-neutral-900 rounded-full border border-neutral-800 transition-all font-semibold cursor-pointer font-sans"
-            title="Copy entry details to clipboard"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="text-emerald-400 font-bold">Copied!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5 text-neutral-400" />
-                <span>Copy Text</span>
-              </>
-            )}
-          </button>
+          {isEditable && (
+            <button
+              id="btn-copy-poem"
+              onClick={handleCopy}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-neutral-200 hover:bg-neutral-800 hover:text-white bg-neutral-900 rounded-full border border-neutral-800 transition-all font-semibold cursor-pointer font-sans"
+              title="Copy entry details to clipboard"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-emerald-400 font-bold">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>Copy Text</span>
+                </>
+              )}
+            </button>
+          )}
 
           {/* Edit Button */}
           {isEditable && (
@@ -100,7 +110,10 @@ export default function PoemReader({
       {/* Styled Poem Parchment */}
       <div 
         id="poem-parchment"
-        className="bg-[#14151f] border border-neutral-800 shadow-inner p-8 sm:p-12 rounded-2xl max-h-[60vh] overflow-y-auto"
+        className={`bg-[#14151f] border border-neutral-800 shadow-inner p-8 sm:p-12 rounded-2xl max-h-[60vh] overflow-y-auto ${!isEditable ? 'select-none' : ''}`}
+        onContextMenu={(e) => {
+          if (!isEditable) e.preventDefault();
+        }}
       >
         <div className="text-center space-y-4 max-w-xl mx-auto">
           {/* Category Pill centered */}
@@ -161,6 +174,12 @@ export default function PoemReader({
                         alt={attach.name}
                         className="max-h-[300px] object-contain rounded-xl border border-neutral-850 bg-[#14151f] w-full transition-transform duration-300 group-hover/media:scale-102"
                         referrerPolicy="no-referrer"
+                        onContextMenu={(e) => {
+                          if (!isEditable) e.preventDefault();
+                        }}
+                        onDragStart={(e) => {
+                          if (!isEditable) e.preventDefault();
+                        }}
                       />
                     ) : (
                       <video
@@ -170,6 +189,10 @@ export default function PoemReader({
                         loop
                         autoPlay
                         playsInline
+                        controlsList={!isEditable ? "nodownload nofullscreen noremoteplayback" : undefined}
+                        onContextMenu={(e) => {
+                          if (!isEditable) e.preventDefault();
+                        }}
                       />
                     )}
                   </div>

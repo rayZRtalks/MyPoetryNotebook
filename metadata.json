@@ -1,5 +1,5 @@
 {
-  "name": "Poetry Notebook",
+  "name": "RayZR Talks - Where thoughts find rhythm and stories become poetry",
   "description": "Store and categorize personal poems in a sleek, elegant single-screen workspace.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
