@@ -538,6 +538,20 @@ export default function App() {
                 }`}>
                   Where thoughts find rhythm and stories become poetry
                 </p>
+                {/* Dynamically tracking metrics ledger counters */}
+                <div id="header-counters" className="flex items-center gap-3 mt-1.5 flex-wrap">
+                  <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
+                    appTheme === 'light' ? 'text-neutral-600' : 'text-neutral-400'
+                  }`}>
+                    ✍️ <span className={`font-black ${appTheme === 'light' ? 'text-neutral-900 bg-amber-100/60 px-1.5 py-0.5 rounded-md' : 'text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded-md border border-cyan-900/30'}`}>{poems.filter(p => !p.isPhotoCapture).length}</span> Verses
+                  </span>
+                  <span className={`w-1 h-1 rounded-full ${appTheme === 'light' ? 'bg-[#dfd5be]' : 'bg-neutral-800'}`} />
+                  <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
+                    appTheme === 'light' ? 'text-neutral-600' : 'text-neutral-400'
+                  }`}>
+                    📷 <span className={`font-black ${appTheme === 'light' ? 'text-neutral-900 bg-orange-100/60 px-1.5 py-0.5 rounded-md' : 'text-pink-400 bg-fuchsia-950/40 px-1.5 py-0.5 rounded-md border border-fuchsia-900/30'}`}>{poems.filter(p => p.isPhotoCapture).length}</span> Daily Snaps
+                  </span>
+                </div>
               </div>
             </div>
           </div>

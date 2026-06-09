@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Poem, Category } from '../types';
-import { X, Copy, Check, Edit3, Calendar, Tag, BookOpen } from 'lucide-react';
+import { X, Copy, Check, Edit3, Calendar, Tag, BookOpen, Play, Pause, Square, Volume2 } from 'lucide-react';
 
 interface PoemReaderProps {
   poem: Poem;
@@ -20,7 +20,19 @@ export default function PoemReader({
   onSelectMedia,
 }: PoemReaderProps) {
   const [copied, setCopied] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [voiceRate, setVoiceRate] = useState(0.95);
   const category = categories.find((c) => c.id === poem.categoryId);
+
+  useEffect(() => {
+    // Automatically stop speech when reader is closed / unmounted
+    return () => {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   const handleCopy = async () => {
     const textToCopy = `${poem.title}\nby ${poem.author || 'Anonymous'}\n\n${poem.body}`;
@@ -30,6 +42,64 @@ export default function PoemReader({
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy poem: ', err);
+    }
+  };
+
+  const handleSpeakToggle = () => {
+    if (!('speechSynthesis' in window)) {
+      alert("Speech synthesis is not supported on this browser.");
+      return;
+    }
+
+    if (isPlaying) {
+      if (isPaused) {
+        window.speechSynthesis.resume();
+        setIsPaused(false);
+      } else {
+        window.speechSynthesis.pause();
+        setIsPaused(true);
+      }
+    } else {
+      window.speechSynthesis.cancel(); // Clear any pre-existing text in queue
+
+      // Structure text to read slowly and elegantly
+      const readText = `Reciting entry. Title: ${poem.title}. By ${poem.author || 'Anonymous'}. \n\n ${poem.body}`;
+      const utterance = new SpeechSynthesisUtterance(readText);
+      utterance.rate = voiceRate;
+
+      // Try to load any natural/clear English voices
+      const voices = window.speechSynthesis.getVoices();
+      const idealVoice = voices.find(v => 
+        v.name.toLowerCase().includes('google us english') ||
+        v.name.toLowerCase().includes('natural') || 
+        v.name.toLowerCase().includes('male') ||
+        v.lang.startsWith('en-US')
+      );
+      if (idealVoice) {
+        utterance.voice = idealVoice;
+      }
+
+      utterance.onend = () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+      };
+
+      utterance.onerror = () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+      setIsPlaying(true);
+      setIsPaused(false);
+    }
+  };
+
+  const handleStopSpeech = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+      setIsPaused(false);
     }
   };
 
@@ -135,6 +205,81 @@ export default function PoemReader({
           <p id="reader-author" className="text-xs font-mono text-neutral-400 tracking-tight uppercase">
             composed by <span className="font-semibold text-neutral-200 underline decoration-cyan-500/40 decoration-2 underline-offset-4">{poem.author || 'Anonymous'}</span>
           </p>
+
+          {/* Vocal Recital Controller widget */}
+          {poem.body && poem.body.trim() && (
+            <div id="vocal-recital-panel" className="max-w-xs mx-auto mt-4 px-4 py-2.5 bg-[#0e0f18] border border-neutral-800/80 rounded-xl flex items-center justify-between gap-3 text-left">
+              <div className="flex items-center gap-2">
+                <button
+                  id="vocal-play-btn"
+                  onClick={handleSpeakToggle}
+                  className="p-2 bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-neutral-950 rounded-full transition-all cursor-pointer flex items-center justify-center shadow-lg shadow-cyan-500/20"
+                  title={isPlaying ? (isPaused ? "Resume Recital" : "Pause Recital") : "Start Recital Voice Over"}
+                >
+                  {isPlaying && !isPaused ? (
+                    <Pause className="w-3.5 h-3.5 fill-current" />
+                  ) : (
+                    <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                  )}
+                </button>
+                {isPlaying && (
+                  <button
+                    id="vocal-stop-btn"
+                    onClick={handleStopSpeech}
+                    className="p-2 bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-red-400 rounded-full border border-neutral-800 transition-all cursor-pointer flex items-center justify-center"
+                    title="Stop Voice Over"
+                  >
+                    <Square className="w-3.5 h-3.5 fill-neutral-400" />
+                  </button>
+                )}
+                <div className="flex flex-col">
+                  <span className="text-[9px] font-bold font-mono tracking-wider text-neutral-500 uppercase">
+                    Vocal Recital
+                  </span>
+                  <span className="text-[10px] font-sans font-semibold text-neutral-350">
+                    {isPlaying ? (isPaused ? "Paused" : "Speaking...") : "Listen to entry"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Equalizer & voice velocity panel */}
+              <div className="flex items-center gap-2">
+                {isPlaying && !isPaused && (
+                  <div className="flex items-end gap-[2.5px] h-3.5 px-1">
+                    <span className="w-[3px] h-3 bg-cyan-400 rounded-full animate-bounce [animation-duration:0.6s]" />
+                    <span className="w-[3px] h-4 bg-indigo-400 rounded-full animate-bounce [animation-duration:0.8s] [animation-delay:0.1s]" />
+                    <span className="w-[3px] h-2 bg-fuchsia-400 rounded-full animate-bounce [animation-duration:0.7s] [animation-delay:0.2s]" />
+                  </div>
+                )}
+                
+                {/* Rate Selector Button */}
+                <select
+                  id="vocal-rate-select"
+                  value={voiceRate}
+                  onChange={(e) => {
+                    const rate = parseFloat(e.target.value);
+                    setVoiceRate(rate);
+                    // If speaking, restart with new rate
+                    if (isPlaying) {
+                      window.speechSynthesis.cancel();
+                      setIsPlaying(false);
+                      setIsPaused(false);
+                      setTimeout(() => {
+                        handleSpeakToggle();
+                      }, 100);
+                    }
+                  }}
+                  className="bg-neutral-950 border border-neutral-800 text-[10px] font-mono font-bold text-neutral-450 p-1.5 rounded-md cursor-pointer outline-none focus:border-cyan-500/40"
+                  title="Recital pacing speed"
+                >
+                  <option value="0.8">0.8x</option>
+                  <option value="0.95">1.0x</option>
+                  <option value="1.15">1.2x</option>
+                  <option value="1.3">1.3x</option>
+                </select>
+              </div>
+            </div>
+          )}
 
           {poem.body && poem.body.trim() && (
             <>
