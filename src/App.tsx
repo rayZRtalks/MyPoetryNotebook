@@ -17,6 +17,8 @@ import { getAttachmentBlob, deleteAttachmentBlob } from './utils/attachmentDb';
 import PoemForm from './components/PoemForm';
 import PoemCard from './components/PoemCard';
 import PoemReader from './components/PoemReader';
+import DailySnapCapture from './components/DailySnapCapture';
+import DailySnapCard from './components/DailySnapCard';
 
 export default function App() {
   // --- Persistent States ---
@@ -78,6 +80,7 @@ export default function App() {
   const [activePoemForEditing, setActivePoemForEditing] = useState<Poem | null>(null);
   const [activePoemForLightbox, setActivePoemForLightbox] = useState<Poem | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSnapFormOpen, setIsSnapFormOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
@@ -405,7 +408,7 @@ export default function App() {
       (poem.author && poem.author.toLowerCase().includes(searchString));
 
     const matchCategory = selectedCatId === 'all' || poem.categoryId === selectedCatId;
-    const matchMood = selectedMood === 'all' || poem.mood === selectedMood;
+    const matchMood = selectedMood === 'all' || poem.mood === selectedMood || poem.isPhotoCapture;
 
     return matchQuery && matchCategory && matchMood;
   });
@@ -667,6 +670,15 @@ export default function App() {
                   <RotateCcw className="w-4 h-4" />
                 </button>
 
+                {/* Capture Day Snapshot trigger */}
+                <button
+                  id="btn-trigger-capture-snap"
+                  onClick={() => setIsSnapFormOpen(true)}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-[#0f111a] border border-cyan-800/60 hover:border-cyan-500/80 hover:bg-neutral-900 text-cyan-400 font-display uppercase tracking-wider rounded-full text-xs font-bold transition-all ml-2 cursor-pointer shadow-lg hover:shadow-cyan-500/10"
+                >
+                  <span>Capture Snap 📷</span>
+                </button>
+
                 {/* Write New Poem main trigger */}
                 <button
                   id="btn-trigger-new-poem"
@@ -792,7 +804,23 @@ export default function App() {
                       : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300 font-semibold'
                 }`}
               >
-                All Verses ({poems.length})
+                All Entries ({poems.length})
+              </button>
+
+              <button
+                id="cat-pill-snaps"
+                onClick={() => setSelectedCatId('cat-snaps')}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold font-display cursor-pointer border transition-all duration-200 uppercase tracking-widest ${
+                  selectedCatId === 'cat-snaps'
+                    ? appTheme === 'light'
+                      ? 'bg-neutral-900 border-neutral-850 text-orange-200 shadow-md font-extrabold'
+                      : 'bg-gradient-to-r from-cyan-500 to-pink-500 text-white border-transparent shadow-[0_0_15px_rgba(6,182,212,0.25)] font-extrabold'
+                    : appTheme === 'light'
+                      ? 'bg-[#ede6d4]/50 hover:bg-[#ede6d3] border-[#e0d6be] text-neutral-700 font-semibold'
+                      : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-cyan-400 border-cyan-950/40 font-semibold'
+                }`}
+              >
+                Daily Snaps 📷 ({poems.filter(p => p.isPhotoCapture).length})
               </button>
               {categories.map((cat, index) => {
                 const count = poems.filter((poem) => poem.categoryId === cat.id).length;
@@ -905,20 +933,31 @@ export default function App() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: Math.min(index * 0.05, 0.4) }}
                   >
-                    <PoemCard
-                      poem={poem}
-                      categories={categories}
-                      onSelect={(p) => setActivePoemForReading(p)}
-                      onEdit={(p) => {
-                        setActivePoemForEditing(p);
-                        setIsFormOpen(true);
-                      }}
-                      onDelete={handleDeletePoem}
-                      isEditable={isAuthorMode}
-                      onSelectMedia={(p) => setActivePoemForLightbox(p)}
-                      appTheme={appTheme}
-                      gridOverlayEnabled={gridOverlayEnabled}
-                    />
+                    {poem.isPhotoCapture ? (
+                      <DailySnapCard
+                        poem={poem}
+                        onSelectMedia={(p) => setActivePoemForLightbox(p)}
+                        onDelete={handleDeletePoem}
+                        isEditable={isAuthorMode}
+                        appTheme={appTheme}
+                        gridOverlayEnabled={gridOverlayEnabled}
+                      />
+                    ) : (
+                      <PoemCard
+                        poem={poem}
+                        categories={categories}
+                        onSelect={(p) => setActivePoemForReading(p)}
+                        onEdit={(p) => {
+                          setActivePoemForEditing(p);
+                          setIsFormOpen(true);
+                        }}
+                        onDelete={handleDeletePoem}
+                        isEditable={isAuthorMode}
+                        onSelectMedia={(p) => setActivePoemForLightbox(p)}
+                        appTheme={appTheme}
+                        gridOverlayEnabled={gridOverlayEnabled}
+                      />
+                    )}
                   </motion.div>
                 ))}
               </motion.div>
@@ -965,6 +1004,46 @@ export default function App() {
       </footer>
 
       {/* --- Overlay Modals (Using motion animate) --- */}
+      
+      {/* 1b. Daily Picture Snapshot Modal */}
+      <AnimatePresence>
+        {isSnapFormOpen && (
+          <div id="modal-container-snap-form" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop cover */}
+            <motion.div
+              id="backdrop-snap"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSnapFormOpen(false)}
+              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
+            />
+            {/* Modal Sheet panel */}
+            <motion.div
+              id="sheet-snap"
+              initial={{ scale: 0.95, y: 12, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 12, opacity: 0 }}
+              className="bg-[#0c0d15] border border-neutral-800/80 rounded-2xl p-6 sm:p-8 shadow-[0_0_50px_rgba(6,182,212,0.15)] relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto text-neutral-200 animate-sans"
+            >
+              <DailySnapCapture
+                onSave={(snapData) => {
+                  const newPoemSnap: Poem = {
+                    ...snapData,
+                    id: `poem-snap-${Date.now()}`,
+                    createdAt: new Date().toISOString(),
+                  };
+                  setPoems((prev) => [newPoemSnap, ...prev]);
+                  showToast("Daily picture snapshot saved to ledger.", "success");
+                  setIsSnapFormOpen(false);
+                }}
+                onCancel={() => setIsSnapFormOpen(false)}
+                appTheme={appTheme}
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* 1. Poem Creation & Edit Modal */}
       <AnimatePresence>
@@ -1233,8 +1312,8 @@ export default function App() {
                            onCopy={(e) => { if (!isAuthorMode) e.preventDefault(); }}
                          >
                            <p className="font-serif text-[14px] text-neutral-200 leading-relaxed whitespace-pre-wrap italic pl-3 border-l-2 border-cyan-500/40">
-                             {activePoemForLightbox.body.split('\n').slice(0, 5).join('\n') || 'No textual content available.'}
-                             {activePoemForLightbox.body.split('\n').length > 5 && "\n..."}
+                             {activePoemForLightbox.isPhotoCapture ? activePoemForLightbox.body : (activePoemForLightbox.body.split('\n').slice(0, 5).join('\n') || 'No textual content available.')}
+                             {!activePoemForLightbox.isPhotoCapture && activePoemForLightbox.body.split('\n').length > 5 && "\n..."}
                            </p>
                          </div>
                        )}
@@ -1245,7 +1324,7 @@ export default function App() {
                  {/* Action controls */}
                  <div className="space-y-3 mt-8 font-sans">
                    <button
-                     id="lightbox-btn-full-read"
+                     id="lightbox-btn-full-read" style={{ display: activePoemForLightbox.isPhotoCapture ? "none" : ("flex" as any) }}
                      onClick={() => {
                        setActivePoemForReading(activePoemForLightbox);
                        setActivePoemForLightbox(null);

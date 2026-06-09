@@ -25,4 +25,5 @@ export interface Poem {
   createdAt: string; // ISO date string
   updatedAt?: string;
   attachments?: PoemAttachment[];
+  isPhotoCapture?: boolean;
 }
