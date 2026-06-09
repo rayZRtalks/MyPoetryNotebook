@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { Poem } from '../types';
-import { Camera, Calendar, Trash2, Maximize2 } from 'lucide-react';
+import { Camera, Calendar, Trash2, Maximize2, Edit3, BookOpen } from 'lucide-react';
 
 interface DailySnapCardProps {
   poem: Poem;
   onSelectMedia: (poem: Poem) => void;
   onDelete: (id: string) => void;
+  onEdit?: (poem: Poem) => void;
   isEditable?: boolean;
   appTheme?: 'dark' | 'light';
   gridOverlayEnabled?: boolean;
@@ -15,6 +16,7 @@ export default function DailySnapCard({
   poem,
   onSelectMedia,
   onDelete,
+  onEdit,
   isEditable = false,
   appTheme = 'dark',
   gridOverlayEnabled = false,
@@ -32,10 +34,10 @@ export default function DailySnapCard({
   return (
     <div
       id={`snap-card-${poem.id}`}
-      className={`relative group flex flex-col justify-between transition-all duration-500 border rounded-2xl p-4 md:p-5 shadow-lg select-none ${
+      className={`relative group flex flex-col justify-between min-h-[340px] h-full transition-all duration-500 border rounded-2xl p-6 shadow-lg select-none ${
         appTheme === 'light'
-          ? 'bg-[#faf8f5] border-[#dfd5be] text-neutral-800 hover:shadow-[0_12px_32px_rgba(28,28,30,0.06)]'
-          : 'bg-[#0f111a] border-neutral-900 text-zinc-300 hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
+          ? 'bg-white border-[#e0d6be] text-neutral-800 hover:shadow-[0_12px_32px_rgba(28,28,30,0.06)]'
+          : 'bg-[#111218]/95 border-neutral-800/80 text-zinc-300 hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
       }`}
       onContextMenu={(e) => {
         if (!isEditable) e.preventDefault();
@@ -109,13 +111,7 @@ export default function DailySnapCard({
         </div>
 
         {/* Written Day Note Caption */}
-        <div className="pt-1.5 px-1 space-y-2">
-          {/* Subtle date separator indicator */}
-          <div className="flex items-center gap-1 text-[9.5px] font-mono uppercase tracking-widest text-neutral-500">
-            <Calendar className="w-3 h-3 text-neutral-500" />
-            <span>{formattedDate}</span>
-          </div>
-          
+        <div className="pt-1.5 px-1">
           <p
             className={`font-serif text-[13.5px] leading-relaxed italic border-l border-cyan-500/30 pl-3 ${
               appTheme === 'light' ? 'text-neutral-700' : 'text-neutral-200'
@@ -126,35 +122,91 @@ export default function DailySnapCard({
         </div>
       </div>
 
-      {/* Delete/Action Tray for Authorized Poet */}
-      {isEditable && (
-        <div className="border-t border-neutral-900/60 pt-3 mt-4 flex items-center justify-end">
-          {confirmDelete ? (
-            <div className="flex items-center gap-1.5 animate-pulse">
-              <button
-                onClick={() => onDelete(poem.id)}
-                className="px-2.5 py-1 text-[9px] uppercase font-mono rounded bg-red-600 hover:bg-red-500 border border-red-500 text-white font-bold cursor-pointer transition-colors"
-              >
-                Confirm Delete
-              </button>
-              <button
-                onClick={() => setConfirmDelete(false)}
-                className="px-2 py-1 text-[9px] uppercase font-mono rounded bg-neutral-800 hover:bg-neutral-700 text-neutral-400 transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
+      {/* Footer Details & Quick Action buttons */}
+      <div className={`border-t pt-4 flex items-center justify-between mt-6 transition-colors ${
+        appTheme === 'light' ? 'border-[#e0d6be]' : 'border-neutral-800/80'
+      }`}>
+        {/* Creation Date indicator */}
+        <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 font-mono tracking-wider uppercase">
+          <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+          <span>{formattedDate}</span>
+        </div>
+
+        {/* Action Triggers */}
+        <div className="flex items-center gap-0.5">
+          <button
+            onClick={() => onSelectMedia(poem)}
+            className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
+              appTheme === 'light'
+                ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
+            }`}
+            title="View Enlarged"
+          >
+            <BookOpen className="w-4 h-4" />
+          </button>
+
+          {isEditable && onEdit && (
             <button
-              onClick={() => setConfirmDelete(true)}
-              className="p-1.5 rounded-full text-neutral-500 hover:text-red-400 hover:bg-neutral-900 transition-colors cursor-pointer"
-              title="Delete Snapshot Entry"
+              onClick={() => onEdit(poem)}
+              className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
+                appTheme === 'light'
+                  ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                  : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
+              }`}
+              title="Edit Caption Note"
             >
-              <Trash2 className="w-4 h-4" />
+              <Edit3 className="w-4 h-4" />
             </button>
           )}
+
+          {isEditable && (
+            confirmDelete ? (
+              <div className={`flex items-center gap-1 rounded-lg p-1 animate-pulse border ${
+                appTheme === 'light'
+                  ? 'bg-red-50 border-red-200'
+                  : 'bg-red-950/40 border-red-900/50'
+              }`}>
+                <button
+                  onClick={() => {
+                    onDelete(poem.id);
+                    setConfirmDelete(false);
+                  }}
+                  className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
+                    appTheme === 'light'
+                      ? 'text-red-700 hover:bg-red-100'
+                      : 'text-red-400 hover:bg-red-900/40'
+                  }`}
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
+                    appTheme === 'light'
+                      ? 'text-neutral-600 hover:bg-neutral-100'
+                      : 'text-neutral-400 hover:text-neutral-800'
+                  }`}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className={`p-1.5 rounded-full transition-colors cursor-pointer ${
+                  appTheme === 'light'
+                    ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50'
+                    : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
+                }`}
+                title="Delete Snapshot Entry"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -4,21 +4,23 @@ import { PoemAttachment, Poem } from '../types';
 import { storeAttachmentBlob } from '../utils/attachmentDb';
 
 interface DailySnapCaptureProps {
-  onSave: (snapData: Omit<Poem, 'id' | 'createdAt'>) => void;
+  onSave: (snapData: Omit<Poem, 'id' | 'createdAt'> & { createdAt?: string }) => void;
   onCancel: () => void;
   appTheme?: 'dark' | 'light';
+  editPoem?: Poem | null;
 }
 
 export default function DailySnapCapture({
   onSave,
   onCancel,
   appTheme = 'dark',
+  editPoem = null,
 }: DailySnapCaptureProps) {
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [useCamera, setUseCamera] = useState<boolean>(true);
-  const [capturedUrl, setCapturedUrl] = useState<string>('');
+  const [useCamera, setUseCamera] = useState<boolean>(!editPoem);
+  const [capturedUrl, setCapturedUrl] = useState<string>(editPoem?.attachments?.[0]?.url || '');
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
-  const [caption, setCaption] = useState<string>('');
+  const [caption, setCaption] = useState<string>(editPoem?.body || '');
   const [cameraError, setCameraError] = useState<string>('');
   const [showFlash, setShowFlash] = useState<boolean>(false);
 
@@ -136,38 +138,51 @@ export default function DailySnapCapture({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!capturedBlob) return;
+    if (!capturedBlob && !editPoem) return;
 
-    const attachmentId = `attach-snap-${Date.now()}`;
-    try {
-      // Store picture blob in IndexedDB
-      await storeAttachmentBlob(attachmentId, capturedBlob);
+    let snapAttachment: PoemAttachment | undefined = editPoem?.attachments?.[0];
 
-      const formattedDate = new Date().toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
+    if (capturedBlob) {
+      const attachmentId = `attach-snap-${Date.now()}`;
+      try {
+        // Store picture blob in IndexedDB
+        await storeAttachmentBlob(attachmentId, capturedBlob);
 
-      const snapAttachment: PoemAttachment = {
-        id: attachmentId,
-        name: `Daily_Capture_${Date.now()}.jpg`,
-        type: 'image',
-        url: capturedUrl,
-      };
-
-      onSave({
-        title: `Snapshot: ${formattedDate}`,
-        body: caption.trim() || 'Spontaneous glimpse of the day.',
-        categoryId: 'cat-snaps', // reserved ID for snapshots
-        tags: ['snapshot', 'daily', 'photo-of-the-day'],
-        mood: 'Reflective',
-        attachments: [snapAttachment],
-        isPhotoCapture: true,
-      });
-    } catch (err) {
-      console.error('Failed to save snap to IndexedDB', err);
+        snapAttachment = {
+          id: attachmentId,
+          name: `Daily_Capture_${Date.now()}.jpg`,
+          type: 'image',
+          url: capturedUrl,
+        };
+      } catch (err) {
+        console.error('Failed to save snap to IndexedDB', err);
+      }
     }
+
+    if (!snapAttachment) return;
+
+    const formattedDate = editPoem
+      ? new Date(editPoem.createdAt).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        })
+      : new Date().toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+
+    onSave({
+      title: editPoem ? editPoem.title : `Snapshot: ${formattedDate}`,
+      body: caption.trim() || 'Spontaneous glimpse of the day.',
+      categoryId: 'cat-snaps', // reserved ID for snapshots
+      tags: ['snapshot', 'daily', 'photo-of-the-day'],
+      mood: 'Reflective',
+      attachments: [snapAttachment],
+      isPhotoCapture: true,
+      ...(editPoem ? { createdAt: editPoem.createdAt } : {}),
+    });
   };
 
   return (
@@ -177,7 +192,7 @@ export default function DailySnapCapture({
         <div className="flex items-center gap-2">
           <Camera className="w-5 h-5 text-cyan-400" />
           <h3 className="text-base font-bold font-display uppercase tracking-wider text-neutral-100">
-            Inscribe Daily Picture Snapshot
+            {editPoem ? 'Edit Daily Snapshot' : 'Inscribe Daily Picture Snapshot'}
           </h3>
         </div>
         <button
@@ -334,7 +349,7 @@ export default function DailySnapCapture({
             className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-cyan-500 via-indigo-500 to-fuchsia-500 hover:from-cyan-400 hover:to-fuchsia-400 text-neutral-950 font-display uppercase tracking-widest text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-lg hover:shadow-cyan-500/25 active:scale-[0.99] text-center"
           >
             <Check className="w-4 h-4 text-neutral-950 stroke-[3]" />
-            <span>Publish Daily Snapshot</span>
+            <span>{editPoem ? 'Update Snapshot Details' : 'Publish Daily Snapshot'}</span>
           </button>
         )}
       </form>

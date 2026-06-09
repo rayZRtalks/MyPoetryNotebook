@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Feather, Plus, Search, Download, Upload, Trash2, 
+  Pen, Plus, Search, Download, Upload, Trash2, 
   Sparkles, FolderPlus, ArrowUpDown, Clock, HelpCircle, 
   Layers, ChevronDown, Check, X, RotateCcw, Quote, BookOpen, AlertCircle,
   Grid3X3
@@ -519,24 +519,24 @@ export default function App() {
                     : 'bg-neutral-900 border-neutral-800 text-cyan-400'
                 }`}
               >
-                <Feather className={`w-5 h-5 rotate-45 transform transition-all ${
+                <Pen className={`w-5 h-5 transform transition-all ${
                   appTheme === 'light' ? 'text-amber-500' : 'text-cyan-400'
                 }`} />
               </div>
               <div>
-                <h1 id="app-heading" className={`text-xl md:text-2xl font-bold tracking-tight font-display transition-all ${
+                <h1 id="app-heading" className={`text-xl md:text-2xl font-black font-display tracking-tight transition-all ${
                   appTheme === 'light'
                     ? 'text-neutral-900 font-extrabold'
-                    : 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400'
+                    : 'text-[#f4f4f5]'
                 }`}>
-                  RayZR Talks - Where thoughts find rhythm and stories become poetry
+                  RayZR Talks
                 </h1>
-                <p id="app-subheading" className="text-xs text-neutral-400 font-mono font-medium uppercase tracking-widest mt-0.5">
-                  {poems.length} verses in <span className={
-                    appTheme === 'light' 
-                      ? 'text-neutral-800 font-extrabold' 
-                      : 'text-cyan-400'
-                  }>{categories.length} archives</span>
+                <p id="app-subheading" className={`text-xs md:text-sm font-medium tracking-wide mt-0.5 transition-all ${
+                  appTheme === 'light'
+                    ? 'text-neutral-500'
+                    : 'inline-block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400'
+                }`}>
+                  Where thoughts find rhythm and stories become poetry
                 </p>
               </div>
             </div>
@@ -888,7 +888,7 @@ export default function App() {
                 className="bg-white border border-[#e8e8ed] rounded-3xl p-12 text-center max-w-xl mx-auto shadow-xs flex flex-col items-center justify-center space-y-4"
               >
                 <div className="w-16 h-16 bg-[#f5f5f7] border border-[#e8e8ed] rounded-full flex items-center justify-center text-[#86868b]">
-                  <Feather className="w-8 h-8 rotate-12 transform text-[#0071e3]" />
+                  <Pen className="w-8 h-8 transform text-[#0071e3]" />
                 </div>
                 <h3 className="text-xl font-sans font-bold text-[#1d1d1f] tracking-tight">
                   No Poetry Entries Found
@@ -938,6 +938,10 @@ export default function App() {
                         poem={poem}
                         onSelectMedia={(p) => setActivePoemForLightbox(p)}
                         onDelete={handleDeletePoem}
+                        onEdit={(p) => {
+                          setActivePoemForEditing(p);
+                          setIsSnapFormOpen(true);
+                        }}
                         isEditable={isAuthorMode}
                         appTheme={appTheme}
                         gridOverlayEnabled={gridOverlayEnabled}
@@ -1015,7 +1019,10 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsSnapFormOpen(false)}
+              onClick={() => {
+                setIsSnapFormOpen(false);
+                setActivePoemForEditing(null);
+              }}
               className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
             />
             {/* Modal Sheet panel */}
@@ -1027,17 +1034,33 @@ export default function App() {
               className="bg-[#0c0d15] border border-neutral-800/80 rounded-2xl p-6 sm:p-8 shadow-[0_0_50px_rgba(6,182,212,0.15)] relative z-10 w-full max-w-md max-h-[90vh] overflow-y-auto text-neutral-200 animate-sans"
             >
               <DailySnapCapture
+                editPoem={activePoemForEditing}
                 onSave={(snapData) => {
-                  const newPoemSnap: Poem = {
-                    ...snapData,
-                    id: `poem-snap-${Date.now()}`,
-                    createdAt: new Date().toISOString(),
-                  };
-                  setPoems((prev) => [newPoemSnap, ...prev]);
-                  showToast("Daily picture snapshot saved to ledger.", "success");
+                  if (activePoemForEditing) {
+                    setPoems((prev) =>
+                      prev.map((p) =>
+                        p.id === activePoemForEditing.id
+                          ? { ...p, ...snapData }
+                          : p
+                      )
+                    );
+                    showToast("Daily picture snapshot updated inside ledger.", "success");
+                  } else {
+                    const newPoemSnap: Poem = {
+                      ...snapData,
+                      id: `poem-snap-${Date.now()}`,
+                      createdAt: new Date().toISOString(),
+                    };
+                    setPoems((prev) => [newPoemSnap, ...prev]);
+                    showToast("Daily picture snapshot saved to ledger.", "success");
+                  }
                   setIsSnapFormOpen(false);
+                  setActivePoemForEditing(null);
                 }}
-                onCancel={() => setIsSnapFormOpen(false)}
+                onCancel={() => {
+                  setIsSnapFormOpen(false);
+                  setActivePoemForEditing(null);
+                }}
                 appTheme={appTheme}
               />
             </motion.div>
