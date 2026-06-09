@@ -274,8 +274,7 @@ export default function PoemReader({
                 >
                   <option value="0.8">0.8x</option>
                   <option value="0.95">1.0x</option>
-                  <option value="1.15">1.2x</option>
-                  <option value="1.3">1.3x</option>
+      
                 </select>
               </div>
             </div>
