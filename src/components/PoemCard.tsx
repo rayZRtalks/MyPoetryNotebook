@@ -125,7 +125,17 @@ export default function PoemCard({
         appTheme === 'light'
           ? 'bg-white border-[#e0d6be] text-[#1b1c20] shadow-[0_4px_24px_rgba(28,28,30,0.04)] focus-within:ring-neutral-900/10'
           : 'bg-[#111218]/95 border-neutral-800/80 text-[#e4e4e7] shadow-2xl backdrop-blur-md focus-within:ring-cyan-500/30'
-      } ${mColors.glow}`}
+      } ${mColors.glow} ${!isEditable ? 'select-none' : ''}`}
+      onCopy={(e) => {
+        if (!isEditable) {
+          e.preventDefault();
+        }
+      }}
+      onContextMenu={(e) => {
+        if (!isEditable) {
+          e.preventDefault();
+        }
+      }}
     >
       <div className="space-y-4">
         {/* Category & Mood Headings */}
@@ -217,18 +227,22 @@ export default function PoemCard({
                 <img
                   src={poem.attachments[0].url}
                   alt={poem.attachments[0].name}
-                  className="w-full h-full object-cover grayscale opacity-55 contrast-[1.05] brightness-[1.02] group-hover/thumb:opacity-90 group-hover/thumb:grayscale-0 group-hover/thumb:scale-105 transition-all duration-750 ease-out"
+                  className="w-full h-full object-cover grayscale opacity-55 contrast-[1.05] brightness-[1.02] group-hover/thumb:opacity-90 group-hover/thumb:grayscale-0 group-hover/thumb:scale-105 transition-all duration-750 ease-out select-none"
                   referrerPolicy="no-referrer"
+                  onContextMenu={(e) => { if (!isEditable) e.preventDefault(); }}
+                  onDragStart={(e) => { if (!isEditable) e.preventDefault(); }}
                 />
               ) : (
                 <div className="w-full h-full relative">
                   <video
                     src={poem.attachments[0].url}
-                    className="w-full h-full object-cover grayscale opacity-55 group-hover/thumb:opacity-90 group-hover/thumb:grayscale-0 group-hover/thumb:scale-105 transition-all duration-750 ease-out"
+                    className="w-full h-full object-cover grayscale opacity-55 group-hover/thumb:opacity-90 group-hover/thumb:grayscale-0 group-hover/thumb:scale-105 transition-all duration-750 ease-out select-none"
                     muted
                     loop
                     autoPlay
                     playsInline
+                    controlsList={!isEditable ? "nodownload nofullscreen noremoteplayback" : undefined}
+                    onContextMenu={(e) => { if (!isEditable) e.preventDefault(); }}
                   />
                   <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 bg-neutral-950/80 px-2 py-0.5 rounded-md border border-neutral-800 text-[8px] uppercase tracking-wider font-mono text-cyan-400">
                     <span className="w-1 h-1 rounded-full animate-pulse bg-cyan-400" />

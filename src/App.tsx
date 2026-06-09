@@ -526,7 +526,7 @@ export default function App() {
                     ? 'text-neutral-900 font-extrabold'
                     : 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400'
                 }`}>
-                  Poetry Notebook
+                  RayZR Talks - Where thoughts find rhythm and stories become poetry
                 </h1>
                 <p id="app-subheading" className="text-xs text-neutral-400 font-mono font-medium uppercase tracking-widest mt-0.5">
                   {poems.length} verses in <span className={
