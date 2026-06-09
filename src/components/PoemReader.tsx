@@ -22,7 +22,7 @@ export default function PoemReader({
   const [copied, setCopied] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [voiceRate, setVoiceRate] = useState(0.95);
+  const [voiceRate, setVoiceRate] = useState(0.8);
   const category = categories.find((c) => c.id === poem.categoryId);
 
   useEffect(() => {
@@ -67,16 +67,37 @@ export default function PoemReader({
       const utterance = new SpeechSynthesisUtterance(readText);
       utterance.rate = voiceRate;
 
-      // Try to load any natural/clear English voices
+      // Try to load any warm, consistent Indian English male voices
       const voices = window.speechSynthesis.getVoices();
-      const idealVoice = voices.find(v => 
-        v.name.toLowerCase().includes('google us english') ||
-        v.name.toLowerCase().includes('natural') || 
-        v.name.toLowerCase().includes('male') ||
-        v.lang.startsWith('en-US')
+      
+      // Filter voices that are en-IN (English India)
+      const indianVoices = voices.filter(v => 
+        v.lang.toLowerCase().replace('_', '-').includes('en-in')
       );
-      if (idealVoice) {
-        utterance.voice = idealVoice;
+
+      // Match any en-IN that features 'male', 'rishi', 'ravi', or 'mohan'
+      let selectedVoice = indianVoices.find(v => 
+        v.name.toLowerCase().includes('male') || 
+        v.name.toLowerCase().includes('rishi') || 
+        v.name.toLowerCase().includes('ravi') || 
+        v.name.toLowerCase().includes('mohan')
+      );
+
+      // If we don't have an explicit male Indian voice, grab the standard Indian English voice (such as Google English (India))
+      if (!selectedVoice && indianVoices.length > 0) {
+        selectedVoice = indianVoices.find(v => v.name.toLowerCase().includes('google')) || indianVoices[0];
+      }
+
+      // If no en-IN voices exist on the system (e.g. some mobile browsers), fallback to a high-quality warm English male/natural voice
+      if (!selectedVoice) {
+        selectedVoice = voices.find(v => 
+          v.lang.toLowerCase().replace('_', '-').startsWith('en-') && 
+          (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('natural'))
+        ) || voices.find(v => v.lang.toLowerCase().startsWith('en'));
+      }
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
       }
 
       utterance.onend = () => {
@@ -272,9 +293,9 @@ export default function PoemReader({
                   className="bg-neutral-950 border border-neutral-800 text-[10px] font-mono font-bold text-neutral-450 p-1.5 rounded-md cursor-pointer outline-none focus:border-cyan-500/40"
                   title="Recital pacing speed"
                 >
-                  <option value="0.8">0.8x</option>
-                  <option value="0.95">1.0x</option>
-      
+                <option value="0.7">0.8x</option>
+                  <option value="0.8">1.0x</option>
+              
                 </select>
               </div>
             </div>
