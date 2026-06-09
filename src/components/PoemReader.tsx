@@ -8,6 +8,7 @@ interface PoemReaderProps {
   onClose: () => void;
   onEdit: (poem: Poem) => void;
   isEditable?: boolean;
+  onSelectMedia?: (poem: Poem) => void;
 }
 
 export default function PoemReader({
@@ -16,6 +17,7 @@ export default function PoemReader({
   onClose,
   onEdit,
   isEditable = true,
+  onSelectMedia,
 }: PoemReaderProps) {
   const [copied, setCopied] = useState(false);
   const category = categories.find((c) => c.id === poem.categoryId);
@@ -142,28 +144,41 @@ export default function PoemReader({
                 <div
                   id={`reader-attach-card-${attach.id}`}
                   key={attach.id}
-                  className="border border-neutral-800 rounded-2xl overflow-hidden bg-neutral-950/80 shadow-md relative group"
+                  className="border border-neutral-800 rounded-2xl overflow-hidden bg-neutral-950/80 shadow-md relative group/media flex flex-col"
                 >
-                  <div className="p-3 flex justify-center items-center">
+                  <div 
+                    onClick={() => {
+                      if (onSelectMedia) {
+                        onSelectMedia(poem);
+                      }
+                    }}
+                    className="p-3 flex justify-center items-center cursor-pointer transition-all duration-300 hover:bg-neutral-900/40"
+                    title="Click to view full screen"
+                  >
                     {attach.type === 'image' ? (
                       <img
                         src={attach.url}
                         alt={attach.name}
-                        className="max-h-[300px] object-contain rounded-xl border border-neutral-850 bg-[#14151f] w-full"
+                        className="max-h-[300px] object-contain rounded-xl border border-neutral-850 bg-[#14151f] w-full transition-transform duration-300 group-hover/media:scale-102"
                         referrerPolicy="no-referrer"
                       />
                     ) : (
                       <video
                         src={attach.url}
-                        controls
-                        className="max-h-[300px] rounded-xl border border-neutral-850 w-full bg-neutral-900"
+                        className="max-h-[300px] rounded-xl border border-neutral-850 w-full bg-neutral-900 transition-transform duration-300 group-hover/media:scale-102"
+                        muted
+                        loop
+                        autoPlay
                         playsInline
                       />
                     )}
                   </div>
                   {/* Subtle info tag inside the reader container */}
-                  <div className="absolute right-4 bottom-4 px-2.5 py-1 bg-black/90 text-cyan-400 border border-cyan-900/50 rounded-full text-[9px] font-bold uppercase tracking-widest font-mono shadow-md">
+                  <div className="absolute left-4 bottom-4 px-2.5 py-1 bg-black/90 text-neutral-400 border border-neutral-800 rounded-full text-[9px] font-bold uppercase tracking-widest font-mono shadow-md">
                     {attach.type === 'image' ? '✦ Verse Illustration' : '✦ Video Reading'}
+                  </div>
+                  <div className="absolute right-4 bottom-4 px-2.5 py-1 bg-black/90 text-cyan-400 border border-cyan-900/50 rounded-full text-[9px] font-extrabold uppercase tracking-widest font-mono shadow-md opacity-0 group-hover/media:opacity-100 transition-opacity duration-300 flex items-center gap-1 pointer-events-none">
+                    <span>⛶ ENLARGE</span>
                   </div>
                 </div>
               ))}

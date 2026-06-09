@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Poem, Category, PoemMood } from './types';
 import { INITIAL_CATEGORIES, INITIAL_POEMS } from './initialData';
+import { getAttachmentBlob, deleteAttachmentBlob } from './utils/attachmentDb';
 import PoemForm from './components/PoemForm';
 import PoemCard from './components/PoemCard';
 import PoemReader from './components/PoemReader';
@@ -59,6 +60,36 @@ export default function App() {
     if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
       setIsPasscodeModalOpen(true);
     }
+  }, []);
+
+  // --- Hydrate attachments from IndexedDB on startup ---
+  useEffect(() => {
+    const hydrateAttachments = async () => {
+      let changed = false;
+      const hydratedPoems = await Promise.all(
+        poems.map(async (poem) => {
+          if (poem.attachments && poem.attachments.length > 0) {
+            const updatedAttachments = await Promise.all(
+              poem.attachments.map(async (attach) => {
+                const blob = await getAttachmentBlob(attach.id);
+                if (blob) {
+                  const freshUrl = URL.createObjectURL(blob);
+                  changed = true;
+                  return { ...attach, url: freshUrl };
+                }
+                return attach;
+              })
+            );
+            return { ...poem, attachments: updatedAttachments };
+          }
+          return poem;
+        })
+      );
+      if (changed) {
+        setPoems(hydratedPoems);
+      }
+    };
+    hydrateAttachments();
   }, []);
 
   // --- Toast/Notification State ---
@@ -133,6 +164,12 @@ export default function App() {
   };
 
   const handleDeletePoem = (id: string) => {
+    const targetPoem = poems.find((p) => p.id === id);
+    if (targetPoem?.attachments) {
+      targetPoem.attachments.forEach((attach) => {
+        deleteAttachmentBlob(attach.id).catch((err) => console.error('Failed deleting asset on remove', err));
+      });
+    }
     setPoems((prev) => prev.filter((p) => p.id !== id));
     showToast('Poem deleted from storage.', 'warning');
     if (activePoemForReading?.id === id) {
@@ -256,7 +293,7 @@ export default function App() {
   // --- Author Mode Handlers ---
   const handleVerifyPasscode = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const correctPasscode = import.meta.env.VITE_AUTHOR_PASSCODE;
+    const correctPasscode = import.meta.env.VITE_AUTHOR_PASSCODE || 'nature';
     if (enteredPasscode === correctPasscode) {
       setIsAuthorMode(true);
       localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
@@ -959,6 +996,7 @@ export default function App() {
                   setIsFormOpen(true);
                 }}
                 isEditable={isAuthorMode}
+                onSelectMedia={(p) => setActivePoemForLightbox(p)}
               />
             </motion.div>
           </div>

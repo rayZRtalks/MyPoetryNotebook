@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Poem, Category, PoemMood, PoemAttachment } from '../types';
 import { X, Check, Plus, Tag, FolderPlus, Paperclip, Image as ImageIcon, Video, AlertCircle } from 'lucide-react';
+import { storeAttachmentBlob, deleteAttachmentBlob } from '../utils/attachmentDb';
 
 interface PoemFormProps {
   poem?: Poem | null; // If editing
@@ -81,42 +82,42 @@ export default function PoemForm({
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg('');
     const files = e.target.files;
     if (!files) return;
 
-    Array.from(files).forEach((item) => {
+    for (const item of Array.from(files)) {
       const file = item as File;
       const isImage = file.type.startsWith('image/');
       const isVideo = file.type.startsWith('video/');
 
       if (!isImage && !isVideo) {
         setErrorMsg('Only image or video files are accepted as poem attachments.');
-        return;
+        continue;
       }
 
-      // No upload limit is enforced
+      const id = `attach-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      try {
+        // Store in IndexedDB
+        await storeAttachmentBlob(id, file);
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl) {
-          const newAttachment: PoemAttachment = {
-            id: `attach-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
-            name: file.name,
-            type: isImage ? 'image' : 'video',
-            url: dataUrl,
-            size: file.size,
-          };
-          setAttachments((prev) => [...prev, newAttachment]);
-        }
-      };
-      reader.onerror = () => {
-        setErrorMsg('Attempt to read this file failed.');
-      };
-      reader.readAsDataURL(file);
-    });
+        // Generate temporary object URL for immediate local preview
+        const objectUrl = URL.createObjectURL(file);
+
+        const newAttachment: PoemAttachment = {
+          id,
+          name: file.name,
+          type: isImage ? 'image' : 'video',
+          url: objectUrl,
+          size: file.size,
+        };
+        setAttachments((prev) => [...prev, newAttachment]);
+      } catch (err) {
+        setErrorMsg('Attempt to read or store this file failed.');
+        console.error('Failed storing into IDB', err);
+      }
+    }
 
     // Reset input elements
     if (fileInputRef.current) {
@@ -124,8 +125,9 @@ export default function PoemForm({
     }
   };
 
-  const handleRemoveAttachment = (id: string) => {
+  const handleRemoveAttachment = async (id: string) => {
     setAttachments((prev) => prev.filter((a) => a.id !== id));
+    await deleteAttachmentBlob(id);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
