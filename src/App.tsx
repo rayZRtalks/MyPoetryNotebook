@@ -529,7 +529,7 @@ export default function App() {
                     ? 'text-neutral-900 font-extrabold'
                     : 'text-[#f4f4f5]'
                 }`}>
-                  RayZR Talks
+                  rayZR Talks
                 </h1>
                 <p id="app-subheading" className={`text-xs md:text-sm font-medium tracking-wide mt-0.5 transition-all ${
                   appTheme === 'light'
@@ -878,13 +878,17 @@ export default function App() {
           <div className="flex items-center justify-between">
             <h2 id="room-header" className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono">
               {filteredPoems.length === poems.length 
-                ? '✦ Notebook Records Archive' 
-                : `✦ ${filteredPoems.length} of ${poems.length} verses revealed`}
+                ? '' 
+                : `✦ ${filteredPoems.length} of ${poems.length} items revealed`}
             </h2>
             {filteredPoems.length > 0 && (
               <span 
                 id="filtered-indicator" 
-                className="text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-full animate-pulse border text-cyan-400 bg-cyan-950/20 border-cyan-900/40"
+                className={`text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-full animate-pulse border transition-colors ${
+                  appTheme === 'light'
+                    ? 'text-neutral-750 bg-neutral-100 border-neutral-300'
+                    : 'text-cyan-400 bg-cyan-950/20 border-cyan-900/40'
+                }`}
               >
                 ✦ Click a verse card below to read details
               </span>
@@ -988,7 +992,7 @@ export default function App() {
       {/* Minimal Footer */}
       <footer id="primary-footer" className="bg-[#05060f] border-t border-neutral-900 py-6 px-4 md:px-8 mt-auto relative z-10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-neutral-500 font-semibold font-mono uppercase tracking-widest">
-          <p>© {new Date().getFullYear()} Poetry Notebook. Styled with {
+          <p>© {new Date().getFullYear()} Created by rayZRtalks | Powered by AI Studio. Styled with {
             appTheme === 'light' ? 'Light Mode' : 'Dark Mode'
           } accents.</p>
           <div className="flex items-center gap-4">
