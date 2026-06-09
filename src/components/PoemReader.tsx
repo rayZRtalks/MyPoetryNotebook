@@ -293,8 +293,10 @@ export default function PoemReader({
                   className="bg-neutral-950 border border-neutral-800 text-[10px] font-mono font-bold text-neutral-450 p-1.5 rounded-md cursor-pointer outline-none focus:border-cyan-500/40"
                   title="Recital pacing speed"
                 >
-                <option value="0.7">0.8x</option>
-                  <option value="0.8">1.0x</option>
+                <option value="0.5">0.6x</option>
+                <option value="0.6">0.8x</option>
+                <option value="0.7">1.0x</option>
+                
               
                 </select>
               </div>
