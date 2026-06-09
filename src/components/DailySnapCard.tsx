@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Poem } from '../types';
-import { Camera, Calendar, Trash2, Maximize2, Edit3, BookOpen } from 'lucide-react';
+import { Camera, Calendar, Trash2, Maximize2, Edit3, BookOpen, Lock } from 'lucide-react';
 
 interface DailySnapCardProps {
   poem: Poem;
@@ -62,9 +62,19 @@ export default function DailySnapCard({
             <Camera className="w-3 h-3 text-cyan-400 animate-pulse" />
             <span>Daily Snapshot</span>
           </span>
-          <span className="text-[8px] font-semibold font-mono text-neutral-500 uppercase">
-            STB_0{poem.id.slice(-4).toUpperCase()}
-          </span>
+          <div className="flex items-center gap-1.5 font-mono text-[8px] font-semibold text-neutral-500 uppercase">
+            {poem.isPrivate && (
+              <span className={`inline-flex items-center gap-0.5 font-bold px-1.5 py-0.5 rounded border ${
+                appTheme === 'light'
+                  ? 'text-amber-800 bg-amber-50 border-amber-200'
+                  : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
+              }`}>
+                <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
+                <span>PVT</span>
+              </span>
+            )}
+            <span>STB_0{poem.id.slice(-4).toUpperCase()}</span>
+          </div>
         </div>
 
         {/* Polaroid Inner Frame */}

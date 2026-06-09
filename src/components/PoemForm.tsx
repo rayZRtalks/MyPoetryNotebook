@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Poem, Category, PoemMood, PoemAttachment } from '../types';
-import { X, Check, Plus, Tag, FolderPlus, Paperclip, Image as ImageIcon, Video, AlertCircle } from 'lucide-react';
+import { X, Check, Plus, Tag, FolderPlus, Paperclip, Image as ImageIcon, Video, AlertCircle, Lock, Unlock } from 'lucide-react';
 import { storeAttachmentBlob, deleteAttachmentBlob } from '../utils/attachmentDb';
 
 interface PoemFormProps {
@@ -28,6 +28,7 @@ export default function PoemForm({
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [attachments, setAttachments] = useState<PoemAttachment[]>([]);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -44,6 +45,7 @@ export default function PoemForm({
       setMood(poem.mood || 'Reflective');
       setTags(poem.tags || []);
       setAttachments(poem.attachments || []);
+      setIsPrivate(poem.isPrivate || false);
     } else {
       setTitle('');
       setAuthor('');
@@ -52,6 +54,7 @@ export default function PoemForm({
       setMood('Reflective');
       setTags([]);
       setAttachments([]);
+      setIsPrivate(false);
     }
     setErrorMsg('');
   }, [poem, categories]);
@@ -143,6 +146,7 @@ export default function PoemForm({
       mood,
       tags,
       attachments,
+      isPrivate,
     });
   };
 
@@ -297,6 +301,47 @@ export default function PoemForm({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* Visibility / Privacy setting toggle */}
+      <div id="form-visibility-panel" className="p-4 bg-[#f5f5f7] border border-[#e8e8ed] rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-0.5">
+          <span className="text-xs font-bold text-[#1d1d1f] tracking-wide uppercase font-sans flex items-center gap-1.5">
+            {isPrivate ? <Lock className="w-3.5 h-3.5 text-amber-600" /> : <Unlock className="w-3.5 h-3.5 text-emerald-600" />}
+            Entry Visibility Setting
+          </span>
+          <p className="text-[11px] text-[#86868b] font-medium font-sans leading-relaxed">
+            {isPrivate 
+              ? "Private: Locked inside your ledger. Invisible to visitors, only shown when you authorize as the Author." 
+              : "Public: Visible to everyone visiting your poetic notebook archive."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <button
+            id="visibility-public-toggle"
+            type="button"
+            onClick={() => setIsPrivate(false)}
+            className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer border ${
+              !isPrivate 
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-300 shadow-xs' 
+                : 'bg-white text-neutral-400 border-neutral-200 hover:text-neutral-700'
+            }`}
+          >
+            Public
+          </button>
+          <button
+            id="visibility-private-toggle"
+            type="button"
+            onClick={() => setIsPrivate(true)}
+            className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider transition-all cursor-pointer border ${
+              isPrivate 
+                ? 'bg-amber-50 text-amber-700 border-amber-300 shadow-xs' 
+                : 'bg-white text-neutral-400 border-neutral-200 hover:text-neutral-700'
+            }`}
+          >
+            Private
+          </button>
         </div>
       </div>
 

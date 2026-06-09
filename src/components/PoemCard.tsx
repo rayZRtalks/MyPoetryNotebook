@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Poem, Category } from '../types';
-import { Edit3, Trash2, Calendar, BookOpen, Quote, Tag, Paperclip, Maximize2, Play, Eye } from 'lucide-react';
+import { Edit3, Trash2, Calendar, BookOpen, Quote, Tag, Paperclip, Maximize2, Play, Eye, Lock } from 'lucide-react';
 
 interface PoemCardProps {
   poem: Poem;
@@ -152,6 +152,21 @@ export default function PoemCard({
           </span>
           
           <div className="flex items-center gap-1 shrink-0">
+            {poem.isPrivate && (
+              <span
+                id={`card-private-badge-${poem.id}`}
+                className={`text-[9px] font-bold px-2 py-1 rounded-full border flex items-center gap-1 font-mono tracking-wider ${
+                  appTheme === 'light'
+                    ? 'text-amber-800 bg-amber-50 border-amber-200'
+                    : 'text-amber-500 bg-amber-950/30 border-amber-900/40'
+                }`}
+                title="Private Settings (Visible in Author Mode)"
+              >
+                <Lock className="w-2.5 h-2.5 text-amber-500" />
+                <span>PVT</span>
+              </span>
+            )}
+
             {poem.attachments && poem.attachments.length > 0 && (
               <span
                 id={`card-attach-badge-${poem.id}`}

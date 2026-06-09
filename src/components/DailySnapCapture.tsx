@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Upload, X, Check, RotateCcw, AlertCircle, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, X, Check, RotateCcw, AlertCircle, Image as ImageIcon, Lock, Unlock } from 'lucide-react';
 import { PoemAttachment, Poem } from '../types';
 import { storeAttachmentBlob } from '../utils/attachmentDb';
 
 interface DailySnapCaptureProps {
-  onSave: (snapData: Omit<Poem, 'id' | 'createdAt'> & { createdAt?: string }) => void;
+  onSave: (snapData: Omit<Poem, 'id' | 'createdAt'> & { createdAt?: string; isPrivate?: boolean }) => void;
   onCancel: () => void;
   appTheme?: 'dark' | 'light';
   editPoem?: Poem | null;
@@ -21,6 +21,7 @@ export default function DailySnapCapture({
   const [capturedUrl, setCapturedUrl] = useState<string>(editPoem?.attachments?.[0]?.url || '');
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
   const [caption, setCaption] = useState<string>(editPoem?.body || '');
+  const [isPrivate, setIsPrivate] = useState<boolean>(editPoem?.isPrivate || false);
   const [cameraError, setCameraError] = useState<string>('');
   const [showFlash, setShowFlash] = useState<boolean>(false);
 
@@ -181,6 +182,7 @@ export default function DailySnapCapture({
       mood: 'Reflective',
       attachments: [snapAttachment],
       isPhotoCapture: true,
+      isPrivate,
       ...(editPoem ? { createdAt: editPoem.createdAt } : {}),
     });
   };
@@ -339,6 +341,49 @@ export default function DailySnapCapture({
               className="w-full h-20 bg-[#0c0d15] border border-neutral-800 rounded-xl p-3 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:border-cyan-500/50 resize-none leading-relaxed transition-all"
               required
             />
+          </div>
+        )}
+
+        {/* Visibility Setting */}
+        {capturedUrl && (
+          <div id="snap-visibility-panel" className="p-4 bg-[#0c0d15] border border-neutral-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-bold text-neutral-300 tracking-wider uppercase font-mono flex items-center gap-1.5">
+                {isPrivate ? <Lock className="w-3.5 h-3.5 text-amber-500" /> : <Unlock className="w-3.5 h-3.5 text-cyan-400" />}
+                Visibility Setting
+              </span>
+              <p className="text-[10px] text-neutral-500 font-mono tracking-tight leading-relaxed">
+                {isPrivate 
+                  ? "Private: Invisible to the public, viewable only in Author Mode." 
+                  : "Public: Visible to everyone visiting your notebook page."}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+              <button
+                id="snap-public-toggle"
+                type="button"
+                onClick={() => setIsPrivate(false)}
+                className={`px-3 py-1 rounded-full text-[9px] font-mono font-bold uppercase transition-all cursor-pointer border ${
+                  !isPrivate 
+                    ? 'bg-cyan-950/40 text-cyan-400 border-cyan-800/60 shadow-lg shadow-cyan-500/10' 
+                    : 'bg-[#05060f] text-neutral-500 border-neutral-800/80 hover:text-neutral-300'
+                }`}
+              >
+                Public
+              </button>
+              <button
+                id="snap-private-toggle"
+                type="button"
+                onClick={() => setIsPrivate(true)}
+                className={`px-3 py-1 rounded-full text-[9px] font-mono font-bold uppercase transition-all cursor-pointer border ${
+                  isPrivate 
+                    ? 'bg-amber-950/40 text-amber-500 border-amber-800/60 shadow-lg shadow-amber-500/10' 
+                    : 'bg-[#05060f] text-neutral-500 border-neutral-800/80 hover:text-neutral-300'
+                }`}
+              >
+                Private
+              </button>
+            </div>
           </div>
         )}
 

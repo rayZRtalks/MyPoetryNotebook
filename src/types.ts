@@ -26,4 +26,5 @@ export interface Poem {
   updatedAt?: string;
   attachments?: PoemAttachment[];
   isPhotoCapture?: boolean;
+  isPrivate?: boolean;
 }

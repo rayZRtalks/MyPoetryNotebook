@@ -399,6 +399,11 @@ export default function App() {
 
   // --- Pure Search & Filter logic computation ---
   const filteredPoems = poems.filter((poem) => {
+    // Hide private poems or snaps when not in Author Mode
+    if (poem.isPrivate && !isAuthorMode) {
+      return false;
+    }
+
     const searchString = searchQuery.toLowerCase().trim();
     const matchQuery = 
       !searchString ||
