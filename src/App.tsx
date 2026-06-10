@@ -20,38 +20,17 @@ import PoemReader from './components/PoemReader';
 import DailySnapCapture from './components/DailySnapCapture';
 import DailySnapCard from './components/DailySnapCard';
 
+// Firebase Integrations
+import { db, auth, handleFirestoreError, OperationType } from './firebase';
+import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+
 export default function App() {
   // --- Persistent States ---
-  const [poems, setPoems] = useState<Poem[]>(() => {
-    try {
-      const saved = localStorage.getItem('poetry_notebook_poems');
-      if (!saved) return INITIAL_POEMS;
-      let parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) {
-        parsed = parsed.map((poem: any) => {
-          if (poem.attachments) {
-            poem.attachments = poem.attachments.map((attach: any) => {
-              if (attach.url && attach.url.startsWith('data:')) {
-                return { ...attach, url: '' };
-              }
-              return attach;
-            });
-          }
-          return poem;
-        });
-        return parsed;
-      }
-      return INITIAL_POEMS;
-    } catch (e) {
-      console.error('Failed to parse poems from localStorage', e);
-      return INITIAL_POEMS;
-    }
-  });
-
-  const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem('poetry_notebook_categories');
-    return saved ? JSON.parse(saved) : INITIAL_CATEGORIES;
-  });
+  const [poems, setPoems] = useState<Poem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isDbLoading, setIsDbLoading] = useState(true);
 
   const [appTheme, setAppTheme] = useState<'dark' | 'light'>(() => {
     try {
@@ -84,43 +63,98 @@ export default function App() {
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
-  // --- Check URL parameters for secret admin trigger ---
+  // --- Sync with Firebase Firestore & Auth ---
   useEffect(() => {
+    // 1. Sync categories
+    const unsubscribeCats = onSnapshot(collection(db, 'categories'), (snapshot) => {
+      const catsData: Category[] = [];
+      snapshot.forEach((snapDoc) => {
+        catsData.push({ id: snapDoc.id, ...snapDoc.data() } as Category);
+      });
+
+      if (catsData.length === 0) {
+        const seedCats = async () => {
+          try {
+            const batch = writeBatch(db);
+            INITIAL_CATEGORIES.forEach((cat) => {
+              batch.set(doc(db, 'categories', cat.id), cat);
+            });
+            await batch.commit();
+          } catch (e) {
+            console.error('Failed to auto-seed categories:', e);
+          }
+        };
+        seedCats();
+      } else {
+        setCategories(catsData);
+      }
+    }, (error) => {
+      console.error('Firestore categories sync error:', error);
+    });
+
+    // 2. Sync poems
+    const unsubscribePoems = onSnapshot(collection(db, 'poems'), (snapshot) => {
+      const poemsData: Poem[] = [];
+      snapshot.forEach((snapDoc) => {
+        poemsData.push({ id: snapDoc.id, ...snapDoc.data() } as Poem);
+      });
+
+      if (poemsData.length === 0) {
+        const seedPoems = async () => {
+          try {
+            const batch = writeBatch(db);
+            INITIAL_POEMS.forEach((poem) => {
+              batch.set(doc(db, 'poems', poem.id), poem);
+            });
+            await batch.commit();
+          } catch (e) {
+            console.error('Failed to auto-seed poems:', e);
+          }
+        };
+        seedPoems();
+      } else {
+        setPoems(poemsData);
+        setIsDbLoading(false);
+      }
+    }, (error) => {
+      console.error('Firestore poems sync error:', error);
+    });
+
+    // 3. Monitor auth state (Google login)
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (user) {
+        if (user.email === 'soumyaranjan.ray@gmail.com') {
+          setIsAuthorMode(true);
+          localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
+          showToast(`Welcome back, Author Soumya! Cloud sync is live.`, 'success');
+        } else {
+          // Logged in with different email
+          setIsAuthorMode(false);
+          localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
+          showToast(`Authenticated as ${user.email}. Read-Only view active.`, 'info');
+        }
+      } else {
+        // Logged out
+        const saved = localStorage.getItem('poetry_notebook_is_author_authenticated');
+        if (saved !== 'true') {
+          setIsAuthorMode(false);
+        }
+      }
+    });
+
+    // 4. URL query triggers
     const params = new URLSearchParams(window.location.search);
     if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
       setIsAuthorMode(true);
       setIsPasscodeModalOpen(false);
     }
-  }, []);
 
-  // --- Hydrate attachments from IndexedDB on startup ---
-  useEffect(() => {
-    const hydrateAttachments = async () => {
-      let changed = false;
-      const hydratedPoems = await Promise.all(
-        poems.map(async (poem) => {
-          if (poem.attachments && poem.attachments.length > 0) {
-            const updatedAttachments = await Promise.all(
-              poem.attachments.map(async (attach) => {
-                const blob = await getAttachmentBlob(attach.id);
-                if (blob) {
-                  const freshUrl = URL.createObjectURL(blob);
-                  changed = true;
-                  return { ...attach, url: freshUrl };
-                }
-                return attach;
-              })
-            );
-            return { ...poem, attachments: updatedAttachments };
-          }
-          return poem;
-        })
-      );
-      if (changed) {
-        setPoems(hydratedPoems);
-      }
+    return () => {
+      unsubscribeCats();
+      unsubscribePoems();
+      unsubscribeAuth();
     };
-    hydrateAttachments();
   }, []);
 
   // --- Toast/Notification State ---
@@ -139,10 +173,10 @@ export default function App() {
         return true;
       }
       const saved = localStorage.getItem('poetry_notebook_is_author_authenticated');
-      // If was explicitly locked to false, load as false. Else default to true for author session confidence.
-      return saved !== 'false';
+      // Default to false for the public, so they don't see author tools.
+      return saved === 'true';
     } catch {
-      return true;
+      return false;
     }
   });
   const [isPasscodeModalOpen, setIsPasscodeModalOpen] = useState(false);
@@ -177,58 +211,50 @@ export default function App() {
 
   // --- Save to LocalStorage ---
   useEffect(() => {
-    localStorage.setItem('poetry_notebook_poems', JSON.stringify(poems));
-  }, [poems]);
-
-  useEffect(() => {
-    localStorage.setItem('poetry_notebook_categories', JSON.stringify(categories));
-  }, [categories]);
-
-  useEffect(() => {
     localStorage.setItem('poetry_notebook_grid_overlay', String(gridOverlayEnabled));
   }, [gridOverlayEnabled]);
 
   // --- Poem Operations ---
-  const handleSavePoem = (poemData: Omit<Poem, 'id' | 'createdAt'> & { id?: string }) => {
-    if (poemData.id) {
-      // Editing
-      setPoems((prev) =>
-        prev.map((p) =>
-          p.id === poemData.id
-            ? {
-                ...p,
-                ...poemData,
-                updatedAt: new Date().toISOString(),
-              }
-            : p
-        )
-      );
-      showToast('Poem updated and saved properly.', 'success');
-    } else {
-      // Creating
-      const newPoem: Poem = {
-        ...poemData,
-        id: `poem-${Date.now()}`,
-        createdAt: new Date().toISOString(),
-      };
-      setPoems((prev) => [newPoem, ...prev]);
-      showToast('New poem added to your journal.', 'success');
+  const handleSavePoem = async (poemData: Omit<Poem, 'id' | 'createdAt'> & { id?: string }) => {
+    try {
+      const isEdit = !!poemData.id;
+      const id = poemData.id || `poem-${Date.now()}`;
+      const docRef = doc(db, 'poems', id);
+
+      if (isEdit) {
+        await setDoc(docRef, {
+          ...poemData,
+          id,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+        showToast('Poem updated and synchronized to cloud.', 'success');
+      } else {
+        const newPoem: Poem = {
+          ...poemData,
+          id,
+          createdAt: new Date().toISOString(),
+        };
+        await setDoc(docRef, newPoem);
+        showToast('New poem published to cloud.', 'success');
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `poems/${poemData.id || 'new'}`);
+      showToast('Save failed. Write permissions are private/secured.', 'error');
     }
     setIsFormOpen(false);
     setActivePoemForEditing(null);
   };
 
-  const handleDeletePoem = (id: string) => {
-    const targetPoem = poems.find((p) => p.id === id);
-    if (targetPoem?.attachments) {
-      targetPoem.attachments.forEach((attach) => {
-        deleteAttachmentBlob(attach.id).catch((err) => console.error('Failed deleting asset on remove', err));
-      });
-    }
-    setPoems((prev) => prev.filter((p) => p.id !== id));
-    showToast('Poem deleted from storage.', 'warning');
-    if (activePoemForReading?.id === id) {
-      setActivePoemForReading(null);
+  const handleDeletePoem = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'poems', id));
+      showToast('Poem permanently removed from cloud.', 'warning');
+      if (activePoemForReading?.id === id) {
+        setActivePoemForReading(null);
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `poems/${id}`);
+      showToast('Failed to delete poem. Cloud storage is write-secured.', 'error');
     }
   };
 
@@ -258,36 +284,51 @@ export default function App() {
       color: newColor,
     };
 
-    setCategories((prev) => [...prev, newCat]);
-    showToast(`Category "${trimmed}" added successfully.`, 'success');
+    const saveCat = async () => {
+      try {
+        await setDoc(doc(db, 'categories', newCat.id), newCat);
+        showToast(`Category "${trimmed}" synced to Firestore.`, 'success');
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, `categories/${newCat.id}`);
+        showToast('Failed to save category. Cloud storage is write-secured.', 'error');
+      }
+    };
+    saveCat();
+
     return newCat;
   };
 
-  const handleDeleteCategory = (catId: string) => {
-    // We forbid deleting the sole category
+  const handleDeleteCategory = async (catId: string) => {
     if (categories.length <= 1) {
       showToast('You must keep at least one category.', 'error');
       return;
     }
 
-    // Delete category
-    setCategories((prev) => prev.filter((c) => c.id !== catId));
-
-    // Re-assign poems in this category to the first remaining category
     const remainingCats = categories.filter((c) => c.id !== catId);
     const backupCatId = remainingCats[0]?.id || '';
 
-    setPoems((prev) =>
-      prev.map((poem) =>
-        poem.categoryId === catId ? { ...poem, categoryId: backupCatId } : poem
-      )
-    );
+    try {
+      // 1. Delete the category doc
+      await deleteDoc(doc(db, 'categories', catId));
 
-    if (selectedCatId === catId) {
-      setSelectedCatId('all');
+      // 2. Re-assign poems in this category on cloud in a batch
+      const batch = writeBatch(db);
+      const affectedPoems = poems.filter((poem) => poem.categoryId === catId);
+      
+      affectedPoems.forEach((p) => {
+        batch.update(doc(db, 'poems', p.id), { categoryId: backupCatId });
+      });
+      await batch.commit();
+
+      if (selectedCatId === catId) {
+        setSelectedCatId('all');
+      }
+
+      showToast('Category deleted. Affected poems re-routed on cloud.', 'info');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `categories/${catId}`);
+      showToast('Failed to delete category. Cloud database is write-secured.', 'error');
     }
-
-    showToast('Category deleted. Affected poems re-routed.', 'info');
   };
 
   // --- Backup Handlers (Local Files Integration) ---
@@ -345,6 +386,31 @@ export default function App() {
     showToast('Reverted notebook to demo poems.', 'info');
   };
 
+  // --- Google Auth Sign In Handlers ---
+  const handleGoogleSignIn = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      await signInWithPopup(auth, provider);
+      setIsPasscodeModalOpen(false);
+    } catch (error) {
+      console.error('Failed to sign in with Google:', error);
+      showToast('Google Authenticator popup was closed or failed.', 'error');
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      setIsAuthorMode(false);
+      localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
+      showToast('Successfully signed out.', 'success');
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+      showToast('Sign out failed.', 'error');
+    }
+  };
+
   // --- Author Mode Handlers ---
   const handleVerifyPasscode = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -355,46 +421,51 @@ export default function App() {
       setIsPasscodeModalOpen(false);
       setEnteredPasscode('');
       setPasscodeError(false);
-      showToast('Welcome, Author. Your inkwell is prepared.', 'success');
+      showToast('Welcome back, Author. (Cloud writes require Google Auth login).', 'success');
     } else {
       setPasscodeError(true);
       showToast('Passcode incorrect. The quill remains locked.', 'error');
     }
   };
 
-  const handleLockAuthorMode = () => {
+  const handleLockAuthorMode = async () => {
+    try {
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
+    } catch (e) {
+      console.error('Sign out failed on lock', e);
+    }
     setIsAuthorMode(false);
     localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
     showToast('Securely returned to viewer-only mode.', 'info');
   };
 
-  const handleSaveLightboxVerseChange = () => {
+  const handleSaveLightboxVerseChange = async () => {
     if (!activePoemForLightbox) return;
     
-    // Update the poem in the master poems array
-    setPoems((prev) =>
-      prev.map((p) =>
-        p.id === activePoemForLightbox.id
-          ? {
-              ...p,
-              body: editedVerseText,
-              updatedAt: new Date().toISOString(),
-            }
-          : p
-      )
-    );
-
-    // Update active poem inside lightbox too!
-    setActivePoemForLightbox((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
+    try {
+      const docRef = doc(db, 'poems', activePoemForLightbox.id);
+      await setDoc(docRef, {
         body: editedVerseText,
-      };
-    });
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
 
-    setIsEditingVerse(false);
-    showToast('Verse text updated and catalogued successfully.', 'success');
+      // Update active poem inside lightbox too!
+      setActivePoemForLightbox((prev) => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          body: editedVerseText,
+        };
+      });
+
+      setIsEditingVerse(false);
+      showToast('Verse text updated and catalogued successfully on cloud.', 'success');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `poems/${activePoemForLightbox.id}`);
+      showToast('Failed to save edit on cloud. Write permissions are secured.', 'error');
+    }
   };
 
   // --- Pure Search & Filter logic computation ---
@@ -891,7 +962,7 @@ export default function App() {
                 id="filtered-indicator" 
                 className={`text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-full animate-pulse border transition-colors ${
                   appTheme === 'light'
-                    ? 'text-neutral-750 bg-neutral-100 border-neutral-300'
+                    ? 'text-neutral-700 bg-neutral-100 border-neutral-300'
                     : 'text-cyan-400 bg-cyan-950/20 border-cyan-900/40'
                 }`}
               >
@@ -1675,6 +1746,42 @@ export default function App() {
                   </div>
                 </div>
               </form>
+
+              <div className="relative py-2 select-none">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-neutral-800"></div>
+                </div>
+                <div className="relative flex justify-center text-[9px] uppercase font-mono tracking-widest text-neutral-500">
+                  <span className="bg-[#0c0d14] px-2 font-bold">OR CLOUD VERIFIED AUTHOR</span>
+                </div>
+              </div>
+
+              <button
+                id="btn-google-signin"
+                type="button"
+                onClick={handleGoogleSignIn}
+                className="w-full flex items-center justify-center gap-2.5 py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-neutral-250 font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer font-sans"
+              >
+                <svg className="w-4 h-4 shrink-0 text-white" viewBox="0 0 24 24">
+                  <path
+                    fill="currentColor"
+                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                  />
+                  <path
+                    fill="currentColor"
+                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                  />
+                </svg>
+                Sign in with Google
+              </button>
             </motion.div>
           </div>
         )}

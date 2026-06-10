@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAuthor() {
+      return isSignedIn() && 
+             request.auth.token.email_verified == true && 
+             request.auth.token.email == 'soumyaranjan.ray@gmail.com';
+    }
+
+    // Validation functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll(['id', 'name', 'color']) &&
+             data.keys().size() >= 3 &&
+             data.id is string && data.id.size() <= 100 &&
+             data.name is string && data.name.size() <= 100 &&
+             data.color is string && data.color.size() <= 200;
+    }
+
+    function isValidPoem(data) {
+      return data.keys().hasAll(['id', 'title', 'body', 'categoryId', 'tags', 'createdAt']) &&
+             data.keys().size() >= 6 &&
+             data.id is string && data.id.size() <= 100 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.body is string && data.body.size() <= 100000 &&
+             data.categoryId is string && data.categoryId.size() <= 100 &&
+             data.tags is list && data.tags.size() <= 50 &&
+             data.createdAt is string;
+    }
+
+    // Collection: categories
+    match /categories/{categoryId} {
+      // Free public read access for compiling visual indexes
+      allow read: if true;
+      
+      // Authoritative write access
+      allow create, update: if isAuthor() && isValidCategory(request.resource.data) && isValidId(categoryId);
+      allow delete: if isAuthor();
+    }
+
+    // Collection: poems
+    match /poems/{poemId} {
+      // Dynamic Read: anyone can read public poems. Private poems require being the designated Author.
+      allow read: if (resource == null) || 
+                   (resource.data.isPrivate != true) || 
+                   isAuthor();
+
+      // Secure write gates
+      allow create: if isAuthor() && isValidPoem(request.resource.data) && isValidId(poemId);
+      allow update: if isAuthor() && isValidPoem(request.resource.data) && isValidId(poemId);
+      allow delete: if isAuthor();
+    }
+  }
+}

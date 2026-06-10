@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Poem, Category, PoemMood, PoemAttachment } from '../types';
 import { X, Check, Plus, Tag, FolderPlus, Paperclip, Image as ImageIcon, Video, AlertCircle, Lock, Unlock } from 'lucide-react';
 import { storeAttachmentBlob, deleteAttachmentBlob } from '../utils/attachmentDb';
+import { uploadToStorage } from '../firebase';
 
 interface PoemFormProps {
   poem?: Poem | null; // If editing
@@ -30,6 +31,7 @@ export default function PoemForm({
   const [attachments, setAttachments] = useState<PoemAttachment[]>([]);
   const [isPrivate, setIsPrivate] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Custom new category creation box state
@@ -102,23 +104,32 @@ export default function PoemForm({
 
       const id = `attach-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
       try {
-        // Store in IndexedDB
+        setIsUploadingMedia(true);
+        // Store in IndexedDB locally as a fallback
         await storeAttachmentBlob(id, file);
 
-        // Generate temporary object URL for immediate local preview
-        const objectUrl = URL.createObjectURL(file);
+        // Upload to Firebase Storage for cloud persistence
+        let finalUrl = '';
+        try {
+          finalUrl = await uploadToStorage(id, file);
+        } catch (storageErr) {
+          console.error('Firebase Storage upload failed, fallback to local URL', storageErr);
+          finalUrl = URL.createObjectURL(file);
+        }
 
         const newAttachment: PoemAttachment = {
           id,
           name: file.name,
           type: isImage ? 'image' : 'video',
-          url: objectUrl,
+          url: finalUrl,
           size: file.size,
         };
         setAttachments((prev) => [...prev, newAttachment]);
       } catch (err) {
         setErrorMsg('Attempt to read or store this file failed.');
-        console.error('Failed storing into IDB', err);
+        console.error('Failed storing into IDB or Cloud Storage', err);
+      } finally {
+        setIsUploadingMedia(false);
       }
     }
 
@@ -362,12 +373,26 @@ export default function PoemForm({
           {/* File selector card */}
           <div
             id="form-attachment-dropzone"
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-[#e8e8ed] hover:border-[#0071e3]/60 bg-[#f5f5f7] hover:bg-[#e8e8ed]/55 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all min-h-[140px] group"
+            onClick={() => { if (!isUploadingMedia) fileInputRef.current?.click(); }}
+            className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all min-h-[140px] group ${
+              isUploadingMedia 
+                ? 'border-cyan-200 bg-cyan-50/20 cursor-wait' 
+                : 'border-[#e8e8ed] hover:border-[#0071e3]/60 bg-[#f5f5f7] hover:bg-[#e8e8ed]/55'
+            }`}
           >
-            <Paperclip className="w-6 h-6 text-[#86868b] group-hover:text-[#0071e3] mb-2 transition-colors" />
-            <span className="text-xs font-bold text-[#1d1d1f] group-hover:text-[#0071e3] transition-colors font-sans">Direct Upload Media</span>
-            <span className="text-[10px] text-[#86868b] mt-1 max-w-[150px] font-sans font-medium">JPEG, PNG, MP4</span>
+            {isUploadingMedia ? (
+              <>
+                <div className="w-6 h-6 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mb-2" />
+                <span className="text-xs font-bold text-cyan-600 font-sans">Uploading to Cloud...</span>
+                <span className="text-[10px] text-neutral-500 mt-1 font-sans">Storing public attachment</span>
+              </>
+            ) : (
+              <>
+                <Paperclip className="w-6 h-6 text-[#86868b] group-hover:text-[#0071e3] mb-2 transition-colors" />
+                <span className="text-xs font-bold text-[#1d1d1f] group-hover:text-[#0071e3] transition-colors font-sans">Direct Upload Media</span>
+                <span className="text-[10px] text-[#86868b] mt-1 max-w-[150px] font-sans font-medium">JPEG, PNG, MP4</span>
+              </>
+            )}
             <input
               id="file-attachment-input"
               ref={fileInputRef}
@@ -376,6 +401,7 @@ export default function PoemForm({
               multiple
               onChange={handleFileChange}
               className="hidden"
+              disabled={isUploadingMedia}
             />
           </div>
  

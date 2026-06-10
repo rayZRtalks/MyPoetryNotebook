@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "category": {
+      "title": "Category",
+      "description": "Poetry category metadata",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the category"
+        },
+        "name": {
+          "type": "string",
+          "description": "The displayed name of the category"
+        },
+        "color": {
+          "type": "string",
+          "description": "Hex or Tailwind CSS colors for highlight background and borders"
+        }
+      },
+      "required": ["id", "name", "color"]
+    },
+    "poem": {
+      "title": "Poem",
+      "description": "A poetic verse or physical daily snapshot with caption and media",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique document ID"
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of the poem or caption container"
+        },
+        "body": {
+          "type": "string",
+          "description": "Poem content or caption content"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Category ID the poem matches to"
+        },
+        "tags": {
+          "type": "array",
+          "description": "A set of tags/keywords for indexing"
+        },
+        "mood": {
+          "type": "string",
+          "description": "The general mood of the item"
+        },
+        "author": {
+          "type": "string",
+          "description": "The author of the poem"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        },
+        "attachments": {
+          "type": "array",
+          "description": "Media attachments linked to the poem"
+        },
+        "isPhotoCapture": {
+          "type": "boolean",
+          "description": "Whether the entry is a daily snapshot image capture"
+        },
+        "isPrivate": {
+          "type": "boolean",
+          "description": "Whether the entry is restricted from public viewing"
+        }
+      },
+      "required": ["id", "title", "body", "categoryId", "tags", "createdAt"]
+    }
+  },
+  "firestore": {
+    "categories/{categoryId}": {
+      "schema": "category",
+      "description": "Available categories in the Poetry platform"
+    },
+    "poems/{poemId}": {
+      "schema": "poem",
+      "description": "Catalog of shared and private poetry and snapshots"
+    }
+  }
+}

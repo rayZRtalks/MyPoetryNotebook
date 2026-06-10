@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Upload, X, Check, RotateCcw, AlertCircle, Image as ImageIcon, Lock, Unlock } from 'lucide-react';
 import { PoemAttachment, Poem } from '../types';
 import { storeAttachmentBlob } from '../utils/attachmentDb';
+import { uploadToStorage } from '../firebase';
 
 interface DailySnapCaptureProps {
   onSave: (snapData: Omit<Poem, 'id' | 'createdAt'> & { createdAt?: string; isPrivate?: boolean }) => void;
@@ -20,6 +21,7 @@ export default function DailySnapCapture({
   const [useCamera, setUseCamera] = useState<boolean>(!editPoem);
   const [capturedUrl, setCapturedUrl] = useState<string>(editPoem?.attachments?.[0]?.url || '');
   const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   const [caption, setCaption] = useState<string>(editPoem?.body || '');
   const [isPrivate, setIsPrivate] = useState<boolean>(editPoem?.isPrivate || false);
   const [cameraError, setCameraError] = useState<string>('');
@@ -146,17 +148,27 @@ export default function DailySnapCapture({
     if (capturedBlob) {
       const attachmentId = `attach-snap-${Date.now()}`;
       try {
+        setIsUploading(true);
         // Store picture blob in IndexedDB
         await storeAttachmentBlob(attachmentId, capturedBlob);
+
+        let cloudUrl = '';
+        try {
+          cloudUrl = await uploadToStorage(attachmentId, capturedBlob);
+        } catch (err) {
+          console.error('Failed to upload snap to Firebase Storage', err);
+        }
 
         snapAttachment = {
           id: attachmentId,
           name: `Daily_Capture_${Date.now()}.jpg`,
           type: 'image',
-          url: capturedUrl,
+          url: cloudUrl || capturedUrl,
         };
       } catch (err) {
         console.error('Failed to save snap to IndexedDB', err);
+      } finally {
+        setIsUploading(false);
       }
     }
 
@@ -391,10 +403,22 @@ export default function DailySnapCapture({
         {capturedUrl && (
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-cyan-500 via-indigo-500 to-fuchsia-500 hover:from-cyan-400 hover:to-fuchsia-400 text-neutral-950 font-display uppercase tracking-widest text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-lg hover:shadow-cyan-500/25 active:scale-[0.99] text-center"
+            disabled={isUploading}
+            className={`w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-cyan-500 via-indigo-500 to-fuchsia-500 hover:from-cyan-400 hover:to-fuchsia-400 text-neutral-950 font-display uppercase tracking-widest text-xs font-extrabold rounded-xl transition-all shadow-lg hover:shadow-cyan-500/25 active:scale-[0.99] text-center ${
+              isUploading ? 'opacity-50 cursor-wait' : 'cursor-pointer'
+            }`}
           >
-            <Check className="w-4 h-4 text-neutral-950 stroke-[3]" />
-            <span>{editPoem ? 'Update Snapshot Details' : 'Publish Daily Snapshot'}</span>
+            {isUploading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-neutral-950 border-t-transparent rounded-full animate-spin" />
+                <span>Uploading Snapshot...</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4 text-neutral-950 stroke-[3]" />
+                <span>{editPoem ? 'Update Snapshot Details' : 'Publish Daily Snapshot'}</span>
+              </>
+            )}
           </button>
         )}
       </form>
