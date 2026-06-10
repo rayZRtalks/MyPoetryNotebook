@@ -522,6 +522,8 @@ export default function App() {
   // Extract all unique tags for supplementary tags filters if wished
   const allUniqueTags = Array.from(new Set(poems.flatMap((p) => p.tags || []))).slice(0, 15);
 
+  const hasAttachmentForLightbox = !!(activePoemForLightbox?.attachments && activePoemForLightbox.attachments.length > 0);
+
   return (
     <div id="app-root" className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden transition-colors duration-500 ${
       appTheme === 'light'
@@ -1262,7 +1264,11 @@ export default function App() {
                className="bg-neutral-950 border border-neutral-800/80 rounded-2xl w-full max-w-6xl h-[85vh] md:h-[80vh] flex flex-col md:flex-row overflow-hidden relative z-10 shadow-[0_0_80px_rgba(6,182,212,0.18)]"
              >
                {/* 1. Primary Widescreen Media Display Area */}
-               <div className="flex-1 bg-black relative flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-neutral-900 group">
+               <div className={`bg-black relative flex items-center justify-center overflow-hidden border-b md:border-b-0 md:border-r border-neutral-900 group transition-all duration-300 ${
+                 hasAttachmentForLightbox 
+                   ? 'h-[55%] md:h-auto md:flex-1' 
+                   : 'h-[15%] md:h-auto md:flex-1'
+               }`}>
                  {/* Blueprint coordinate matrix background */}
                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.012)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.012)_1px,transparent_1px)] bg-[size:24px_24px] opacity-40 pointer-events-none" />
                  
@@ -1292,11 +1298,11 @@ export default function App() {
                    )
                  ) : (
                    /* Colossal Fallback CSS Typography Specimen Screen */
-                   <div className="absolute inset-0 flex flex-col items-center justify-center p-8 select-none text-center">
-                     <span className="font-sans font-black text-[12vw] leading-none text-neutral-900/60 tracking-tighter uppercase mb-2 animate-pulse">
+                   <div className="absolute inset-0 flex flex-col items-center justify-center p-4 md:p-8 select-none text-center">
+                     <span className="font-sans font-black text-[6vw] md:text-[12vw] leading-none text-neutral-900/60 tracking-tighter uppercase mb-1 md:mb-2 animate-pulse">
                        {activePoemForLightbox.title.split(' ').map(w => w ? w[0] : '').join('').slice(0, 2).toUpperCase() || activePoemForLightbox.title.slice(0, 2).toUpperCase()}
                      </span>
-                     <p className="font-mono text-xs text-neutral-600 uppercase tracking-widest leading-relaxed max-w-xs">
+                     <p className="hidden md:block font-mono text-xs text-neutral-600 uppercase tracking-widest leading-relaxed max-w-xs">
                        [ TYPOGRAPHIC SPECIMEN GRAPHIC // NO COVER MEDIA ASSOCIATED ]
                      </p>
                    </div>
@@ -1338,7 +1344,11 @@ export default function App() {
                </div>
 
                {/* 2. Side Metadata Ledger Panel & Scrollable Excerpt */}
-               <div className="w-full md:w-96 p-6 sm:p-8 flex flex-col justify-between bg-[#08090f] border-t md:border-t-0 md:border-l border-neutral-900 relative">
+               <div className={`w-full md:w-96 flex flex-col justify-between bg-[#08090f] border-t md:border-t-0 md:border-l border-neutral-900 relative overflow-y-auto transition-all duration-300 ${
+                 hasAttachmentForLightbox 
+                   ? 'h-[45%] md:h-full p-4 sm:p-6 md:p-8' 
+                   : 'h-[85%] md:h-full p-6 sm:p-8 md:p-8'
+               }`}>
                  <div>
                    {/* Ledger Header: Micro specs */}
                    <div className="flex items-center justify-between border-b border-neutral-900 pb-4 mb-6">
@@ -1424,7 +1434,11 @@ export default function App() {
                          </div>
                        ) : (
                          <div 
-                           className={`bg-[#0b0c13] border border-neutral-900 p-4 rounded-xl max-h-48 overflow-y-auto ${!isAuthorMode ? 'select-none' : ''}`}
+                           className={`bg-[#0b0c13] border border-neutral-900 p-4 rounded-xl overflow-y-auto ${!isAuthorMode ? 'select-none' : ''} ${
+                             hasAttachmentForLightbox 
+                               ? 'max-h-20 md:max-h-48' 
+                               : 'max-h-64 md:max-h-48'
+                           }`}
                            onContextMenu={(e) => { if (!isAuthorMode) e.preventDefault(); }}
                            onCopy={(e) => { if (!isAuthorMode) e.preventDefault(); }}
                          >

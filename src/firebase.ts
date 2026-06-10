@@ -58,16 +58,25 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 
 /**
  * Uploads a file or snapshot blob to Firebase Storage and returns the public download URL.
+ * Wraps upload request in a timeout to ensure quick fallback if client/Storage is slow or blocked.
  */
 export async function uploadToStorage(id: string, blob: Blob | File): Promise<string> {
-  try {
+  const timeoutMs = 8000; // 8 seconds timeout
+  const uploadPromise = (async () => {
     const fileRef = ref(storage, `attachments/${id}`);
     await uploadBytes(fileRef, blob);
     const url = await getDownloadURL(fileRef);
     return url;
+  })();
+
+  const timeoutPromise = new Promise<string>((_, reject) =>
+    setTimeout(() => reject(new Error('Firebase Storage upload request timed out after 8s.')), timeoutMs)
+  );
+
+  try {
+    return await Promise.race([uploadPromise, timeoutPromise]);
   } catch (error) {
     console.error('Failed to upload file/snapshot to Firebase Storage:', error);
-    // Return empty or throw
     throw error;
   }
 }
