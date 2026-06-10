@@ -22,11 +22,25 @@ import DailySnapCard from './components/DailySnapCard';
 
 // Firebase Integrations
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
-import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, where } from 'firebase/firestore';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 
 export default function App() {
   // --- Persistent States ---
+  const [isAuthorMode, setIsAuthorMode] = useState<boolean>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
+        localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
+        return true;
+      }
+      const saved = localStorage.getItem('poetry_notebook_is_author_authenticated');
+      // Default to false for the public, so they don't see author tools.
+      return saved === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [poems, setPoems] = useState<Poem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -64,63 +78,8 @@ export default function App() {
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   // --- Sync with Firebase Firestore & Auth ---
+  // 1. Monitor auth state (Google login)
   useEffect(() => {
-    // 1. Sync categories
-    const unsubscribeCats = onSnapshot(collection(db, 'categories'), (snapshot) => {
-      const catsData: Category[] = [];
-      snapshot.forEach((snapDoc) => {
-        catsData.push({ id: snapDoc.id, ...snapDoc.data() } as Category);
-      });
-
-      if (catsData.length === 0) {
-        const seedCats = async () => {
-          try {
-            const batch = writeBatch(db);
-            INITIAL_CATEGORIES.forEach((cat) => {
-              batch.set(doc(db, 'categories', cat.id), cat);
-            });
-            await batch.commit();
-          } catch (e) {
-            console.error('Failed to auto-seed categories:', e);
-          }
-        };
-        seedCats();
-      } else {
-        setCategories(catsData);
-      }
-    }, (error) => {
-      console.error('Firestore categories sync error:', error);
-    });
-
-    // 2. Sync poems
-    const unsubscribePoems = onSnapshot(collection(db, 'poems'), (snapshot) => {
-      const poemsData: Poem[] = [];
-      snapshot.forEach((snapDoc) => {
-        poemsData.push({ id: snapDoc.id, ...snapDoc.data() } as Poem);
-      });
-
-      if (poemsData.length === 0) {
-        const seedPoems = async () => {
-          try {
-            const batch = writeBatch(db);
-            INITIAL_POEMS.forEach((poem) => {
-              batch.set(doc(db, 'poems', poem.id), poem);
-            });
-            await batch.commit();
-          } catch (e) {
-            console.error('Failed to auto-seed poems:', e);
-          }
-        };
-        seedPoems();
-      } else {
-        setPoems(poemsData);
-        setIsDbLoading(false);
-      }
-    }, (error) => {
-      console.error('Firestore poems sync error:', error);
-    });
-
-    // 3. Monitor auth state (Google login)
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (user) {
@@ -143,7 +102,7 @@ export default function App() {
       }
     });
 
-    // 4. URL query triggers
+    // URL query triggers
     const params = new URLSearchParams(window.location.search);
     if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
       setIsAuthorMode(true);
@@ -151,11 +110,91 @@ export default function App() {
     }
 
     return () => {
-      unsubscribeCats();
-      unsubscribePoems();
       unsubscribeAuth();
     };
   }, []);
+
+  // 2. Sync database collections depending on authentication status
+  useEffect(() => {
+    const savedIsAuthorMode = localStorage.getItem('poetry_notebook_is_author_authenticated') === 'true';
+    const isActuallyAuthor = (currentUser?.email === 'soumyaranjan.ray@gmail.com') || isAuthorMode || savedIsAuthorMode;
+
+    // A. Sync categories
+    const unsubscribeCats = onSnapshot(collection(db, 'categories'), (snapshot) => {
+      const catsData: Category[] = [];
+      snapshot.forEach((snapDoc) => {
+        catsData.push({ id: snapDoc.id, ...snapDoc.data() } as Category);
+      });
+
+      if (catsData.length === 0) {
+        const seedCats = async () => {
+          try {
+            const batch = writeBatch(db);
+            INITIAL_CATEGORIES.forEach((cat) => {
+              batch.set(doc(db, 'categories', cat.id), cat);
+            });
+            await batch.commit();
+          } catch (e) {
+            console.error('Failed to auto-seed categories:', e);
+          }
+        };
+        if (isActuallyAuthor) {
+          seedCats();
+        }
+      } else {
+        setCategories(catsData);
+      }
+    }, (error) => {
+      console.error('Firestore categories sync error:', error);
+    });
+
+    // B. Sync poems
+    // Construct authorized query or guest query to prevent permission-denied crashes
+    let poemsQuery;
+    if (isActuallyAuthor) {
+      poemsQuery = collection(db, 'poems');
+    } else {
+      // In guest mode, restrict query to public poems to prevent server permission errors
+      poemsQuery = query(collection(db, 'poems'), where('isPrivate', '!=', true));
+    }
+
+    const unsubscribePoems = onSnapshot(poemsQuery, (snapshot) => {
+      const poemsData: Poem[] = [];
+      snapshot.forEach((snapDoc) => {
+        poemsData.push({ id: snapDoc.id, ...snapDoc.data() } as Poem);
+      });
+
+      if (poemsData.length === 0 && isActuallyAuthor) {
+        const seedPoems = async () => {
+          try {
+            const batch = writeBatch(db);
+            INITIAL_POEMS.forEach((poem) => {
+              // Ensure we write isPrivate: false so guest inequality query matches
+              batch.set(doc(db, 'poems', poem.id), {
+                ...poem,
+                isPrivate: poem.isPrivate ?? false,
+              });
+            });
+            await batch.commit();
+          } catch (e) {
+            console.error('Failed to auto-seed poems:', e);
+          }
+        };
+        seedPoems();
+      } else {
+        setPoems(poemsData);
+        setIsDbLoading(false);
+      }
+    }, (error) => {
+      console.warn('Firestore poems sync error (re-attempting or safe fallback):', error);
+      setIsDbLoading(false);
+    });
+
+    return () => {
+      unsubscribeCats();
+      unsubscribePoems();
+    };
+  }, [currentUser, isAuthorMode]);
 
   // --- Toast/Notification State ---
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
@@ -165,20 +204,6 @@ export default function App() {
   const [newCatNameInput, setNewCatNameInput] = useState('');
 
   // --- Author Mode & Passcode Verification States ---
-  const [isAuthorMode, setIsAuthorMode] = useState<boolean>(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
-        localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
-        return true;
-      }
-      const saved = localStorage.getItem('poetry_notebook_is_author_authenticated');
-      // Default to false for the public, so they don't see author tools.
-      return saved === 'true';
-    } catch {
-      return false;
-    }
-  });
   const [isPasscodeModalOpen, setIsPasscodeModalOpen] = useState(false);
   const [enteredPasscode, setEnteredPasscode] = useState('');
   const [passcodeError, setPasscodeError] = useState(false);
@@ -224,6 +249,7 @@ export default function App() {
       if (isEdit) {
         await setDoc(docRef, {
           ...poemData,
+          isPrivate: poemData.isPrivate ?? false,
           id,
           updatedAt: new Date().toISOString(),
         }, { merge: true });
@@ -231,6 +257,7 @@ export default function App() {
       } else {
         const newPoem: Poem = {
           ...poemData,
+          isPrivate: poemData.isPrivate ?? false,
           id,
           createdAt: new Date().toISOString(),
         };
@@ -1131,24 +1158,34 @@ export default function App() {
             >
               <DailySnapCapture
                 editPoem={activePoemForEditing}
-                onSave={(snapData) => {
-                  if (activePoemForEditing) {
-                    setPoems((prev) =>
-                      prev.map((p) =>
-                        p.id === activePoemForEditing.id
-                          ? { ...p, ...snapData }
-                          : p
-                      )
-                    );
-                    showToast("Daily picture snapshot updated inside ledger.", "success");
-                  } else {
-                    const newPoemSnap: Poem = {
-                      ...snapData,
-                      id: `poem-snap-${Date.now()}`,
-                      createdAt: new Date().toISOString(),
-                    };
-                    setPoems((prev) => [newPoemSnap, ...prev]);
-                    showToast("Daily picture snapshot saved to ledger.", "success");
+                onSave={async (snapData) => {
+                  try {
+                    const isEdit = !!activePoemForEditing;
+                    const id = activePoemForEditing?.id || `poem-snap-${Date.now()}`;
+                    const docRef = doc(db, 'poems', id);
+
+                    if (isEdit) {
+                      const updatedSnap = {
+                        ...snapData,
+                        isPrivate: snapData.isPrivate ?? false,
+                        id,
+                        updatedAt: new Date().toISOString(),
+                      };
+                      await setDoc(docRef, updatedSnap, { merge: true });
+                      showToast("Daily picture snapshot updated inside ledger & cloud.", "success");
+                    } else {
+                      const newPoemSnap: Poem = {
+                        ...snapData,
+                        isPrivate: snapData.isPrivate ?? false,
+                        id,
+                        createdAt: new Date().toISOString(),
+                      };
+                      await setDoc(docRef, newPoemSnap);
+                      showToast("Daily picture snapshot saved to ledger & cloud.", "success");
+                    }
+                  } catch (error) {
+                    handleFirestoreError(error, OperationType.WRITE, `poems/${activePoemForEditing?.id || 'new-snap'}`);
+                    showToast("Failed to save snapshot to cloud database. Confirm write permissions.", "error");
                   }
                   setIsSnapFormOpen(false);
                   setActivePoemForEditing(null);
