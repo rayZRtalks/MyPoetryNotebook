@@ -118,6 +118,7 @@ export default function App() {
   useEffect(() => {
     const savedIsAuthorMode = localStorage.getItem('poetry_notebook_is_author_authenticated') === 'true';
     const isActuallyAuthor = (currentUser?.email === 'soumyaranjan.ray@gmail.com') || isAuthorMode || savedIsAuthorMode;
+    const isFirebaseAuthor = currentUser?.email === 'soumyaranjan.ray@gmail.com';
 
     // A. Sync categories
     const unsubscribeCats = onSnapshot(collection(db, 'categories'), (snapshot) => {
@@ -151,11 +152,11 @@ export default function App() {
     // B. Sync poems
     // Construct authorized query or guest query to prevent permission-denied crashes
     let poemsQuery;
-    if (isActuallyAuthor) {
+    if (isFirebaseAuthor) {
       poemsQuery = collection(db, 'poems');
     } else {
-      // In guest mode, restrict query to public poems to prevent server permission errors
-      poemsQuery = query(collection(db, 'poems'), where('isPrivate', '!=', true));
+      // In guest mode, restrict query to public poems using strict comparison to avoid index and permission failures
+      poemsQuery = query(collection(db, 'poems'), where('isPrivate', '==', false));
     }
 
     const unsubscribePoems = onSnapshot(poemsQuery, (snapshot) => {
@@ -164,27 +165,9 @@ export default function App() {
         poemsData.push({ id: snapDoc.id, ...snapDoc.data() } as Poem);
       });
 
-      if (poemsData.length === 0 && isActuallyAuthor) {
-        const seedPoems = async () => {
-          try {
-            const batch = writeBatch(db);
-            INITIAL_POEMS.forEach((poem) => {
-              // Ensure we write isPrivate: false so guest inequality query matches
-              batch.set(doc(db, 'poems', poem.id), {
-                ...poem,
-                isPrivate: poem.isPrivate ?? false,
-              });
-            });
-            await batch.commit();
-          } catch (e) {
-            console.error('Failed to auto-seed poems:', e);
-          }
-        };
-        seedPoems();
-      } else {
-        setPoems(poemsData);
-        setIsDbLoading(false);
-      }
+      // Completely stopped seeding those default poems as requested
+      setPoems(poemsData);
+      setIsDbLoading(false);
     }, (error) => {
       console.warn('Firestore poems sync error (re-attempting or safe fallback):', error);
       setIsDbLoading(false);
@@ -247,10 +230,15 @@ export default function App() {
       const docRef = doc(db, 'poems', id);
 
       if (isEdit) {
+        // Look up the pre-existing document locally or default to now, securing the required createdAt field
+        const existingPoem = poems.find((p) => p.id === id);
+        const createdAt = existingPoem?.createdAt || new Date().toISOString();
+
         await setDoc(docRef, {
           ...poemData,
           isPrivate: poemData.isPrivate ?? false,
           id,
+          createdAt,
           updatedAt: new Date().toISOString(),
         }, { merge: true });
         showToast('Poem updated and synchronized to cloud.', 'success');
@@ -265,9 +253,15 @@ export default function App() {
         showToast('New poem published to cloud.', 'success');
       }
     } catch (error) {
-      handleFirestoreError(error, OperationType.WRITE, `poems/${poemData.id || 'new'}`);
-      showToast('Save failed. Write permissions are private/secured.', 'error');
+      console.error('Error saving poetry record:', error);
+      showToast('Save failed. Secure write permissions or authentication active.', 'error');
+      try {
+        handleFirestoreError(error, OperationType.WRITE, `poems/${poemData.id || 'new'}`);
+      } catch (logErr) {
+        console.warn('Silent secure exception check:', logErr);
+      }
     }
+    // Always call modal closing triggers, preventing multiple clicks or duplicate records
     setIsFormOpen(false);
     setActivePoemForEditing(null);
   };
@@ -1165,10 +1159,13 @@ export default function App() {
                     const docRef = doc(db, 'poems', id);
 
                     if (isEdit) {
+                      const existingPoem = poems.find((p) => p.id === id);
+                      const createdAt = existingPoem?.createdAt || snapData.createdAt || new Date().toISOString();
                       const updatedSnap = {
                         ...snapData,
                         isPrivate: snapData.isPrivate ?? false,
                         id,
+                        createdAt,
                         updatedAt: new Date().toISOString(),
                       };
                       await setDoc(docRef, updatedSnap, { merge: true });
@@ -1184,9 +1181,15 @@ export default function App() {
                       showToast("Daily picture snapshot saved to ledger & cloud.", "success");
                     }
                   } catch (error) {
-                    handleFirestoreError(error, OperationType.WRITE, `poems/${activePoemForEditing?.id || 'new-snap'}`);
+                    console.error('Error saving snapshot record:', error);
                     showToast("Failed to save snapshot to cloud database. Confirm write permissions.", "error");
+                    try {
+                      handleFirestoreError(error, OperationType.WRITE, `poems/${activePoemForEditing?.id || 'new-snap'}`);
+                    } catch (logErr) {
+                      console.warn('Silent secure exception check:', logErr);
+                    }
                   }
+                  // Cleanly close modal states, avoiding any duplicate saving or stuck forms
                   setIsSnapFormOpen(false);
                   setActivePoemForEditing(null);
                 }}
