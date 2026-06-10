@@ -42,7 +42,7 @@ export default function App() {
     }
   });
   const [poems, setPoems] = useState<Poem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isDbLoading, setIsDbLoading] = useState(true);
 
@@ -128,25 +128,29 @@ export default function App() {
       });
 
       if (catsData.length === 0) {
-        const seedCats = async () => {
-          try {
-            const batch = writeBatch(db);
-            INITIAL_CATEGORIES.forEach((cat) => {
-              batch.set(doc(db, 'categories', cat.id), cat);
-            });
-            await batch.commit();
-          } catch (e) {
-            console.error('Failed to auto-seed categories:', e);
-          }
-        };
-        if (isActuallyAuthor) {
+        // Fallback to initial seed categories locally
+        setCategories(INITIAL_CATEGORIES);
+
+        if (isFirebaseAuthor) {
+          const seedCats = async () => {
+            try {
+              const batch = writeBatch(db);
+              INITIAL_CATEGORIES.forEach((cat) => {
+                batch.set(doc(db, 'categories', cat.id), cat);
+              });
+              await batch.commit();
+            } catch (e) {
+              console.error('Failed to auto-seed categories:', e);
+            }
+          };
           seedCats();
         }
       } else {
         setCategories(catsData);
       }
     }, (error) => {
-      console.error('Firestore categories sync error:', error);
+      console.error('Firestore categories sync error, falling back locally:', error);
+      setCategories(INITIAL_CATEGORIES);
     });
 
     // B. Sync poems
@@ -224,39 +228,40 @@ export default function App() {
 
   // --- Poem Operations ---
   const handleSavePoem = async (poemData: Omit<Poem, 'id' | 'createdAt'> & { id?: string }) => {
-    try {
-      const isEdit = !!poemData.id;
-      const id = poemData.id || `poem-${Date.now()}`;
-      const docRef = doc(db, 'poems', id);
+    const isEdit = !!poemData.id;
+    const id = poemData.id || `poem-${Date.now()}`;
+    const docRef = doc(db, 'poems', id);
 
-      if (isEdit) {
-        // Look up the pre-existing document locally or default to now, securing the required createdAt field
-        const existingPoem = poems.find((p) => p.id === id);
-        const createdAt = existingPoem?.createdAt || new Date().toISOString();
+    // Prepare full poem payload
+    const existingPoem = poems.find((p) => p.id === id);
+    const createdAt = existingPoem?.createdAt || new Date().toISOString();
+    const finalPoem: Poem = {
+      ...poemData,
+      isPrivate: poemData.isPrivate ?? false,
+      id,
+      createdAt,
+      updatedAt: new Date().toISOString(),
+    };
 
-        await setDoc(docRef, {
-          ...poemData,
-          isPrivate: poemData.isPrivate ?? false,
-          id,
-          createdAt,
-          updatedAt: new Date().toISOString(),
-        }, { merge: true });
-        showToast('Poem updated and synchronized to cloud.', 'success');
-      } else {
-        const newPoem: Poem = {
-          ...poemData,
-          isPrivate: poemData.isPrivate ?? false,
-          id,
-          createdAt: new Date().toISOString(),
-        };
-        await setDoc(docRef, newPoem);
-        showToast('New poem published to cloud.', 'success');
+    // Optimistic Local State Update
+    setPoems((prev) => {
+      const idx = prev.findIndex((p) => p.id === id);
+      if (idx > -1) {
+        const copy = [...prev];
+        copy[idx] = finalPoem;
+        return copy;
       }
+      return [finalPoem, ...prev];
+    });
+
+    try {
+      await setDoc(docRef, finalPoem);
+      showToast(isEdit ? 'Poem updated and synchronized to cloud.' : 'New poem published to cloud.', 'success');
     } catch (error) {
       console.error('Error saving poetry record:', error);
-      showToast('Save failed. Secure write permissions or authentication active.', 'error');
+      showToast('Saved locally on device (cloud sync read-only).', 'info');
       try {
-        handleFirestoreError(error, OperationType.WRITE, `poems/${poemData.id || 'new'}`);
+        handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
       } catch (logErr) {
         console.warn('Silent secure exception check:', logErr);
       }
@@ -267,15 +272,23 @@ export default function App() {
   };
 
   const handleDeletePoem = async (id: string) => {
+    // Optimistic Local State Update
+    setPoems((prev) => prev.filter((p) => p.id !== id));
+    if (activePoemForReading?.id === id) {
+      setActivePoemForReading(null);
+    }
+
     try {
       await deleteDoc(doc(db, 'poems', id));
       showToast('Poem permanently removed from cloud.', 'warning');
-      if (activePoemForReading?.id === id) {
-        setActivePoemForReading(null);
-      }
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `poems/${id}`);
-      showToast('Failed to delete poem. Cloud storage is write-secured.', 'error');
+      console.error('Error deleting poem:', error);
+      showToast('Permanently deleted locally (cloud read-only).', 'info');
+      try {
+        handleFirestoreError(error, OperationType.DELETE, `poems/${id}`);
+      } catch (logErr) {
+        console.warn('Silent secure exception check:', logErr);
+      }
     }
   };
 
@@ -289,13 +302,13 @@ export default function App() {
     }
 
     const pastelColors = [
-      'bg-indigo-50 text-indigo-700 border-indigo-100',
-      'bg-emerald-50 text-emerald-700 border-emerald-100',
-      'bg-rose-50 text-rose-700 border-rose-100',
-      'bg-amber-50 text-amber-700 border-amber-100',
-      'bg-sky-50 text-sky-700 border-sky-100',
-      'bg-teal-50 text-teal-700 border-teal-100',
-      'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-100',
+      'bg-indigo-950/50 text-indigo-300 border-indigo-800/40',
+      'bg-emerald-950/50 text-emerald-300 border-emerald-800/40',
+      'bg-rose-950/50 text-rose-300 border-rose-800/45',
+      'bg-amber-950/50 text-amber-300 border-amber-800/45',
+      'bg-sky-950/50 text-sky-300 border-sky-800/40',
+      'bg-teal-950/50 text-teal-300 border-teal-800/40',
+      'bg-fuchsia-950/50 text-fuchsia-300 border-fuchsia-800/40',
     ];
     const newColor = pastelColors[categories.length % pastelColors.length];
 
@@ -305,13 +318,20 @@ export default function App() {
       color: newColor,
     };
 
+    // Optimistic Local State Update
+    setCategories((prev) => [...prev, newCat]);
+    showToast(`Category "${trimmed}" successfully created.`, 'success');
+
     const saveCat = async () => {
       try {
         await setDoc(doc(db, 'categories', newCat.id), newCat);
-        showToast(`Category "${trimmed}" synced to Firestore.`, 'success');
       } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, `categories/${newCat.id}`);
-        showToast('Failed to save category. Cloud storage is write-secured.', 'error');
+        console.error('Failed to sync category to firestore:', err);
+        try {
+          handleFirestoreError(err, OperationType.WRITE, `categories/${newCat.id}`);
+        } catch (logErr) {
+          console.warn('Silent secure exception check:', logErr);
+        }
       }
     };
     saveCat();
@@ -328,6 +348,12 @@ export default function App() {
     const remainingCats = categories.filter((c) => c.id !== catId);
     const backupCatId = remainingCats[0]?.id || '';
 
+    // Optimistic Local State Update
+    setCategories(remainingCats);
+    if (selectedCatId === catId) {
+      setSelectedCatId('all');
+    }
+
     try {
       // 1. Delete the category doc
       await deleteDoc(doc(db, 'categories', catId));
@@ -341,14 +367,15 @@ export default function App() {
       });
       await batch.commit();
 
-      if (selectedCatId === catId) {
-        setSelectedCatId('all');
-      }
-
       showToast('Category deleted. Affected poems re-routed on cloud.', 'info');
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `categories/${catId}`);
-      showToast('Failed to delete category. Cloud database is write-secured.', 'error');
+      console.error('Error deleting category:', error);
+      showToast('Category deleted locally (cloud read-only).', 'info');
+      try {
+        handleFirestoreError(error, OperationType.DELETE, `categories/${catId}`);
+      } catch (logErr) {
+        console.warn('Silent secure exception check:', logErr);
+      }
     }
   };
 
@@ -1168,6 +1195,8 @@ export default function App() {
                         createdAt,
                         updatedAt: new Date().toISOString(),
                       };
+                      // Optimistic Local State Update
+                      setPoems((prev) => prev.map((p) => p.id === id ? updatedSnap : p));
                       await setDoc(docRef, updatedSnap, { merge: true });
                       showToast("Daily picture snapshot updated inside ledger & cloud.", "success");
                     } else {
@@ -1177,6 +1206,8 @@ export default function App() {
                         id,
                         createdAt: new Date().toISOString(),
                       };
+                      // Optimistic Local State Update
+                      setPoems((prev) => [newPoemSnap, ...prev]);
                       await setDoc(docRef, newPoemSnap);
                       showToast("Daily picture snapshot saved to ledger & cloud.", "success");
                     }
