@@ -114,74 +114,41 @@ export default function App() {
     };
   }, []);
 
-  // 2. Sync database collections depending on authentication status
+  // 2. Load database collections from our robust Node API server
   useEffect(() => {
-    const savedIsAuthorMode = localStorage.getItem('poetry_notebook_is_author_authenticated') === 'true';
-    const isActuallyAuthor = (currentUser?.email === 'soumyaranjan.ray@gmail.com') || isAuthorMode || savedIsAuthorMode;
-    const isFirebaseAuthor = currentUser?.email === 'soumyaranjan.ray@gmail.com';
-
-    // A. Sync categories
-    const unsubscribeCats = onSnapshot(collection(db, 'categories'), (snapshot) => {
-      const catsData: Category[] = [];
-      snapshot.forEach((snapDoc) => {
-        catsData.push({ id: snapDoc.id, ...snapDoc.data() } as Category);
-      });
-
-      if (catsData.length === 0) {
-        // Fallback to initial seed categories locally
-        setCategories(INITIAL_CATEGORIES);
-
-        if (isFirebaseAuthor) {
-          const seedCats = async () => {
-            try {
-              const batch = writeBatch(db);
-              INITIAL_CATEGORIES.forEach((cat) => {
-                batch.set(doc(db, 'categories', cat.id), cat);
-              });
-              await batch.commit();
-            } catch (e) {
-              console.error('Failed to auto-seed categories:', e);
-            }
-          };
-          seedCats();
+    const fetchAllData = async () => {
+      setIsDbLoading(true);
+      try {
+        const catRes = await fetch('/api/categories');
+        if (catRes.ok) {
+          const catJson = await catRes.json();
+          setCategories(catJson);
+        } else {
+          setCategories(INITIAL_CATEGORIES);
         }
-      } else {
-        setCategories(catsData);
+      } catch (err) {
+        console.warn('API categories fetch failed, falling back to client defaults.', err);
+        setCategories(INITIAL_CATEGORIES);
       }
-    }, (error) => {
-      console.error('Firestore categories sync error, falling back locally:', error);
-      setCategories(INITIAL_CATEGORIES);
-    });
 
-    // B. Sync poems
-    // Construct authorized query or guest query to prevent permission-denied crashes
-    let poemsQuery;
-    if (isFirebaseAuthor) {
-      poemsQuery = collection(db, 'poems');
-    } else {
-      // In guest mode, restrict query to public poems using strict comparison to avoid index and permission failures
-      poemsQuery = query(collection(db, 'poems'), where('isPrivate', '==', false));
-    }
-
-    const unsubscribePoems = onSnapshot(poemsQuery, (snapshot) => {
-      const poemsData: Poem[] = [];
-      snapshot.forEach((snapDoc) => {
-        poemsData.push({ id: snapDoc.id, ...snapDoc.data() } as Poem);
-      });
-
-      // Completely stopped seeding those default poems as requested
-      setPoems(poemsData);
-      setIsDbLoading(false);
-    }, (error) => {
-      console.warn('Firestore poems sync error (re-attempting or safe fallback):', error);
-      setIsDbLoading(false);
-    });
-
-    return () => {
-      unsubscribeCats();
-      unsubscribePoems();
+      try {
+        const poemRes = await fetch('/api/poems');
+        if (poemRes.ok) {
+          const poemJson = await poemRes.json();
+          setPoems(poemJson);
+        } else {
+          setPoems([]);
+        }
+      } catch (err) {
+        console.warn('API poems fetch failed, using client fallback.', err);
+        setPoems([]);
+      } finally {
+        setIsDbLoading(false);
+      }
     };
-  }, [currentUser, isAuthorMode]);
+
+    fetchAllData();
+  }, []);
 
   // --- Toast/Notification State ---
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
@@ -230,7 +197,6 @@ export default function App() {
   const handleSavePoem = async (poemData: Omit<Poem, 'id' | 'createdAt'> & { id?: string }) => {
     const isEdit = !!poemData.id;
     const id = poemData.id || `poem-${Date.now()}`;
-    const docRef = doc(db, 'poems', id);
 
     // Prepare full poem payload
     const existingPoem = poems.find((p) => p.id === id);
@@ -255,16 +221,21 @@ export default function App() {
     });
 
     try {
-      await setDoc(docRef, finalPoem);
-      showToast(isEdit ? 'Poem updated and synchronized to cloud.' : 'New poem published to cloud.', 'success');
+      const res = await fetch('/api/poems', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(finalPoem)
+      });
+      if (res.ok) {
+        showToast(isEdit ? 'Poem updated inside the database.' : 'New poem saved to the database.', 'success');
+      } else {
+        throw new Error('Backend returned non-ok response');
+      }
     } catch (error) {
       console.error('Error saving poetry record:', error);
-      showToast('Saved locally on device (cloud sync read-only).', 'info');
-      try {
-        handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
-      } catch (logErr) {
-        console.warn('Silent secure exception check:', logErr);
-      }
+      showToast('Saved locally on device (offline/sync alert).', 'info');
     }
     // Always call modal closing triggers, preventing multiple clicks or duplicate records
     setIsFormOpen(false);
@@ -279,16 +250,17 @@ export default function App() {
     }
 
     try {
-      await deleteDoc(doc(db, 'poems', id));
-      showToast('Poem permanently removed from cloud.', 'warning');
+      const res = await fetch(`/api/poems/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        showToast('Poem permanently removed from the database.', 'warning');
+      } else {
+        throw new Error('Backend returned delete failure');
+      }
     } catch (error) {
       console.error('Error deleting poem:', error);
-      showToast('Permanently deleted locally (cloud read-only).', 'info');
-      try {
-        handleFirestoreError(error, OperationType.DELETE, `poems/${id}`);
-      } catch (logErr) {
-        console.warn('Silent secure exception check:', logErr);
-      }
+      showToast('Permanently deleted locally (offline/sync alert).', 'info');
     }
   };
 
@@ -324,14 +296,16 @@ export default function App() {
 
     const saveCat = async () => {
       try {
-        await setDoc(doc(db, 'categories', newCat.id), newCat);
+        const res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newCat)
+        });
+        if (!res.ok) throw new Error('Failed to save category server-side');
       } catch (err) {
-        console.error('Failed to sync category to firestore:', err);
-        try {
-          handleFirestoreError(err, OperationType.WRITE, `categories/${newCat.id}`);
-        } catch (logErr) {
-          console.warn('Silent secure exception check:', logErr);
-        }
+        console.error('Failed to sync category:', err);
       }
     };
     saveCat();
@@ -353,29 +327,26 @@ export default function App() {
     if (selectedCatId === catId) {
       setSelectedCatId('all');
     }
+    // Update local poems category IDs optimistically to match server's auto-routing
+    setPoems((prev) => prev.map((p) => {
+      if (p.categoryId === catId) {
+        return { ...p, categoryId: backupCatId, updatedAt: new Date().toISOString() };
+      }
+      return p;
+    }));
 
     try {
-      // 1. Delete the category doc
-      await deleteDoc(doc(db, 'categories', catId));
-
-      // 2. Re-assign poems in this category on cloud in a batch
-      const batch = writeBatch(db);
-      const affectedPoems = poems.filter((poem) => poem.categoryId === catId);
-      
-      affectedPoems.forEach((p) => {
-        batch.update(doc(db, 'poems', p.id), { categoryId: backupCatId });
+      const res = await fetch(`/api/categories/${catId}`, {
+        method: 'DELETE'
       });
-      await batch.commit();
-
-      showToast('Category deleted. Affected poems re-routed on cloud.', 'info');
+      if (res.ok) {
+        showToast('Category deleted. Affected poems re-routed successfully.', 'info');
+      } else {
+        throw new Error('API delete failed');
+      }
     } catch (error) {
       console.error('Error deleting category:', error);
-      showToast('Category deleted locally (cloud read-only).', 'info');
-      try {
-        handleFirestoreError(error, OperationType.DELETE, `categories/${catId}`);
-      } catch (logErr) {
-        console.warn('Silent secure exception check:', logErr);
-      }
+      showToast('Category deleted locally (offline mode).', 'info');
     }
   };
 
@@ -1183,42 +1154,40 @@ export default function App() {
                   try {
                     const isEdit = !!activePoemForEditing;
                     const id = activePoemForEditing?.id || `poem-snap-${Date.now()}`;
-                    const docRef = doc(db, 'poems', id);
+
+                    const existingPoem = poems.find((p) => p.id === id);
+                    const createdAt = existingPoem?.createdAt || snapData.createdAt || new Date().toISOString();
+                    const finalSnap = {
+                      ...snapData,
+                      isPrivate: snapData.isPrivate ?? false,
+                      id,
+                      createdAt,
+                      updatedAt: new Date().toISOString(),
+                    };
 
                     if (isEdit) {
-                      const existingPoem = poems.find((p) => p.id === id);
-                      const createdAt = existingPoem?.createdAt || snapData.createdAt || new Date().toISOString();
-                      const updatedSnap = {
-                        ...snapData,
-                        isPrivate: snapData.isPrivate ?? false,
-                        id,
-                        createdAt,
-                        updatedAt: new Date().toISOString(),
-                      };
                       // Optimistic Local State Update
-                      setPoems((prev) => prev.map((p) => p.id === id ? updatedSnap : p));
-                      await setDoc(docRef, updatedSnap, { merge: true });
-                      showToast("Daily picture snapshot updated inside ledger & cloud.", "success");
+                      setPoems((prev) => prev.map((p) => p.id === id ? finalSnap : p));
                     } else {
-                      const newPoemSnap: Poem = {
-                        ...snapData,
-                        isPrivate: snapData.isPrivate ?? false,
-                        id,
-                        createdAt: new Date().toISOString(),
-                      };
                       // Optimistic Local State Update
-                      setPoems((prev) => [newPoemSnap, ...prev]);
-                      await setDoc(docRef, newPoemSnap);
-                      showToast("Daily picture snapshot saved to ledger & cloud.", "success");
+                      setPoems((prev) => [finalSnap, ...prev]);
+                    }
+
+                    const res = await fetch('/api/poems', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json'
+                      },
+                      body: JSON.stringify(finalSnap)
+                    });
+                    if (res.ok) {
+                      showToast(isEdit ? "Daily picture snapshot updated inside ledger." : "Daily picture snapshot saved to ledger.", "success");
+                    } else {
+                      throw new Error("Server snapshot save returned non-ok");
                     }
                   } catch (error) {
                     console.error('Error saving snapshot record:', error);
-                    showToast("Failed to save snapshot to cloud database. Confirm write permissions.", "error");
-                    try {
-                      handleFirestoreError(error, OperationType.WRITE, `poems/${activePoemForEditing?.id || 'new-snap'}`);
-                    } catch (logErr) {
-                      console.warn('Silent secure exception check:', logErr);
-                    }
+                    showToast("Failed to save snapshot to database. Confirm connection.", "error");
                   }
                   // Cleanly close modal states, avoiding any duplicate saving or stuck forms
                   setIsSnapFormOpen(false);
