@@ -127,19 +127,22 @@ export default function App() {
 
       if (catsData.length === 0) {
         setCategories(INITIAL_CATEGORIES);
-        // Seed initial categories to cloud
-        const seedCats = async () => {
-          try {
-            const batch = writeBatch(db);
-            INITIAL_CATEGORIES.forEach((cat) => {
-              batch.set(doc(db, 'categories', cat.id), cat);
-            });
-            await batch.commit();
-          } catch (e) {
-            console.error('Failed to auto-seed categories:', e);
-          }
-        };
-        seedCats();
+        // Seed initial categories to cloud ONLY if the logged-in user is the verified author
+        if (auth.currentUser?.email === 'soumyaranjan.ray@gmail.com') {
+          const seedCats = async () => {
+            try {
+              const batch = writeBatch(db);
+              INITIAL_CATEGORIES.forEach((cat) => {
+                batch.set(doc(db, 'categories', cat.id), cat);
+              });
+              await batch.commit();
+            } catch (e) {
+              console.error('Failed to auto-seed categories:', e);
+              handleFirestoreError(e, OperationType.WRITE, 'categories');
+            }
+          };
+          seedCats();
+        }
       } else {
         setCategories(catsData);
       }
@@ -252,6 +255,7 @@ export default function App() {
     } catch (error) {
       console.error('Error saving poetry record:', error);
       showToast('Saved locally on device (offline/sync alert).', 'info');
+      handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
     }
     // Always call modal closing triggers, preventing multiple clicks or duplicate records
     setIsFormOpen(false);
@@ -271,6 +275,7 @@ export default function App() {
     } catch (error) {
       console.error('Error deleting poem:', error);
       showToast('Permanently deleted locally (offline/sync alert).', 'info');
+      handleFirestoreError(error, OperationType.DELETE, `poems/${id}`);
     }
   };
 
@@ -309,6 +314,7 @@ export default function App() {
         await setDoc(doc(db, 'categories', newCat.id), newCat);
       } catch (err) {
         console.error('Failed to sync category:', err);
+        handleFirestoreError(err, OperationType.WRITE, `categories/${newCat.id}`);
       }
     };
     saveCat();
@@ -355,6 +361,7 @@ export default function App() {
     } catch (error) {
       console.error('Error deleting category:', error);
       showToast('Category deleted locally (offline mode).', 'info');
+      handleFirestoreError(error, OperationType.DELETE, `categories/${catId}`);
     }
   };
 
@@ -1159,10 +1166,10 @@ export default function App() {
               <DailySnapCapture
                 editPoem={activePoemForEditing}
                 onSave={async (snapData) => {
+                  const isEdit = !!activePoemForEditing;
+                  const id = activePoemForEditing?.id || `poem-snap-${Date.now()}`;
+                  const docRef = doc(db, 'poems', id);
                   try {
-                    const isEdit = !!activePoemForEditing;
-                    const id = activePoemForEditing?.id || `poem-snap-${Date.now()}`;
-                    const docRef = doc(db, 'poems', id);
 
                     const existingPoem = poems.find((p) => p.id === id);
                     const createdAt = existingPoem?.createdAt || snapData.createdAt || new Date().toISOString();
@@ -1187,6 +1194,7 @@ export default function App() {
                   } catch (error) {
                     console.error('Error saving snapshot record:', error);
                     showToast("Failed to save snapshot to database. Confirm connection.", "error");
+                    handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
                   }
                   // Cleanly close modal states, avoiding any duplicate saving or stuck forms
                   setIsSnapFormOpen(false);
