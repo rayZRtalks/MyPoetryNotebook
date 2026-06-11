@@ -9,7 +9,7 @@ import {
   Pen, Plus, Search, Download, Upload, Trash2, 
   Sparkles, FolderPlus, ArrowUpDown, Clock, HelpCircle, 
   Layers, ChevronDown, Check, X, RotateCcw, Quote, BookOpen, AlertCircle,
-  Grid3X3
+  Grid3X3, Cloud
 } from 'lucide-react';
 import { Poem, Category, PoemMood } from './types';
 import { INITIAL_CATEGORIES, INITIAL_POEMS } from './initialData';
@@ -19,6 +19,7 @@ import PoemCard from './components/PoemCard';
 import PoemReader from './components/PoemReader';
 import DailySnapCapture from './components/DailySnapCapture';
 import DailySnapCard from './components/DailySnapCard';
+import CloudinarySettingsModal from './components/CloudinarySettingsModal';
 
 // Firebase Integrations
 import { db, auth, handleFirestoreError, OperationType } from './firebase';
@@ -75,6 +76,7 @@ export default function App() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSnapFormOpen, setIsSnapFormOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [isCloudinarySettingsOpen, setIsCloudinarySettingsOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
   // --- Sync with Firebase Firestore & Auth ---
@@ -784,6 +786,17 @@ export default function App() {
                 >
                   <Layers className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Categories</span>
+                </button>
+
+                {/* Cloudinary Settings Button */}
+                <button
+                  id="btn-cloudinary"
+                  onClick={() => setIsCloudinarySettingsOpen(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#111218]/90 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 rounded-full text-cyan-400 font-semibold transition-all cursor-pointer font-mono tracking-wider"
+                  title="Configure Cloudinary Unsigned Image Uploads"
+                >
+                  <Cloud className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Cloudinary</span>
                 </button>
 
                 {/* Revert to demo */}
@@ -1660,6 +1673,17 @@ export default function App() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* 3.5 Cloudinary Settings Modal */}
+      <AnimatePresence>
+        {isCloudinarySettingsOpen && (
+          <CloudinarySettingsModal
+            isOpen={isCloudinarySettingsOpen}
+            onClose={() => setIsCloudinarySettingsOpen(false)}
+            onShowToast={showToast}
+          />
         )}
       </AnimatePresence>
 
