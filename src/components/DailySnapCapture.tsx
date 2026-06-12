@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Upload, X, Check, RotateCcw, AlertCircle, Image as ImageIcon, Lock, Unlock } from 'lucide-react';
 import { PoemAttachment, Poem } from '../types';
 import { storeAttachmentBlob } from '../utils/attachmentDb';
-import { uploadToStorage } from '../firebase';
+import { uploadToStorage } from '../cloudinary';
 
 interface DailySnapCaptureProps {
   onSave: (snapData: Omit<Poem, 'id' | 'createdAt'> & { createdAt?: string; isPrivate?: boolean }) => void;

@@ -3,171 +3,156 @@ import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
 
+const app = express();
 const PORT = 3000;
+
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ limit: '100mb', extended: true }));
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const POEMS_FILE = path.join(DATA_DIR, 'poems.json');
 const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 
-// Ensure data directory and files exist
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
-
-const DEFAULT_CATEGORIES = [
+// Initial baseline categories congruent with client side definitions
+const INITIAL_CATEGORIES = [
   { id: 'cat-1', name: 'Nature & Seasons', color: 'bg-emerald-950/50 text-emerald-300 border-emerald-800/40' },
   { id: 'cat-2', name: 'Love & Affection', color: 'bg-rose-950/50 text-rose-300 border-rose-800/45' },
   { id: 'cat-3', name: 'Reflection & Silence', color: 'bg-violet-950/50 text-violet-300 border-violet-800/40' },
   { id: 'cat-4', name: 'Hope & Dreams', color: 'bg-amber-950/50 text-amber-300 border-amber-800/45' },
-  { id: 'cat-5', name: 'Modern & Free Verse', color: 'bg-sky-950/50 text-sky-300 border-sky-800/40' }
+  { id: 'cat-5', name: 'Modern & Free Verse', color: 'bg-sky-950/50 text-sky-300 border-sky-800/40' },
 ];
 
-if (!fs.existsSync(POEMS_FILE)) {
-  fs.writeFileSync(POEMS_FILE, JSON.stringify([], null, 2));
-}
-
-if (!fs.existsSync(CATEGORIES_FILE)) {
-  fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(DEFAULT_CATEGORIES, null, 2));
-}
-
-// Helpers for file persistence
-function readPoems(): any[] {
-  try {
-    const content = fs.readFileSync(POEMS_FILE, 'utf-8');
-    return JSON.parse(content);
-  } catch (err) {
-    console.error('Error reading poems file:', err);
-    return [];
+function initDataFiles() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(POEMS_FILE)) {
+    fs.writeFileSync(POEMS_FILE, JSON.stringify([], null, 2), 'utf-8');
+  }
+  if (!fs.existsSync(CATEGORIES_FILE)) {
+    fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(INITIAL_CATEGORIES, null, 2), 'utf-8');
   }
 }
 
-function writePoems(poems: any[]): void {
+initDataFiles();
+
+// Helper to read data safely
+function readJSONFile(filePath: string, fallback: any = []) {
   try {
-    fs.writeFileSync(POEMS_FILE, JSON.stringify(poems, null, 2));
+    if (fs.existsSync(filePath)) {
+      const data = fs.readFileSync(filePath, 'utf-8');
+      return JSON.parse(data);
+    }
   } catch (err) {
-    console.error('Error writing poems file:', err);
+    console.error(`Error reading ${filePath}:`, err);
+  }
+  return fallback;
+}
+
+// Helper to write data safely
+function writeJSONFile(filePath: string, data: any) {
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error(`Error writing to ${filePath}:`, err);
   }
 }
 
-function readCategories(): any[] {
-  try {
-    const content = fs.readFileSync(CATEGORIES_FILE, 'utf-8');
-    return JSON.parse(content);
-  } catch (err) {
-    console.error('Error reading categories file:', err);
-    return DEFAULT_CATEGORIES;
-  }
-}
+// --- API Routes ---
 
-function writeCategories(categories: any[]): void {
-  try {
-    fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(categories, null, 2));
-  } catch (err) {
-    console.error('Error writing categories file:', err);
-  }
-}
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
 
+// Categories APIs
+app.get('/api/categories', (req, res) => {
+  const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+  res.json(categories);
+});
+
+app.post('/api/categories', (req, res) => {
+  const newCat = req.body;
+  if (!newCat || !newCat.id || !newCat.name) {
+    return res.status(400).json({ error: 'Invalid category format' });
+  }
+  const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+  const existingIdx = categories.findIndex((c: any) => c.id === newCat.id);
+  if (existingIdx > -1) {
+    categories[existingIdx] = newCat;
+  } else {
+    categories.push(newCat);
+  }
+  writeJSONFile(CATEGORIES_FILE, categories);
+  res.json(newCat);
+});
+
+app.delete('/api/categories/:id', (req, res) => {
+  const catId = req.params.id;
+  const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+  const remainingCats = categories.filter((c: any) => c.id !== catId);
+  writeJSONFile(CATEGORIES_FILE, remainingCats);
+
+  // Fallback category ID for re-routing affected poems
+  const backupCatId = remainingCats[0]?.id || 'cat-1';
+
+  // Update affected poems category
+  const poems = readJSONFile(POEMS_FILE, []);
+  let updated = false;
+  const updatedPoems = poems.map((p: any) => {
+    if (p.categoryId === catId) {
+      updated = true;
+      return { ...p, categoryId: backupCatId, updatedAt: new Date().toISOString() };
+    }
+    return p;
+  });
+  if (updated) {
+    writeJSONFile(POEMS_FILE, updatedPoems);
+  }
+
+  res.json({ success: true, backupCatId });
+});
+
+// Poems APIs
+app.get('/api/poems', (req, res) => {
+  const poems = readJSONFile(POEMS_FILE, []);
+  res.json(poems);
+});
+
+app.post('/api/poems', (req, res) => {
+  const newPoem = req.body;
+  if (!newPoem || !newPoem.id || !newPoem.title) {
+    return res.status(400).json({ error: 'Invalid poem format' });
+  }
+  const poems = readJSONFile(POEMS_FILE, []);
+  const existingIdx = poems.findIndex((p: any) => p.id === newPoem.id);
+  if (existingIdx > -1) {
+    poems[existingIdx] = newPoem;
+  } else {
+    // New poem prepended
+    poems.unshift(newPoem);
+  }
+  writeJSONFile(POEMS_FILE, poems);
+  res.json(newPoem);
+});
+
+app.delete('/api/poems/:id', (req, res) => {
+  const id = req.params.id;
+  const poems = readJSONFile(POEMS_FILE, []);
+  const remainingPoems = poems.filter((p: any) => p.id !== id);
+  writeJSONFile(POEMS_FILE, remainingPoems);
+  res.json({ success: true });
+});
+
+// Reset API
+app.post('/api/reset', (req, res) => {
+  writeJSONFile(POEMS_FILE, []);
+  writeJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+  res.json({ poems: [], categories: INITIAL_CATEGORIES });
+});
+
+// --- Vite Asset / Static Serving Middleware ---
 async function startServer() {
-  const app = express();
-
-  // Allow larger payloads in case of offline photos or base64 data uploads
-  app.use(express.json({ limit: '100mb' }));
-  app.use(express.urlencoded({ limit: '100mb', extended: true }));
-
-  // --- API Routes ---
-
-  // Health check
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok' });
-  });
-
-  // Get all poems
-  app.get('/api/poems', (req, res) => {
-    res.json(readPoems());
-  });
-
-  // Save/Update a poem
-  app.post('/api/poems', (req, res) => {
-    const poem = req.body;
-    if (!poem || !poem.id) {
-       res.status(400).json({ error: 'Poem objects must have an id.' });
-       return;
-    }
-
-    const poems = readPoems();
-    const index = poems.findIndex((p: any) => p.id === poem.id);
-
-    if (index !== -1) {
-      poems[index] = { ...poems[index], ...poem, updatedAt: new Date().toISOString() };
-    } else {
-      poems.push({ ...poem, createdAt: poem.createdAt || new Date().toISOString(), updatedAt: new Date().toISOString() });
-    }
-
-    writePoems(poems);
-    res.json({ success: true, poem: index !== -1 ? poems[index] : poem });
-  });
-
-  // Delete a poem
-  app.delete('/api/poems/:id', (req, res) => {
-    const { id } = req.params;
-    const poems = readPoems();
-    const updated = poems.filter((p: any) => p.id !== id);
-    writePoems(updated);
-    res.json({ success: true });
-  });
-
-  // Get all categories
-  app.get('/api/categories', (req, res) => {
-    res.json(readCategories());
-  });
-
-  // Save/Create a category
-  app.post('/api/categories', (req, res) => {
-    const cat = req.body;
-    if (!cat || !cat.id) {
-      res.status(400).json({ error: 'Category objects must have an id.' });
-       return;
-    }
-
-    const categories = readCategories();
-    const index = categories.findIndex((c: any) => c.id === cat.id);
-
-    if (index !== -1) {
-      categories[index] = { ...categories[index], ...cat };
-    } else {
-      categories.push(cat);
-    }
-
-    writeCategories(categories);
-    res.json({ success: true, category: cat });
-  });
-
-  // Delete a category and re-route affected poems
-  app.delete('/api/categories/:id', (req, res) => {
-    const { id } = req.params;
-    const categories = readCategories().filter((c: any) => c.id !== id);
-    const backupCatId = categories[0]?.id || '';
-
-    // Re-route poems
-    const poems = readPoems().map((p: any) => {
-      if (p.categoryId === id) {
-        return { ...p, categoryId: backupCatId, updatedAt: new Date().toISOString() };
-      }
-      return p;
-    });
-
-    writeCategories(categories);
-    writePoems(poems);
-    res.json({ success: true, backupCatId });
-  });
-
-  // Rewrite / Reset database completely to revert to defaults (with NO poems)
-  app.post('/api/reset', (req, res) => {
-    writePoems([]);
-    writeCategories(DEFAULT_CATEGORIES);
-    res.json({ success: true, categories: DEFAULT_CATEGORIES, poems: [] });
-  });
-
-  // --- Vite Asset / Static Serving Middleware ---
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

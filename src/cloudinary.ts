@@ -1,6 +1,6 @@
 /**
  * Cloudinary Integration & Media Utilities
- * Bypasses all Firebase constraints.
+ * Completely replaces the legacy Firebase media utilities.
  */
 
 /**

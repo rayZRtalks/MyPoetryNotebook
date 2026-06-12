@@ -22,7 +22,7 @@ import DailySnapCard from './components/DailySnapCard';
 import CloudinarySettingsModal from './components/CloudinarySettingsModal';
 
 // Cloud Ledger & Local Media Setup
-import { uploadToStorage } from './firebase';
+import { uploadToStorage } from './cloudinary';
 
 export default function App() {
   // --- Persistent States ---
@@ -469,7 +469,7 @@ export default function App() {
 
   // --- Reset/Factory Revert ---
   const handleRevertToDemo = async () => {
-    setPoems(INITIAL_POEMS);
+    setPoems([]);
     setCategories(INITIAL_CATEGORIES);
     setSelectedCatId('all');
     setSelectedMood('all');
@@ -481,7 +481,9 @@ export default function App() {
       if (response.ok) {
         const data = await response.json();
         setCategories(data.categories || INITIAL_CATEGORIES);
-        setPoems(data.poems || INITIAL_POEMS);
+        setPoems(data.poems || []);
+        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify([]));
+        localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
         showToast('Successfully reset and re-seeded default cloud categories with empty ledger.', 'info');
       } else {
         throw new Error('Reset request failed');

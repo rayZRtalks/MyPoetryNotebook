@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Poem, Category, PoemMood, PoemAttachment } from '../types';
 import { X, Check, Plus, Tag, FolderPlus, Paperclip, Image as ImageIcon, Video, AlertCircle, Lock, Unlock } from 'lucide-react';
 import { storeAttachmentBlob, deleteAttachmentBlob } from '../utils/attachmentDb';
-import { uploadToStorage } from '../firebase';
+import { uploadToStorage } from '../cloudinary';
 
 interface PoemFormProps {
   poem?: Poem | null; // If editing
