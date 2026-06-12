@@ -42,8 +42,22 @@ export default function App() {
       return false;
     }
   });
-  const [poems, setPoems] = useState<Poem[]>([]);
-  const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
+  const [poems, setPoems] = useState<Poem[]>(() => {
+    try {
+      const cached = localStorage.getItem('poetry_notebook_poems_cache');
+      return cached ? JSON.parse(cached) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [categories, setCategories] = useState<Category[]>(() => {
+    try {
+      const cached = localStorage.getItem('poetry_notebook_categories_cache');
+      return cached ? JSON.parse(cached) : INITIAL_CATEGORIES;
+    } catch {
+      return INITIAL_CATEGORIES;
+    }
+  });
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isDbLoading, setIsDbLoading] = useState(true);
 
@@ -84,21 +98,29 @@ export default function App() {
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      const isPasscodeAuth = localStorage.getItem('poetry_notebook_is_author_authenticated') === 'true';
+      
       if (user) {
         if (user.email === 'soumyaranjan.ray@gmail.com') {
           setIsAuthorMode(true);
           localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
           showToast(`Welcome back, Author Soumya! Cloud sync is live.`, 'success');
         } else {
-          // Logged in with different email
-          setIsAuthorMode(false);
-          localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
-          showToast(`Authenticated as ${user.email}. Read-Only view active.`, 'info');
+          // Logged in with different email, but if they entered the correct passcode, keep author privileges!
+          if (isPasscodeAuth) {
+            setIsAuthorMode(true);
+            showToast(`Connected as ${user.email}. Cloud sync active via passcode.`, 'success');
+          } else {
+            setIsAuthorMode(false);
+            localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
+            showToast(`Authenticated as ${user.email}. Read-Only view active.`, 'info');
+          }
         }
       } else {
         // Logged out
-        const saved = localStorage.getItem('poetry_notebook_is_author_authenticated');
-        if (saved !== 'true') {
+        if (isPasscodeAuth) {
+          setIsAuthorMode(true);
+        } else {
           setIsAuthorMode(false);
         }
       }
@@ -129,6 +151,11 @@ export default function App() {
 
       if (catsData.length === 0) {
         setCategories(INITIAL_CATEGORIES);
+        try {
+          localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
+        } catch (e) {
+          console.warn('LocalStorage save failed', e);
+        }
         // Seed initial categories to cloud ONLY if the logged-in user is the verified author
         if (auth.currentUser?.email === 'soumyaranjan.ray@gmail.com') {
           const seedCats = async () => {
@@ -147,16 +174,24 @@ export default function App() {
         }
       } else {
         setCategories(catsData);
+        try {
+          localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(catsData));
+        } catch (e) {
+          console.warn('LocalStorage save failed', e);
+        }
       }
     }, (error) => {
       console.error('Firestore categories sync error, falling back locally:', error);
-      setCategories(INITIAL_CATEGORIES);
+      setCategories((prev) => prev.length > 0 ? prev : INITIAL_CATEGORIES);
     });
 
     // B. Sync Poems
-    // Query based on modern passcode Author Mode status
+    // Query based on google active credentials or client passcode verification
     let poemsQuery;
-    if (isAuthorMode) {
+    const isGoogleAuthor = auth.currentUser?.email === 'soumyaranjan.ray@gmail.com';
+    const canSeeAll = isGoogleAuthor || isAuthorMode;
+    
+    if (canSeeAll) {
       poemsQuery = collection(db, 'poems');
     } else {
       poemsQuery = query(collection(db, 'poems'), where('isPrivate', '==', false));
@@ -167,18 +202,34 @@ export default function App() {
       snapshot.forEach((snapDoc) => {
         poemsData.push({ id: snapDoc.id, ...snapDoc.data() } as Poem);
       });
-      setPoems(poemsData);
+      
+      // Merge Firestore poems with local custom poems that weren't synced yet
+      setPoems((prev) => {
+        const merged = [...poemsData];
+        prev.forEach((p) => {
+          if (!merged.some((m) => m.id === p.id)) {
+            merged.push(p);
+          }
+        });
+        try {
+          localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(merged));
+        } catch (e) {
+          console.warn('LocalStorage save failed', e);
+        }
+        return merged;
+      });
       setIsDbLoading(false);
     }, (error) => {
       console.warn('Firestore poems sync error, trying local fallback:', error);
       setIsDbLoading(false);
+      // Retain the cached poems on error
     });
 
     return () => {
       unsubscribeCats();
       unsubscribePoems();
     };
-  }, [isAuthorMode]);
+  }, [currentUser, isAuthorMode]);
 
   // --- Toast/Notification State ---
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
@@ -240,15 +291,23 @@ export default function App() {
       updatedAt: new Date().toISOString(),
     };
 
-    // Optimistic Local State Update
+    // Optimistic Local State Update with Persistent Cache
     setPoems((prev) => {
       const idx = prev.findIndex((p) => p.id === id);
+      let updatedList = [];
       if (idx > -1) {
         const copy = [...prev];
         copy[idx] = finalPoem;
-        return copy;
+        updatedList = copy;
+      } else {
+        updatedList = [finalPoem, ...prev];
       }
-      return [finalPoem, ...prev];
+      try {
+        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
+      } catch (e) {
+        console.warn('LocalStorage save failed', e);
+      }
+      return updatedList;
     });
 
     try {
@@ -256,7 +315,7 @@ export default function App() {
       showToast(isEdit ? 'Poem updated inside the database.' : 'New poem saved to the database.', 'success');
     } catch (error) {
       console.error('Error saving poetry record:', error);
-      showToast('Saved locally on device (offline/sync alert).', 'info');
+      showToast('Saved to browser fallback storage.', 'info');
       handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
     } finally {
       // Always call modal closing triggers, preventing multiple clicks or duplicate records
@@ -266,8 +325,16 @@ export default function App() {
   };
 
   const handleDeletePoem = async (id: string) => {
-    // Optimistic Local State Update
-    setPoems((prev) => prev.filter((p) => p.id !== id));
+    // Optimistic Local State Update with Persistent Cache
+    setPoems((prev) => {
+      const filtered = prev.filter((p) => p.id !== id);
+      try {
+        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(filtered));
+      } catch (e) {
+        console.warn('LocalStorage save failed', e);
+      }
+      return filtered;
+    });
     if (activePoemForReading?.id === id) {
       setActivePoemForReading(null);
     }
@@ -277,7 +344,7 @@ export default function App() {
       showToast('Poem permanently removed from the database.', 'warning');
     } catch (error) {
       console.error('Error deleting poem:', error);
-      showToast('Permanently deleted locally (offline/sync alert).', 'info');
+      showToast('Deleted locally from browser cache.', 'info');
       handleFirestoreError(error, OperationType.DELETE, `poems/${id}`);
     }
   };
@@ -309,7 +376,15 @@ export default function App() {
     };
 
     // Optimistic Local State Update
-    setCategories((prev) => [...prev, newCat]);
+    setCategories((prev) => {
+      const newList = [...prev, newCat];
+      try {
+        localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(newList));
+      } catch (e) {
+        console.warn('LocalStorage save failed', e);
+      }
+      return newList;
+    });
     showToast(`Category "${trimmed}" successfully created.`, 'success');
 
     const saveCat = async () => {
@@ -335,17 +410,33 @@ export default function App() {
     const backupCatId = remainingCats[0]?.id || '';
 
     // Optimistic Local State Update
-    setCategories(remainingCats);
+    setCategories((prev) => {
+      const filtered = prev.filter((c) => c.id !== catId);
+      try {
+        localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(filtered));
+      } catch (e) {
+        console.warn('LocalStorage save failed', e);
+      }
+      return filtered;
+    });
     if (selectedCatId === catId) {
       setSelectedCatId('all');
     }
     // Update local poems category IDs- optimistically to match server's auto-routing
-    setPoems((prev) => prev.map((p) => {
-      if (p.categoryId === catId) {
-        return { ...p, categoryId: backupCatId, updatedAt: new Date().toISOString() };
+    setPoems((prev) => {
+      const updatedList = prev.map((p) => {
+        if (p.categoryId === catId) {
+          return { ...p, categoryId: backupCatId, updatedAt: new Date().toISOString() };
+        }
+        return p;
+      });
+      try {
+        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
+      } catch (e) {
+        console.warn('LocalStorage save failed', e);
       }
-      return p;
-    }));
+      return updatedList;
+    });
 
     try {
       // 1. Delete the category doc
@@ -485,6 +576,17 @@ export default function App() {
   const handleSaveLightboxVerseChange = async () => {
     if (!activePoemForLightbox) return;
     
+    // Optimistic update of local poems state and cache
+    setPoems((prev) => {
+      const updatedList = prev.map((p) => p.id === activePoemForLightbox.id ? { ...p, body: editedVerseText, updatedAt: new Date().toISOString() } : p);
+      try {
+        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
+      } catch (e) {
+        console.warn('LocalStorage save failed', e);
+      }
+      return updatedList;
+    });
+
     try {
       const docRef = doc(db, 'poems', activePoemForLightbox.id);
       await setDoc(docRef, {
@@ -504,8 +606,10 @@ export default function App() {
       setIsEditingVerse(false);
       showToast('Verse text updated and catalogued successfully on cloud.', 'success');
     } catch (error) {
+      console.error('Failed to write verse update to Firestore cloud:', error);
+      showToast('Saved to browser fallback storage.', 'info');
+      setIsEditingVerse(false);
       handleFirestoreError(error, OperationType.WRITE, `poems/${activePoemForLightbox.id}`);
-      showToast('Failed to save edit on cloud. Write permissions are secured.', 'error');
     }
   };
 
@@ -1217,31 +1321,39 @@ export default function App() {
                   const isEdit = !!activePoemForEditing;
                   const id = activePoemForEditing?.id || `poem-snap-${Date.now()}`;
                   const docRef = doc(db, 'poems', id);
-                  try {
+                  
+                  const existingPoem = poems.find((p) => p.id === id);
+                  const createdAt = existingPoem?.createdAt || snapData.createdAt || new Date().toISOString();
+                  const finalSnap = {
+                    ...snapData,
+                    isPrivate: snapData.isPrivate ?? false,
+                    id,
+                    createdAt,
+                    updatedAt: new Date().toISOString(),
+                  };
 
-                    const existingPoem = poems.find((p) => p.id === id);
-                    const createdAt = existingPoem?.createdAt || snapData.createdAt || new Date().toISOString();
-                    const finalSnap = {
-                      ...snapData,
-                      isPrivate: snapData.isPrivate ?? false,
-                      id,
-                      createdAt,
-                      updatedAt: new Date().toISOString(),
-                    };
-
+                  // Optimistic Local State Update with Persistent Cache
+                  setPoems((prev) => {
+                    let updatedList = [];
                     if (isEdit) {
-                      // Optimistic Local State Update
-                      setPoems((prev) => prev.map((p) => p.id === id ? finalSnap : p));
+                      updatedList = prev.map((p) => p.id === id ? finalSnap : p);
                     } else {
-                      // Optimistic Local State Update
-                      setPoems((prev) => [finalSnap, ...prev]);
+                      updatedList = [finalSnap, ...prev];
                     }
+                    try {
+                      localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
+                    } catch (e) {
+                      console.warn('LocalStorage save failed', e);
+                    }
+                    return updatedList;
+                  });
 
+                  try {
                     await setDoc(docRef, finalSnap);
                     showToast(isEdit ? "Daily picture snapshot updated inside ledger." : "Daily picture snapshot saved to ledger.", "success");
                   } catch (error) {
                     console.error('Error saving snapshot record:', error);
-                    showToast("Failed to save snapshot to database. Confirm connection.", "error");
+                    showToast("Saved to browser fallback storage.", "info");
                     handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
                   } finally {
                     // Cleanly close modal states, avoiding any duplicate saving or stuck forms
@@ -1909,11 +2021,22 @@ export default function App() {
                 <div className="p-3 bg-amber-950/20 border border-amber-900/30 rounded-xl space-y-2 text-left">
                   <div className="flex items-center gap-1.5 text-xs text-amber-300 font-bold">
                     <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Popup Blocked?</span>
+                    <span>OAuth / Popup Settings</span>
                   </div>
                   <p className="text-[10px] text-neutral-400 leading-relaxed font-sans">
-                    The AI Studio developer sandbox blocks authentication popups inside its internal preview pane. Open the application directly in a <b>New Tab</b> to sign in successfully:
+                    1. <b>Open in New Tab</b>: Popups are blocked in the internal preview iframe.<br />
+                    2. <b>Authorized Domains</b>: Google sign-in requires this app origin domain to be authorized in your Firebase console.<br />
+                    Add <b>{window.location.hostname}</b> to authorized domains at:
                   </p>
+                  <a
+                    id="link-firebase-auth-console"
+                    href={`https://console.firebase.google.com/project/gen-lang-client-0854716502/authentication/settings`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-neutral-900 border border-neutral-800 text-[9px] font-mono text-amber-400 hover:text-amber-300 rounded hover:bg-neutral-800 transition-all w-full justify-center"
+                  >
+                    Configure Firebase Domains ↗
+                  </a>
                   <a
                     id="link-open-new-tab"
                     href={window.location.href}

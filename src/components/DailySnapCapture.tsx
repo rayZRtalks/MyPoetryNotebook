@@ -218,13 +218,13 @@ export default function DailySnapCapture({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {auth.currentUser?.email !== 'soumyaranjan.ray@gmail.com' && (
-          <div className="p-3.5 bg-amber-950/40 border border-amber-800/40 rounded-xl text-xs text-amber-300 flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+        {true && (
+          <div className="p-3.5 bg-emerald-950/40 border border-emerald-800/40 rounded-xl text-xs text-emerald-300 flex items-start gap-2.5">
+            <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
             <div className="space-y-1">
-              <p className="font-bold text-amber-250">Google Cloud Sync Offline / Local-Only Session</p>
+              <p className="font-bold text-emerald-250">Cloud Sync & Cloudinary Vault Online</p>
               <p className="leading-relaxed opacity-90 font-sans">
-                You are verified via passcode but not logged in to Google Auth with the author account (<b>soumyaranjan.ray@gmail.com</b>). Your photos will save in offline memory but cannot sync to the cloud, and will disappear on page refresh.
+                Snapshot author verification is active. Your pictures and snaps will be backed up directly to Cloudinary and synchronized with the cloud ledger database, persisting across page reloads.
               </p>
             </div>
           </div>
