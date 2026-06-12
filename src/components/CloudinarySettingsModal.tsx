@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Cloud, Lock, HelpCircle, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
+import { safeLocalStorage } from '../utils/safeStorage';
 
 interface CloudinarySettingsModalProps {
   isOpen: boolean;
@@ -23,9 +24,9 @@ export default function CloudinarySettingsModal({
   // Load existing configuration from localStorage
   useEffect(() => {
     if (isOpen) {
-      const savedName = localStorage.getItem('poetry_notebook_cloudinary_cloud_name') || '';
-      const savedPreset = localStorage.getItem('poetry_notebook_cloudinary_upload_preset') || '';
-      const savedEnabled = localStorage.getItem('poetry_notebook_cloudinary_enabled') !== 'false'; // default to true if preset and name exist
+      const savedName = safeLocalStorage.getItem('poetry_notebook_cloudinary_cloud_name') || '';
+      const savedPreset = safeLocalStorage.getItem('poetry_notebook_cloudinary_upload_preset') || '';
+      const savedEnabled = safeLocalStorage.getItem('poetry_notebook_cloudinary_enabled') !== 'false'; // default to true if preset and name exist
 
       setCloudName(savedName);
       setUploadPreset(savedPreset);
@@ -45,9 +46,9 @@ export default function CloudinarySettingsModal({
     }
 
     try {
-      localStorage.setItem('poetry_notebook_cloudinary_cloud_name', trimmedCloudName);
-      localStorage.setItem('poetry_notebook_cloudinary_upload_preset', trimmedUploadPreset);
-      localStorage.setItem('poetry_notebook_cloudinary_enabled', String(isEnabled && !!trimmedCloudName && !!trimmedUploadPreset));
+      safeLocalStorage.setItem('poetry_notebook_cloudinary_cloud_name', trimmedCloudName);
+      safeLocalStorage.setItem('poetry_notebook_cloudinary_upload_preset', trimmedUploadPreset);
+      safeLocalStorage.setItem('poetry_notebook_cloudinary_enabled', String(isEnabled && !!trimmedCloudName && !!trimmedUploadPreset));
 
       if (isEnabled && trimmedCloudName && trimmedUploadPreset && onEnableAuthorMode) {
         onEnableAuthorMode();

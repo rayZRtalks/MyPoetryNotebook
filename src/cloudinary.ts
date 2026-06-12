@@ -3,6 +3,8 @@
  * Completely replaces the legacy Firebase media utilities.
  */
 
+import { safeLocalStorage } from './utils/safeStorage';
+
 /**
  * Uploads an image or video to Cloudinary using Unsigned Upload presets.
  */
@@ -46,9 +48,9 @@ export async function uploadToStorage(id: string, blob: Blob | File): Promise<st
   let useCloudinary = false;
 
   try {
-    const savedName = localStorage.getItem('poetry_notebook_cloudinary_cloud_name') || '';
-    const savedPreset = localStorage.getItem('poetry_notebook_cloudinary_upload_preset') || '';
-    const savedEnabled = localStorage.getItem('poetry_notebook_cloudinary_enabled') !== 'false'; // defaults to true if set
+    const savedName = safeLocalStorage.getItem('poetry_notebook_cloudinary_cloud_name') || '';
+    const savedPreset = safeLocalStorage.getItem('poetry_notebook_cloudinary_upload_preset') || '';
+    const savedEnabled = safeLocalStorage.getItem('poetry_notebook_cloudinary_enabled') !== 'false'; // defaults to true if set
     
     // Fallback to env variables if local storage is blank
     cloudName = savedName || import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
@@ -58,7 +60,7 @@ export async function uploadToStorage(id: string, blob: Blob | File): Promise<st
     useCloudinary = savedEnabled === true && !!cloudName && !!uploadPreset;
     
     // If enabled in localStorage initially or has env variables
-    if (!localStorage.getItem('poetry_notebook_cloudinary_enabled') && cloudName && uploadPreset) {
+    if (!safeLocalStorage.getItem('poetry_notebook_cloudinary_enabled') && cloudName && uploadPreset) {
       useCloudinary = true;
     }
   } catch (err) {

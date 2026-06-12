@@ -23,6 +23,7 @@ import CloudinarySettingsModal from './components/CloudinarySettingsModal';
 
 // Cloud Ledger & Local Media Setup
 import { uploadToStorage } from './cloudinary';
+import { safeLocalStorage } from './utils/safeStorage';
 
 export default function App() {
   // --- Persistent States ---
@@ -30,10 +31,10 @@ export default function App() {
     try {
       const params = new URLSearchParams(window.location.search);
       if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
-        localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
+        safeLocalStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
         return true;
       }
-      const saved = localStorage.getItem('poetry_notebook_is_author_authenticated');
+      const saved = safeLocalStorage.getItem('poetry_notebook_is_author_authenticated');
       // Default to false for the public, so they don't see author tools.
       return saved === 'true';
     } catch {
@@ -42,7 +43,7 @@ export default function App() {
   });
   const [poems, setPoems] = useState<Poem[]>(() => {
     try {
-      const cached = localStorage.getItem('poetry_notebook_poems_cache');
+      const cached = safeLocalStorage.getItem('poetry_notebook_poems_cache');
       return cached ? JSON.parse(cached) : [];
     } catch {
       return [];
@@ -50,7 +51,7 @@ export default function App() {
   });
   const [categories, setCategories] = useState<Category[]>(() => {
     try {
-      const cached = localStorage.getItem('poetry_notebook_categories_cache');
+      const cached = safeLocalStorage.getItem('poetry_notebook_categories_cache');
       return cached ? JSON.parse(cached) : INITIAL_CATEGORIES;
     } catch {
       return INITIAL_CATEGORIES;
@@ -60,7 +61,7 @@ export default function App() {
 
   const [appTheme, setAppTheme] = useState<'dark' | 'light'>(() => {
     try {
-      const saved = localStorage.getItem('poetry_notebook_theme');
+      const saved = safeLocalStorage.getItem('poetry_notebook_theme');
       if (saved === 'multicolor' || saved === 'dark') return 'dark';
       if (saved === 'paper-specimen' || saved === 'light') return 'light';
       return 'dark';
@@ -70,7 +71,7 @@ export default function App() {
   });
 
   const [gridOverlayEnabled, setGridOverlayEnabled] = useState<boolean>(() => {
-    const saved = localStorage.getItem('poetry_notebook_grid_overlay');
+    const saved = safeLocalStorage.getItem('poetry_notebook_grid_overlay');
     return saved === 'true';
   });
 
@@ -101,14 +102,14 @@ export default function App() {
         if (catsRes.ok) {
           const catsData = await catsRes.json();
           setCategories(catsData);
-          localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(catsData));
+          safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(catsData));
         } else {
           throw new Error('Categories fetch not ok');
         }
       } catch (err) {
         console.warn('Backend categories fetch failed, falling back locally:', err);
         try {
-          const savedCats = localStorage.getItem('poetry_notebook_categories_cache');
+          const savedCats = safeLocalStorage.getItem('poetry_notebook_categories_cache');
           if (savedCats) {
             setCategories(JSON.parse(savedCats));
           } else {
@@ -125,14 +126,14 @@ export default function App() {
         if (poemsRes.ok) {
           const poemsData = await poemsRes.json();
           setPoems(poemsData);
-          localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(poemsData));
+          safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(poemsData));
         } else {
           throw new Error('Poems fetch not ok');
         }
       } catch (err) {
         console.warn('Backend poems fetch failed, falling back locally:', err);
         try {
-          const savedPoems = localStorage.getItem('poetry_notebook_poems_cache');
+          const savedPoems = safeLocalStorage.getItem('poetry_notebook_poems_cache');
           if (savedPoems) {
             setPoems(JSON.parse(savedPoems));
           } else {
@@ -152,7 +153,7 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
       setIsAuthorMode(true);
-      localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
+      safeLocalStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
       setIsPasscodeModalOpen(false);
     }
   }, []);
@@ -197,7 +198,7 @@ export default function App() {
 
   // --- Save to LocalStorage ---
   useEffect(() => {
-    localStorage.setItem('poetry_notebook_grid_overlay', String(gridOverlayEnabled));
+    safeLocalStorage.setItem('poetry_notebook_grid_overlay', String(gridOverlayEnabled));
   }, [gridOverlayEnabled]);
 
   // --- Poem Operations ---
@@ -228,7 +229,7 @@ export default function App() {
         updatedList = [finalPoem, ...prev];
       }
       try {
-        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
+        safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
       } catch (e) {
         console.warn('LocalStorage save failed', e);
       }
@@ -260,7 +261,7 @@ export default function App() {
     setPoems((prev) => {
       const filtered = prev.filter((p) => p.id !== id);
       try {
-        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(filtered));
+        safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(filtered));
       } catch (e) {
         console.warn('LocalStorage save failed', e);
       }
@@ -315,7 +316,7 @@ export default function App() {
     setCategories((prev) => {
       const newList = [...prev, newCat];
       try {
-        localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(newList));
+        safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(newList));
       } catch (e) {
         console.warn('LocalStorage save failed', e);
       }
@@ -357,7 +358,7 @@ export default function App() {
     setCategories((prev) => {
       const filtered = prev.filter((c) => c.id !== catId);
       try {
-        localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(filtered));
+        safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(filtered));
       } catch (e) {
         console.warn('LocalStorage save failed', e);
       }
@@ -375,7 +376,7 @@ export default function App() {
         return p;
       });
       try {
-        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
+        safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
       } catch (e) {
         console.warn('LocalStorage save failed', e);
       }
@@ -482,8 +483,8 @@ export default function App() {
         const data = await response.json();
         setCategories(data.categories || INITIAL_CATEGORIES);
         setPoems(data.poems || []);
-        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify([]));
-        localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
+        safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify([]));
+        safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
         showToast('Successfully reset and re-seeded default cloud categories with empty ledger.', 'info');
       } else {
         throw new Error('Reset request failed');
@@ -501,7 +502,7 @@ export default function App() {
     const correctPasscode = import.meta.env.VITE_AUTHOR_PASSCODE || 'nature';
     if (enteredPasscode === correctPasscode) {
       setIsAuthorMode(true);
-      localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
+      safeLocalStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
       setIsPasscodeModalOpen(false);
       setEnteredPasscode('');
       setPasscodeError(false);
@@ -514,7 +515,7 @@ export default function App() {
 
   const handleLockAuthorMode = () => {
     setIsAuthorMode(false);
-    localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
+    safeLocalStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
     showToast('Securely returned to viewer-only mode.', 'info');
   };
 
@@ -531,7 +532,7 @@ export default function App() {
     const updatedList = poems.map((p) => p.id === activePoemForLightbox.id ? updatedPoem : p);
     setPoems(updatedList);
     try {
-      localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
+      safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
     } catch (e) {
       console.warn('LocalStorage save failed', e);
     }
@@ -760,7 +761,7 @@ export default function App() {
                 id="theme-btn-dark"
                 onClick={() => {
                   setAppTheme('dark');
-                  localStorage.setItem('poetry_notebook_theme', 'dark');
+                  safeLocalStorage.setItem('poetry_notebook_theme', 'dark');
                   showToast('Theme set to Dark Mode.', 'info');
                 }}
                 className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
@@ -776,7 +777,7 @@ export default function App() {
                 id="theme-btn-light"
                 onClick={() => {
                   setAppTheme('light');
-                  localStorage.setItem('poetry_notebook_theme', 'light');
+                  safeLocalStorage.setItem('poetry_notebook_theme', 'light');
                   showToast('Theme set to Light Mode.', 'info');
                 }}
                 className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
@@ -816,9 +817,9 @@ export default function App() {
 
                 {/* Cloudinary Integration Status badge */}
                 <div id="cloudinary-sync-status" className="flex items-center">
-                  {localStorage.getItem('poetry_notebook_cloudinary_enabled') === 'true' && 
-                   localStorage.getItem('poetry_notebook_cloudinary_cloud_name') && 
-                   localStorage.getItem('poetry_notebook_cloudinary_upload_preset') ? (
+                  {safeLocalStorage.getItem('poetry_notebook_cloudinary_enabled') === 'true' && 
+                   safeLocalStorage.getItem('poetry_notebook_cloudinary_cloud_name') && 
+                   safeLocalStorage.getItem('poetry_notebook_cloudinary_upload_preset') ? (
                     <button
                       onClick={() => setIsCloudinarySettingsOpen(true)}
                       className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-emerald-950/40 border border-emerald-850/50 hover:border-emerald-600 text-emerald-400 font-semibold rounded-full font-mono tracking-wider cursor-pointer font-bold"
@@ -1291,7 +1292,7 @@ export default function App() {
                       updatedList = [finalSnap, ...prev];
                     }
                     try {
-                      localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
+                      safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
                     } catch (e) {
                       console.warn('LocalStorage save failed', e);
                     }
@@ -1789,7 +1790,7 @@ export default function App() {
             onShowToast={showToast}
             onEnableAuthorMode={() => {
               setIsAuthorMode(true);
-              localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
+              safeLocalStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
             }}
           />
         )}
