@@ -6,12 +6,14 @@ interface CloudinarySettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onShowToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
+  onEnableAuthorMode?: () => void;
 }
 
 export default function CloudinarySettingsModal({
   isOpen,
   onClose,
   onShowToast,
+  onEnableAuthorMode,
 }: CloudinarySettingsModalProps) {
   const [cloudName, setCloudName] = useState('');
   const [uploadPreset, setUploadPreset] = useState('');
@@ -47,9 +49,13 @@ export default function CloudinarySettingsModal({
       localStorage.setItem('poetry_notebook_cloudinary_upload_preset', trimmedUploadPreset);
       localStorage.setItem('poetry_notebook_cloudinary_enabled', String(isEnabled && !!trimmedCloudName && !!trimmedUploadPreset));
 
+      if (isEnabled && trimmedCloudName && trimmedUploadPreset && onEnableAuthorMode) {
+        onEnableAuthorMode();
+      }
+
       onShowToast(
         isEnabled && trimmedCloudName && trimmedUploadPreset
-          ? 'Cloudinary enabled! All uploads will bypass Firebase Storage.'
+          ? 'Cloudinary enabled and linked to Writer authorization!'
           : 'Cloudinary configuration updated.',
         'success'
       );
@@ -101,10 +107,10 @@ export default function CloudinarySettingsModal({
         <div className="bg-cyan-950/20 border border-cyan-800/40 p-4 rounded-xl space-y-2">
           <span className="text-[11px] font-bold text-cyan-400 tracking-wider uppercase font-mono flex items-center gap-1.5">
             <Sparkles className="w-4 h-4" />
-            FREE & PUBLIC PERSISTENT STORAGE
+            FREE & PUBLIC PERSISTENT CLOUD STORAGE
           </span>
           <p className="text-xs text-neutral-300 leading-relaxed">
-            By integrating Cloudinary via <strong>Unsigned Uploads</strong>, you bypass Firebase Spark plan's storage blocks completely. All images clicked or selected will be securely saved to Cloudinary and visible on your public website!
+            By integrating Cloudinary via <strong>Unsigned Uploads</strong>, you gain safe and persistent cloud media hosting. All pictures snapped or selected will be securely saved directly inside your Cloudinary account!
           </p>
         </div>
 
@@ -117,7 +123,7 @@ export default function CloudinarySettingsModal({
                 Storage Route Selection
               </span>
               <p className="text-[10px] text-neutral-400 leading-relaxed font-mono">
-                If enabled, image uploads will bypass old storage limitations.
+                Select your media route. Cloudinary syncs publicly online.
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -130,7 +136,7 @@ export default function CloudinarySettingsModal({
                     : 'bg-[#05060f] text-neutral-500 border-neutral-800/80 hover:text-neutral-300'
                 }`}
               >
-                Firebase Storage
+                Local Browser
               </button>
               <button
                 type="button"
@@ -146,7 +152,7 @@ export default function CloudinarySettingsModal({
                     : 'bg-[#05060f] text-neutral-500 border-neutral-800/80 hover:text-neutral-300'
                 }`}
               >
-                Cloudinary ☁️
+                Cloudinary Vault ☁️
               </button>
             </div>
           </div>

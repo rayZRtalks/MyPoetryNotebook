@@ -79,10 +79,19 @@ export async function uploadToCloudinary(blob: Blob | File, cloudName: string, u
   return data.secure_url || data.url;
 }
 
+function blobToBase64(blob: Blob | File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
 /**
- * Uploads a file or snapshot blob to Firebase Storage and returns the public download URL.
- * Bypasses to Cloudinary if Cloudinary is configured via LocalStorage or Vite Environment Variables.
- * Wraps upload request in a timeout to ensure quick fallback if client/Storage is slow or blocked.
+ * Uploads a file or snapshot blob directly to Cloudinary.
+ * Bypasses to a robust local Base64 URL fallback if Cloudinary is not configured,
+ * ensuring zero dependencies on any Firebase Storage infrastructure.
  */
 export async function uploadToStorage(id: string, blob: Blob | File): Promise<string> {
   let cloudName = '';
@@ -117,27 +126,17 @@ export async function uploadToStorage(id: string, blob: Blob | File): Promise<st
       console.log('Routing file upload to Cloudinary (unsigned preset):', { cloudName, uploadPreset });
       return await uploadToCloudinary(blob, cloudName, uploadPreset);
     } catch (cloudinaryError) {
-      console.error('Cloudinary direct upload failed, falling back to Firebase Storage:', cloudinaryError);
+      console.error('Cloudinary direct upload failed, returning local Base64 fallback:', cloudinaryError);
     }
   }
 
-  const timeoutMs = 8000; // 8 seconds timeout
-  const uploadPromise = (async () => {
-    const fileRef = ref(storage, `attachments/${id}`);
-    await uploadBytes(fileRef, blob);
-    const url = await getDownloadURL(fileRef);
-    return url;
-  })();
-
-  const timeoutPromise = new Promise<string>((_, reject) =>
-    setTimeout(() => reject(new Error('Firebase Storage upload request timed out after 8s.')), timeoutMs)
-  );
-
+  // Local fallback: convert to a persistent Base64 Data URL or safe Object URL
   try {
-    return await Promise.race([uploadPromise, timeoutPromise]);
+    console.info('Bypassing cloud upload - converting image snap to persistent Base64 string for local offline ledger.');
+    return await blobToBase64(blob);
   } catch (error) {
-    console.error('Failed to upload file/snapshot to Firebase Storage:', error);
-    throw error;
+    console.error('Failed to encode image to Base64 data:', error);
+    return URL.createObjectURL(blob);
   }
 }
 

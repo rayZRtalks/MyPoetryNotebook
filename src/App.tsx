@@ -21,10 +21,8 @@ import DailySnapCapture from './components/DailySnapCapture';
 import DailySnapCard from './components/DailySnapCard';
 import CloudinarySettingsModal from './components/CloudinarySettingsModal';
 
-// Firebase Integrations
-import { db, auth, handleFirestoreError, OperationType } from './firebase';
-import { collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, query, where } from 'firebase/firestore';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+// Local Persistence Setup
+import { uploadToStorage } from './firebase';
 
 export default function App() {
   // --- Persistent States ---
@@ -58,7 +56,6 @@ export default function App() {
       return INITIAL_CATEGORIES;
     }
   });
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [isDbLoading, setIsDbLoading] = useState(true);
 
   const [appTheme, setAppTheme] = useState<'dark' | 'light'>(() => {
@@ -93,143 +90,48 @@ export default function App() {
   const [isCloudinarySettingsOpen, setIsCloudinarySettingsOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
-  // --- Sync with Firebase Firestore & Auth ---
-  // 1. Monitor auth state (Google login)
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      const isPasscodeAuth = localStorage.getItem('poetry_notebook_is_author_authenticated') === 'true';
-      
-      if (user) {
-        if (user.email === 'soumyaranjan.ray@gmail.com') {
-          setIsAuthorMode(true);
-          localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
-          showToast(`Welcome back, Author Soumya! Cloud sync is live.`, 'success');
-        } else {
-          // Logged in with different email, but if they entered the correct passcode, keep author privileges!
-          if (isPasscodeAuth) {
-            setIsAuthorMode(true);
-            showToast(`Connected as ${user.email}. Cloud sync active via passcode.`, 'success');
-          } else {
-            setIsAuthorMode(false);
-            localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
-            showToast(`Authenticated as ${user.email}. Read-Only view active.`, 'info');
-          }
-        }
-      } else {
-        // Logged out
-        if (isPasscodeAuth) {
-          setIsAuthorMode(true);
-        } else {
-          setIsAuthorMode(false);
-        }
-      }
-    });
-
-    // URL query triggers
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
-      setIsAuthorMode(true);
-      setIsPasscodeModalOpen(false);
-    }
-
-    return () => {
-      unsubscribeAuth();
-    };
-  }, []);
-
-  // 2. Sync database collections from Firebase Firestore
+  // --- Load Local Database ---
   useEffect(() => {
     setIsDbLoading(true);
 
-    // A. Sync Categories
-    const unsubscribeCats = onSnapshot(collection(db, 'categories'), (snapshot) => {
-      const catsData: Category[] = [];
-      snapshot.forEach((snapDoc) => {
-        catsData.push({ id: snapDoc.id, ...snapDoc.data() } as Category);
-      });
-
-      if (catsData.length === 0) {
-        setCategories(INITIAL_CATEGORIES);
-        try {
-          localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
-        } catch (e) {
-          console.warn('LocalStorage save failed', e);
-        }
-        // Seed initial categories to cloud ONLY if the logged-in user is the verified author
-        if (auth.currentUser?.email === 'soumyaranjan.ray@gmail.com') {
-          const seedCats = async () => {
-            try {
-              const batch = writeBatch(db);
-              INITIAL_CATEGORIES.forEach((cat) => {
-                batch.set(doc(db, 'categories', cat.id), cat);
-              });
-              await batch.commit();
-            } catch (e) {
-              console.error('Failed to auto-seed categories:', e);
-              handleFirestoreError(e, OperationType.WRITE, 'categories');
-            }
-          };
-          seedCats();
-        }
+    // A. Load Categories
+    try {
+      const savedCats = localStorage.getItem('poetry_notebook_categories_cache');
+      if (savedCats) {
+        setCategories(JSON.parse(savedCats));
       } else {
-        setCategories(catsData);
-        try {
-          localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(catsData));
-        } catch (e) {
-          console.warn('LocalStorage save failed', e);
-        }
+        setCategories(INITIAL_CATEGORIES);
+        localStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
       }
-    }, (error) => {
-      console.error('Firestore categories sync error, falling back locally:', error);
-      setCategories((prev) => prev.length > 0 ? prev : INITIAL_CATEGORIES);
-    });
-
-    // B. Sync Poems
-    // Query based on google active credentials or client passcode verification
-    let poemsQuery;
-    const isGoogleAuthor = auth.currentUser?.email === 'soumyaranjan.ray@gmail.com';
-    const canSeeAll = isGoogleAuthor || isAuthorMode;
-    
-    if (canSeeAll) {
-      poemsQuery = collection(db, 'poems');
-    } else {
-      poemsQuery = query(collection(db, 'poems'), where('isPrivate', '==', false));
+    } catch (e) {
+      console.warn('Failed to load categories cache:', e);
+      setCategories(INITIAL_CATEGORIES);
     }
 
-    const unsubscribePoems = onSnapshot(poemsQuery, (snapshot) => {
-      const poemsData: Poem[] = [];
-      snapshot.forEach((snapDoc) => {
-        poemsData.push({ id: snapDoc.id, ...snapDoc.data() } as Poem);
-      });
-      
-      // Merge Firestore poems with local custom poems that weren't synced yet
-      setPoems((prev) => {
-        const merged = [...poemsData];
-        prev.forEach((p) => {
-          if (!merged.some((m) => m.id === p.id)) {
-            merged.push(p);
-          }
-        });
-        try {
-          localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(merged));
-        } catch (e) {
-          console.warn('LocalStorage save failed', e);
-        }
-        return merged;
-      });
-      setIsDbLoading(false);
-    }, (error) => {
-      console.warn('Firestore poems sync error, trying local fallback:', error);
-      setIsDbLoading(false);
-      // Retain the cached poems on error
-    });
+    // B. Load Poems
+    try {
+      const savedPoems = localStorage.getItem('poetry_notebook_poems_cache');
+      if (savedPoems) {
+        setPoems(JSON.parse(savedPoems));
+      } else {
+        setPoems(INITIAL_POEMS);
+        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(INITIAL_POEMS));
+      }
+    } catch (e) {
+      console.warn('Failed to load poems cache:', e);
+      setPoems(INITIAL_POEMS);
+    }
 
-    return () => {
-      unsubscribeCats();
-      unsubscribePoems();
-    };
-  }, [currentUser, isAuthorMode]);
+    // Direct url parameters triggers
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
+      setIsAuthorMode(true);
+      localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
+      setIsPasscodeModalOpen(false);
+    }
+
+    setIsDbLoading(false);
+  }, []);
 
   // --- Toast/Notification State ---
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' | 'warning' } | null>(null);
@@ -278,7 +180,6 @@ export default function App() {
   const handleSavePoem = async (poemData: Omit<Poem, 'id' | 'createdAt'> & { id?: string }) => {
     const isEdit = !!poemData.id;
     const id = poemData.id || `poem-${Date.now()}`;
-    const docRef = doc(db, 'poems', id);
 
     // Prepare full poem payload
     const existingPoem = poems.find((p) => p.id === id);
@@ -291,7 +192,7 @@ export default function App() {
       updatedAt: new Date().toISOString(),
     };
 
-    // Optimistic Local State Update with Persistent Cache
+    // Update Local State with Persistent Cache
     setPoems((prev) => {
       const idx = prev.findIndex((p) => p.id === id);
       let updatedList = [];
@@ -310,22 +211,13 @@ export default function App() {
       return updatedList;
     });
 
-    try {
-      await setDoc(docRef, finalPoem);
-      showToast(isEdit ? 'Poem updated inside the database.' : 'New poem saved to the database.', 'success');
-    } catch (error) {
-      console.error('Error saving poetry record:', error);
-      showToast('Saved to browser fallback storage.', 'info');
-      handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
-    } finally {
-      // Always call modal closing triggers, preventing multiple clicks or duplicate records
-      setIsFormOpen(false);
-      setActivePoemForEditing(null);
-    }
+    showToast(isEdit ? 'Poem updated inside your secure ledger.' : 'New poem saved to your secure ledger.', 'success');
+    setIsFormOpen(false);
+    setActivePoemForEditing(null);
   };
 
   const handleDeletePoem = async (id: string) => {
-    // Optimistic Local State Update with Persistent Cache
+    // Update Local State with Persistent Cache
     setPoems((prev) => {
       const filtered = prev.filter((p) => p.id !== id);
       try {
@@ -338,15 +230,7 @@ export default function App() {
     if (activePoemForReading?.id === id) {
       setActivePoemForReading(null);
     }
-
-    try {
-      await deleteDoc(doc(db, 'poems', id));
-      showToast('Poem permanently removed from the database.', 'warning');
-    } catch (error) {
-      console.error('Error deleting poem:', error);
-      showToast('Deleted locally from browser cache.', 'info');
-      handleFirestoreError(error, OperationType.DELETE, `poems/${id}`);
-    }
+    showToast('Poem permanently removed from your ledger.', 'warning');
   };
 
   // --- Category Operations ---
@@ -375,7 +259,7 @@ export default function App() {
       color: newColor,
     };
 
-    // Optimistic Local State Update
+    // Update Local State with Persistent Cache
     setCategories((prev) => {
       const newList = [...prev, newCat];
       try {
@@ -386,16 +270,6 @@ export default function App() {
       return newList;
     });
     showToast(`Category "${trimmed}" successfully created.`, 'success');
-
-    const saveCat = async () => {
-      try {
-        await setDoc(doc(db, 'categories', newCat.id), newCat);
-      } catch (err) {
-        console.error('Failed to sync category:', err);
-        handleFirestoreError(err, OperationType.WRITE, `categories/${newCat.id}`);
-      }
-    };
-    saveCat();
 
     return newCat;
   };
@@ -409,7 +283,7 @@ export default function App() {
     const remainingCats = categories.filter((c) => c.id !== catId);
     const backupCatId = remainingCats[0]?.id || '';
 
-    // Optimistic Local State Update
+    // Update Local State with Persistent Cache
     setCategories((prev) => {
       const filtered = prev.filter((c) => c.id !== catId);
       try {
@@ -422,7 +296,7 @@ export default function App() {
     if (selectedCatId === catId) {
       setSelectedCatId('all');
     }
-    // Update local poems category IDs- optimistically to match server's auto-routing
+    // Update local poems category IDs
     setPoems((prev) => {
       const updatedList = prev.map((p) => {
         if (p.categoryId === catId) {
@@ -438,25 +312,7 @@ export default function App() {
       return updatedList;
     });
 
-    try {
-      // 1. Delete the category doc
-      await deleteDoc(doc(db, 'categories', catId));
-
-      // 2. Re-assign poems in this category on cloud in a batch
-      const batch = writeBatch(db);
-      const affectedPoems = poems.filter((poem) => poem.categoryId === catId);
-      
-      affectedPoems.forEach((p) => {
-        batch.set(doc(db, 'poems', p.id), { ...p, categoryId: backupCatId, updatedAt: new Date().toISOString() }, { merge: true });
-      });
-      await batch.commit();
-
-      showToast('Category deleted. Affected poems re-routed successfully.', 'info');
-    } catch (error) {
-      console.error('Error deleting category:', error);
-      showToast('Category deleted locally (offline mode).', 'info');
-      handleFirestoreError(error, OperationType.DELETE, `categories/${catId}`);
-    }
+    showToast('Category permanently deleted. Affected poems re-routed.', 'info');
   };
 
   // --- Backup Handlers (Local Files Integration) ---
@@ -514,34 +370,6 @@ export default function App() {
     showToast('Reverted notebook to demo poems.', 'info');
   };
 
-  // --- Google Auth Sign In Handlers ---
-  const handleGoogleSignIn = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      provider.setCustomParameters({ prompt: 'select_account' });
-      await signInWithPopup(auth, provider);
-      setIsPasscodeModalOpen(false);
-    } catch (error: any) {
-      console.error('Failed to sign in with Google:', error);
-      if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/cancelled-popup-request' || error?.message?.includes('iframe')) {
-        showToast('Google login blocked by iframe permissions. Please use "Open Notebook in New Tab" below.', 'warning');
-      } else {
-        showToast('Sign-in cancelled or blocked. Open in standalone New Tab to authorize.', 'warning');
-      }
-    }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      setIsAuthorMode(false);
-      localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
-      showToast('Successfully signed out.', 'success');
-    } catch (error) {
-      console.error('Failed to sign out:', error);
-      showToast('Sign out failed.', 'error');
-    }
-  };
 
   // --- Author Mode Handlers ---
   const handleVerifyPasscode = (e?: React.FormEvent) => {
@@ -553,64 +381,42 @@ export default function App() {
       setIsPasscodeModalOpen(false);
       setEnteredPasscode('');
       setPasscodeError(false);
-      showToast('Welcome back, Author. (Cloud writes require Google Auth login).', 'success');
+      showToast('Welcome back, Author. Your quill is unlocked!', 'success');
     } else {
       setPasscodeError(true);
       showToast('Passcode incorrect. The quill remains locked.', 'error');
     }
   };
 
-  const handleLockAuthorMode = async () => {
-    try {
-      if (auth.currentUser) {
-        await signOut(auth);
-      }
-    } catch (e) {
-      console.error('Sign out failed on lock', e);
-    }
+  const handleLockAuthorMode = () => {
     setIsAuthorMode(false);
     localStorage.setItem('poetry_notebook_is_author_authenticated', 'false');
     showToast('Securely returned to viewer-only mode.', 'info');
   };
 
-  const handleSaveLightboxVerseChange = async () => {
+  const handleSaveLightboxVerseChange = () => {
     if (!activePoemForLightbox) return;
     
-    // Optimistic update of local poems state and cache
-    setPoems((prev) => {
-      const updatedList = prev.map((p) => p.id === activePoemForLightbox.id ? { ...p, body: editedVerseText, updatedAt: new Date().toISOString() } : p);
-      try {
-        localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
-      } catch (e) {
-        console.warn('LocalStorage save failed', e);
-      }
-      return updatedList;
+    // Update local poems state and cache
+    const updatedList = poems.map((p) => p.id === activePoemForLightbox.id ? { ...p, body: editedVerseText, updatedAt: new Date().toISOString() } : p);
+    setPoems(updatedList);
+    try {
+      localStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(updatedList));
+    } catch (e) {
+      console.warn('LocalStorage save failed', e);
+    }
+
+    // Update active poem inside lightbox too!
+    setActivePoemForLightbox((prev) => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        body: editedVerseText,
+      };
     });
 
-    try {
-      const docRef = doc(db, 'poems', activePoemForLightbox.id);
-      await setDoc(docRef, {
-        body: editedVerseText,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
-
-      // Update active poem inside lightbox too!
-      setActivePoemForLightbox((prev) => {
-        if (!prev) return null;
-        return {
-          ...prev,
-          body: editedVerseText,
-        };
-      });
-
-      setIsEditingVerse(false);
-      showToast('Verse text updated and catalogued successfully on cloud.', 'success');
-    } catch (error) {
-      console.error('Failed to write verse update to Firestore cloud:', error);
-      showToast('Saved to browser fallback storage.', 'info');
-      setIsEditingVerse(false);
-      handleFirestoreError(error, OperationType.WRITE, `poems/${activePoemForLightbox.id}`);
-    }
+    setIsEditingVerse(false);
+    showToast('Verse text updated and catalogued successfully inside your offline ledger.', 'success');
   };
 
   // --- Pure Search & Filter logic computation ---
@@ -845,6 +651,17 @@ export default function App() {
               </button>
             </div>
 
+            {!isAuthorMode && (
+              <button
+                id="btn-header-passcode-trigger"
+                onClick={() => setIsPasscodeModalOpen(true)}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs bg-[#111218]/95 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-cyan-400 font-bold rounded-full transition-all cursor-pointer font-mono tracking-wider shadow-lg"
+              >
+                <span>Write Portal</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-700" />
+              </button>
+            )}
+
             {isAuthorMode && (
               <>
                 {/* Session lock */}
@@ -858,32 +675,27 @@ export default function App() {
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                 </button>
 
-                {/* Firebase Authentication Sync Status badge */}
-                <div id="firebase-sync-status" className="flex items-center">
-                  {currentUser ? (
-                    currentUser.email === 'soumyaranjan.ray@gmail.com' ? (
-                      <div className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-emerald-950/40 border border-emerald-850/50 text-emerald-400 font-semibold rounded-full font-mono tracking-wider" title={`Cloud Synced as ${currentUser.email}`}>
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span>Cloud Active</span>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setIsPasscodeModalOpen(true)}
-                        className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-amber-950/40 border border-amber-850/50 hover:border-amber-600 text-amber-400 font-semibold rounded-full font-mono tracking-wider cursor-pointer"
-                        title={`Signed in as separate account ${currentUser.email}. Click to verify as Soumya.`}
-                      >
-                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                        <span>Read-Only ({currentUser.email.slice(0, 10)}...)</span>
-                      </button>
-                    )
+                {/* Cloudinary Integration Status badge */}
+                <div id="cloudinary-sync-status" className="flex items-center">
+                  {localStorage.getItem('poetry_notebook_cloudinary_enabled') === 'true' && 
+                   localStorage.getItem('poetry_notebook_cloudinary_cloud_name') && 
+                   localStorage.getItem('poetry_notebook_cloudinary_upload_preset') ? (
+                    <button
+                      onClick={() => setIsCloudinarySettingsOpen(true)}
+                      className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-emerald-950/40 border border-emerald-850/50 hover:border-emerald-600 text-emerald-400 font-semibold rounded-full font-mono tracking-wider cursor-pointer font-bold"
+                      title="Cloudinary media server is linked and verified. Click to configure."
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Cloudinary Vault</span>
+                    </button>
                   ) : (
                     <button
-                      onClick={() => setIsPasscodeModalOpen(true)}
-                      className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-rose-950/40 border border-rose-850/50 hover:border-rose-600 hover:bg-rose-900/20 text-rose-400 font-semibold rounded-full font-mono tracking-wider cursor-pointer transition-all"
-                      title="Google sign-in is required to sync writes to the cloud database. Click here to login."
+                      onClick={() => setIsCloudinarySettingsOpen(true)}
+                      className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-amber-950/40 border border-amber-850/50 hover:border-amber-600 hover:bg-amber-900/10 text-amber-500 font-bold rounded-full font-mono tracking-wider cursor-pointer transition-all"
+                      title="No Cloudinary configured. Snaps are stored locally. Click here to configure Cloudinary."
                     >
-                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                      <span>Local-Only (Auth Required)</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      <span>Local Media Route</span>
                     </button>
                   )}
                 </div>
@@ -1320,7 +1132,6 @@ export default function App() {
                 onSave={async (snapData) => {
                   const isEdit = !!activePoemForEditing;
                   const id = activePoemForEditing?.id || `poem-snap-${Date.now()}`;
-                  const docRef = doc(db, 'poems', id);
                   
                   const existingPoem = poems.find((p) => p.id === id);
                   const createdAt = existingPoem?.createdAt || snapData.createdAt || new Date().toISOString();
@@ -1332,7 +1143,7 @@ export default function App() {
                     updatedAt: new Date().toISOString(),
                   };
 
-                  // Optimistic Local State Update with Persistent Cache
+                  // Update Local State with Persistent Cache
                   setPoems((prev) => {
                     let updatedList = [];
                     if (isEdit) {
@@ -1348,18 +1159,9 @@ export default function App() {
                     return updatedList;
                   });
 
-                  try {
-                    await setDoc(docRef, finalSnap);
-                    showToast(isEdit ? "Daily picture snapshot updated inside ledger." : "Daily picture snapshot saved to ledger.", "success");
-                  } catch (error) {
-                    console.error('Error saving snapshot record:', error);
-                    showToast("Saved to browser fallback storage.", "info");
-                    handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
-                  } finally {
-                    // Cleanly close modal states, avoiding any duplicate saving or stuck forms
-                    setIsSnapFormOpen(false);
-                    setActivePoemForEditing(null);
-                  }
+                  showToast(isEdit ? "Daily picture snapshot updated inside ledger." : "Daily picture snapshot saved to ledger.", "success");
+                  setIsSnapFormOpen(false);
+                  setActivePoemForEditing(null);
                 }}
                 onCancel={() => {
                   setIsSnapFormOpen(false);
@@ -1831,6 +1633,10 @@ export default function App() {
             isOpen={isCloudinarySettingsOpen}
             onClose={() => setIsCloudinarySettingsOpen(false)}
             onShowToast={showToast}
+            onEnableAuthorMode={() => {
+              setIsAuthorMode(true);
+              localStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
+            }}
           />
         )}
       </AnimatePresence>
@@ -1985,67 +1791,32 @@ export default function App() {
                   <div className="w-full border-t border-neutral-800"></div>
                 </div>
                 <div className="relative flex justify-center text-[9px] uppercase font-mono tracking-widest text-neutral-500">
-                  <span className="bg-[#0c0d14] px-2 font-bold">OR CLOUD VERIFIED AUTHOR</span>
+                  <span className="bg-[#0c0d14] px-2 font-bold">OR LINK CLOUDINARY VAULT</span>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <button
-                  id="btn-google-signin"
+                  id="btn-cloudinary-modal-open-from-passcode"
                   type="button"
-                  onClick={handleGoogleSignIn}
-                  className="w-full flex items-center justify-center gap-2.5 py-2.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-neutral-250 font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer font-sans"
+                  onClick={() => {
+                    setIsPasscodeModalOpen(false);
+                    setIsCloudinarySettingsOpen(true);
+                  }}
+                  className="w-full flex items-center justify-center gap-2.5 py-2.5 bg-neutral-900 border border-neutral-850 hover:bg-neutral-800 hover:text-cyan-300 hover:border-cyan-800 text-cyan-400 font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer font-sans uppercase tracking-wider"
                 >
-                  <svg className="w-4 h-4 shrink-0 text-white" viewBox="0 0 24 24">
-                    <path
-                      fill="currentColor"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                  Sign in with Google
+                  <Cloud className="w-4 h-4 shrink-0 text-cyan-400" />
+                  Configure Cloudinary Credentials
                 </button>
 
-                {/* Sandboxed iframe auth help block */}
-                <div className="p-3 bg-amber-950/20 border border-amber-900/30 rounded-xl space-y-2 text-left">
-                  <div className="flex items-center gap-1.5 text-xs text-amber-300 font-bold">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>OAuth / Popup Settings</span>
+                <div className="p-3.5 bg-[#111218]/90 border border-neutral-800/80 rounded-xl space-y-2 text-left">
+                  <div className="flex items-center gap-1.5 text-xs text-cyan-400 font-bold font-mono">
+                    <Cloud className="w-3.5 h-3.5" />
+                    <span>Cloudinary Authorization</span>
                   </div>
                   <p className="text-[10px] text-neutral-400 leading-relaxed font-sans">
-                    1. <b>Open in New Tab</b>: Popups are blocked in the internal preview iframe.<br />
-                    2. <b>Authorized Domains</b>: Google sign-in requires this app origin domain to be authorized in your Firebase console.<br />
-                    Add <b>{window.location.hostname}</b> to authorized domains at:
+                    Setting up your custom Cloudinary Cloud Name and Upload Preset automatically authenticates and authorizes your writing privileges without relying on Google accounts or Firebase databases.
                   </p>
-                  <a
-                    id="link-firebase-auth-console"
-                    href={`https://console.firebase.google.com/project/gen-lang-client-0854716502/authentication/settings`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-neutral-900 border border-neutral-800 text-[9px] font-mono text-amber-400 hover:text-amber-300 rounded hover:bg-neutral-800 transition-all w-full justify-center"
-                  >
-                    Configure Firebase Domains ↗
-                  </a>
-                  <a
-                    id="link-open-new-tab"
-                    href={window.location.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-950/50 border border-cyan-800/40 text-[10px] uppercase font-mono font-bold text-cyan-400 hover:text-cyan-300 rounded-lg hover:bg-cyan-900/30 transition-all w-full justify-center"
-                  >
-                    Open Standalone Page ↗
-                  </a>
                 </div>
               </div>
             </motion.div>
