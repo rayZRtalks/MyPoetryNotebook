@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Upload, X, Check, RotateCcw, AlertCircle, Image as ImageIcon, Lock, Unlock } from 'lucide-react';
 import { PoemAttachment, Poem } from '../types';
 import { storeAttachmentBlob } from '../utils/attachmentDb';
-import { uploadToStorage } from '../firebase';
+import { uploadToStorage, auth } from '../firebase';
 
 interface DailySnapCaptureProps {
   onSave: (snapData: Omit<Poem, 'id' | 'createdAt'> & { createdAt?: string; isPrivate?: boolean }) => void;
@@ -218,6 +218,17 @@ export default function DailySnapCapture({
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {auth.currentUser?.email !== 'soumyaranjan.ray@gmail.com' && (
+          <div className="p-3.5 bg-amber-950/40 border border-amber-800/40 rounded-xl text-xs text-amber-300 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold text-amber-250">Google Cloud Sync Offline / Local-Only Session</p>
+              <p className="leading-relaxed opacity-90 font-sans">
+                You are verified via passcode but not logged in to Google Auth with the author account (<b>soumyaranjan.ray@gmail.com</b>). Your photos will save in offline memory but cannot sync to the cloud, and will disappear on page refresh.
+              </p>
+            </div>
+          </div>
+        )}
         {/* Camera Live Feed / Upload Container */}
         <div className="relative aspect-square w-full max-w-[400px] mx-auto rounded-2xl overflow-hidden border border-neutral-800 bg-neutral-950 shadow-inner flex flex-col items-center justify-center">
           {/* Flash Effect */}

@@ -258,10 +258,11 @@ export default function App() {
       console.error('Error saving poetry record:', error);
       showToast('Saved locally on device (offline/sync alert).', 'info');
       handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
+    } finally {
+      // Always call modal closing triggers, preventing multiple clicks or duplicate records
+      setIsFormOpen(false);
+      setActivePoemForEditing(null);
     }
-    // Always call modal closing triggers, preventing multiple clicks or duplicate records
-    setIsFormOpen(false);
-    setActivePoemForEditing(null);
   };
 
   const handleDeletePoem = async (id: string) => {
@@ -749,6 +750,36 @@ export default function App() {
                   <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
                 </button>
 
+                {/* Firebase Authentication Sync Status badge */}
+                <div id="firebase-sync-status" className="flex items-center">
+                  {currentUser ? (
+                    currentUser.email === 'soumyaranjan.ray@gmail.com' ? (
+                      <div className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-emerald-950/40 border border-emerald-850/50 text-emerald-400 font-semibold rounded-full font-mono tracking-wider" title={`Cloud Synced as ${currentUser.email}`}>
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span>Cloud Active</span>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setIsPasscodeModalOpen(true)}
+                        className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-amber-950/40 border border-amber-850/50 hover:border-amber-600 text-amber-400 font-semibold rounded-full font-mono tracking-wider cursor-pointer"
+                        title={`Signed in as separate account ${currentUser.email}. Click to verify as Soumya.`}
+                      >
+                        <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                        <span>Read-Only ({currentUser.email.slice(0, 10)}...)</span>
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      onClick={() => setIsPasscodeModalOpen(true)}
+                      className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-rose-950/40 border border-rose-850/50 hover:border-rose-600 hover:bg-rose-900/20 text-rose-400 font-semibold rounded-full font-mono tracking-wider cursor-pointer transition-all"
+                      title="Google sign-in is required to sync writes to the cloud database. Click here to login."
+                    >
+                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+                      <span>Local-Only (Auth Required)</span>
+                    </button>
+                  )}
+                </div>
+
                 {/* Backup Export */}
                 <button
                   id="btn-export"
@@ -1208,10 +1239,11 @@ export default function App() {
                     console.error('Error saving snapshot record:', error);
                     showToast("Failed to save snapshot to database. Confirm connection.", "error");
                     handleFirestoreError(error, OperationType.WRITE, `poems/${id}`);
+                  } finally {
+                    // Cleanly close modal states, avoiding any duplicate saving or stuck forms
+                    setIsSnapFormOpen(false);
+                    setActivePoemForEditing(null);
                   }
-                  // Cleanly close modal states, avoiding any duplicate saving or stuck forms
-                  setIsSnapFormOpen(false);
-                  setActivePoemForEditing(null);
                 }}
                 onCancel={() => {
                   setIsSnapFormOpen(false);

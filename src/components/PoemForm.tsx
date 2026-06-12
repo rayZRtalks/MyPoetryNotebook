@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Poem, Category, PoemMood, PoemAttachment } from '../types';
 import { X, Check, Plus, Tag, FolderPlus, Paperclip, Image as ImageIcon, Video, AlertCircle, Lock, Unlock } from 'lucide-react';
 import { storeAttachmentBlob, deleteAttachmentBlob } from '../utils/attachmentDb';
-import { uploadToStorage } from '../firebase';
+import { uploadToStorage, auth } from '../firebase';
 
 interface PoemFormProps {
   poem?: Poem | null; // If editing
@@ -163,6 +163,17 @@ export default function PoemForm({
 
   return (
     <form id="poem-form" onSubmit={handleSubmit} className="space-y-6">
+      {auth.currentUser?.email !== 'soumyaranjan.ray@gmail.com' && (
+        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-bold">Google Cloud Sync Offline / Local-Only Session</p>
+            <p className="leading-relaxed opacity-90 font-sans">
+              You are verified via passcode but not logged in to Google Auth with the author account (<b>soumyaranjan.ray@gmail.com</b>). Your writes will save to local memory but cannot write to the Firestore cloud database, and will reset upon refreshing the tab.
+            </p>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between border-b pb-4 border-[#e8e8ed]">
         <h3 id="form-heading" className="text-xl font-sans font-bold text-[#1d1d1f] tracking-tight">
           {poem ? 'Amending Poetry Entry' : 'New Poetry Entry'}
