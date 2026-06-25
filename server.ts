@@ -12,6 +12,7 @@ app.use(express.urlencoded({ limit: '100mb', extended: true }));
 const DATA_DIR = path.join(process.cwd(), 'data');
 const POEMS_FILE = path.join(DATA_DIR, 'poems.json');
 const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
+const CLOUDINARY_CONFIG_FILE = path.join(DATA_DIR, 'cloudinary_config.json');
 
 // Initial baseline categories congruent with client side definitions
 const INITIAL_CATEGORIES = [
@@ -180,6 +181,34 @@ app.post('/api/upload', (req, res) => {
   } catch (err) {
     console.error('Local server file upload failed:', err);
     res.status(500).json({ error: 'Failed to save uploaded file on local disk server' });
+  }
+});
+
+// Persistent cloud Cloudinary configuration storage
+app.get('/api/cloudinary-config', (req, res) => {
+  try {
+    const config = readJSONFile(CLOUDINARY_CONFIG_FILE, { cloudName: '', uploadPreset: '', enabled: 'false' });
+    res.json(config);
+  } catch (err) {
+    console.error('Failed to read Cloudinary config:', err);
+    res.json({ cloudName: '', uploadPreset: '', enabled: 'false' });
+  }
+});
+
+app.post('/api/cloudinary-config', (req, res) => {
+  try {
+    const { cloudName, uploadPreset, enabled } = req.body;
+    const config = {
+      cloudName: cloudName || '',
+      uploadPreset: uploadPreset || '',
+      enabled: enabled || 'false'
+    };
+    writeJSONFile(CLOUDINARY_CONFIG_FILE, config);
+    console.log('Successfully persisted Cloudinary config to backend file database.');
+    res.json(config);
+  } catch (err) {
+    console.error('Failed to write Cloudinary config:', err);
+    res.status(500).json({ error: 'Failed to write Cloudinary config' });
   }
 });
 

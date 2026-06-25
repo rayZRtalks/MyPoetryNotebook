@@ -8,6 +8,7 @@ interface CloudinarySettingsModalProps {
   onClose: () => void;
   onShowToast: (message: string, type?: 'success' | 'error' | 'info' | 'warning') => void;
   onEnableAuthorMode?: () => void;
+  onConfigUpdated?: () => void;
 }
 
 export default function CloudinarySettingsModal({
@@ -15,6 +16,7 @@ export default function CloudinarySettingsModal({
   onClose,
   onShowToast,
   onEnableAuthorMode,
+  onConfigUpdated,
 }: CloudinarySettingsModalProps) {
   const [cloudName, setCloudName] = useState('');
   const [uploadPreset, setUploadPreset] = useState('');
@@ -34,13 +36,16 @@ export default function CloudinarySettingsModal({
     }
   }, [isOpen]);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const trimmedCloudName = cloudName.trim();
     const trimmedUploadPreset = uploadPreset.trim();
 
-    if (isEnabled && (!trimmedCloudName || !trimmedUploadPreset)) {
+    // UX Enhancement: If they have filled both fields, auto-enable Cloudinary
+    const shouldEnable = isEnabled || (!!trimmedCloudName && !!trimmedUploadPreset);
+
+    if (shouldEnable && (!trimmedCloudName || !trimmedUploadPreset)) {
       onShowToast('Cloud Name and Upload Preset are required to enable Cloudinary.', 'error');
       return;
     }
@@ -48,14 +53,33 @@ export default function CloudinarySettingsModal({
     try {
       safeLocalStorage.setItem('poetry_notebook_cloudinary_cloud_name', trimmedCloudName);
       safeLocalStorage.setItem('poetry_notebook_cloudinary_upload_preset', trimmedUploadPreset);
-      safeLocalStorage.setItem('poetry_notebook_cloudinary_enabled', String(isEnabled && !!trimmedCloudName && !!trimmedUploadPreset));
+      safeLocalStorage.setItem('poetry_notebook_cloudinary_enabled', String(shouldEnable && !!trimmedCloudName && !!trimmedUploadPreset));
 
-      if (isEnabled && trimmedCloudName && trimmedUploadPreset && onEnableAuthorMode) {
+      // Post configuration to backend server database so it persists across incognito sessions
+      try {
+        await fetch('/api/cloudinary-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cloudName: trimmedCloudName,
+            uploadPreset: trimmedUploadPreset,
+            enabled: String(shouldEnable && !!trimmedCloudName && !!trimmedUploadPreset)
+          })
+        });
+      } catch (backendError) {
+        console.warn('Failed to persist Cloudinary config on the server:', backendError);
+      }
+
+      if (shouldEnable && trimmedCloudName && trimmedUploadPreset && onEnableAuthorMode) {
         onEnableAuthorMode();
       }
 
+      if (onConfigUpdated) {
+        onConfigUpdated();
+      }
+
       onShowToast(
-        isEnabled && trimmedCloudName && trimmedUploadPreset
+        shouldEnable && trimmedCloudName && trimmedUploadPreset
           ? 'Cloudinary enabled and linked to Writer authorization!'
           : 'Cloudinary configuration updated.',
         'success'
@@ -63,7 +87,7 @@ export default function CloudinarySettingsModal({
       onClose();
     } catch (err) {
       console.error('Error saving Cloudinary settings:', err);
-      onShowToast('Could not save settings locally.', 'error');
+      onShowToast('Could not save settings.', 'error');
     }
   };
 

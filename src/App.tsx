@@ -90,6 +90,7 @@ export default function App() {
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [isCloudinarySettingsOpen, setIsCloudinarySettingsOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [cloudinaryTrigger, setCloudinaryTrigger] = useState(0);
 
   // --- Load and Sync Cloud Ledger / Database ---
   useEffect(() => {
@@ -142,6 +143,25 @@ export default function App() {
         } catch {
           setPoems(INITIAL_POEMS);
         }
+      }
+
+      try {
+        const cloudRes = await fetch('/api/cloudinary-config');
+        if (cloudRes.ok) {
+          const cloudData = await cloudRes.json();
+          if (cloudData.cloudName) {
+            safeLocalStorage.setItem('poetry_notebook_cloudinary_cloud_name', cloudData.cloudName);
+          }
+          if (cloudData.uploadPreset) {
+            safeLocalStorage.setItem('poetry_notebook_cloudinary_upload_preset', cloudData.uploadPreset);
+          }
+          if (cloudData.enabled) {
+            safeLocalStorage.setItem('poetry_notebook_cloudinary_enabled', cloudData.enabled);
+          }
+          setCloudinaryTrigger(prev => prev + 1);
+        }
+      } catch (err) {
+        console.warn('Backend Cloudinary config fetch failed:', err);
       } finally {
         setIsDbLoading(false);
       }
@@ -1792,6 +1812,7 @@ export default function App() {
               setIsAuthorMode(true);
               safeLocalStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
             }}
+            onConfigUpdated={() => setCloudinaryTrigger(prev => prev + 1)}
           />
         )}
       </AnimatePresence>
