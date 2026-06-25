@@ -176,8 +176,9 @@ export async function uploadToStorage(id: string, blob: Blob | File): Promise<st
     try {
       console.log('Routing file upload to Cloudinary (unsigned preset):', { cloudName, uploadPreset });
       return await uploadToCloudinary(processedBlob, cloudName, uploadPreset);
-    } catch (cloudinaryError) {
-      console.error('Cloudinary direct upload failed, returning local Base64 fallback:', cloudinaryError);
+    } catch (cloudinaryError: any) {
+      console.error('Cloudinary direct upload failed:', cloudinaryError);
+      throw new Error(`Cloudinary configuration is enabled, but the upload failed: ${cloudinaryError?.message || cloudinaryError}. Please check your Cloud Name, Upload Preset, and network connection.`);
     }
   }
 
@@ -185,13 +186,13 @@ export async function uploadToStorage(id: string, blob: Blob | File): Promise<st
   try {
     console.info('Uploading file to backend disk database for persistent URL access...');
     return await uploadToBackend(id, processedBlob);
-  } catch (backendError) {
-    console.error('Failed to upload to backend, falling back to client-side Base64 string:', backendError);
-    try {
-      return await blobToBase64(processedBlob);
-    } catch (error) {
-      console.error('Failed to encode image to Base64 data:', error);
-      return URL.createObjectURL(processedBlob);
-    }
+  } catch (backendError: any) {
+    console.error('Failed to upload to backend:', backendError);
+    const sizeKB = (processedBlob.size / 1024).toFixed(1);
+    throw new Error(
+      `Local server file upload of ${sizeKB}KB failed: ${backendError?.message || backendError}. ` +
+      `This is usually caused by reverse-proxy payload size limits on direct server uploads. ` +
+      `To resolve this and permanently support large/high-quality media files, please open settings (Cloud Icon) and link a free Cloudinary account.`
+    );
   }
 }

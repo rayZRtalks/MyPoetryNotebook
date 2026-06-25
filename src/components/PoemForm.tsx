@@ -112,9 +112,11 @@ export default function PoemForm({
         let finalUrl = '';
         try {
           finalUrl = await uploadToStorage(id, file);
-        } catch (storageErr) {
-          console.error('Firebase Storage upload failed, fallback to local URL', storageErr);
-          finalUrl = URL.createObjectURL(file);
+        } catch (storageErr: any) {
+          console.error('Upload to storage failed:', storageErr);
+          setErrorMsg(storageErr?.message || String(storageErr));
+          setIsUploadingMedia(false);
+          return; // Stop the upload process, don't add a broken attachment!
         }
 
         const newAttachment: PoemAttachment = {

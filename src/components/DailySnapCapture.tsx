@@ -26,6 +26,7 @@ export default function DailySnapCapture({
   const [isPrivate, setIsPrivate] = useState<boolean>(editPoem?.isPrivate || false);
   const [cameraError, setCameraError] = useState<string>('');
   const [showFlash, setShowFlash] = useState<boolean>(false);
+  const [uploadError, setUploadError] = useState<string>('');
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -119,9 +120,12 @@ export default function DailySnapCapture({
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
+    setCameraError('');
+    setUploadError('');
+
     const file = files[0];
     if (!file.type.startsWith('image/')) {
-      alert('Please upload an image file.');
+      setCameraError('Only image files (JPEG, PNG, etc.) are accepted.');
       return;
     }
 
@@ -137,6 +141,8 @@ export default function DailySnapCapture({
     setCapturedUrl('');
     setCapturedBlob(null);
     setUseCamera(true);
+    setUploadError('');
+    setCameraError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -149,24 +155,31 @@ export default function DailySnapCapture({
       const attachmentId = `attach-snap-${Date.now()}`;
       try {
         setIsUploading(true);
+        setUploadError('');
         // Store picture blob in IndexedDB
         await storeAttachmentBlob(attachmentId, capturedBlob);
 
         let cloudUrl = '';
         try {
           cloudUrl = await uploadToStorage(attachmentId, capturedBlob);
-        } catch (err) {
-          console.error('Failed to upload snap to Firebase Storage', err);
+        } catch (err: any) {
+          console.error('Failed to upload snap to Storage', err);
+          setUploadError(err?.message || String(err));
+          setIsUploading(false);
+          return; // Stop and prevent saving with a broken transient URL!
         }
 
         snapAttachment = {
           id: attachmentId,
           name: `Daily_Capture_${Date.now()}.jpg`,
           type: 'image',
-          url: cloudUrl || capturedUrl,
+          url: cloudUrl,
         };
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to save snap to IndexedDB', err);
+        setUploadError(`Failed to prepare snapshot file: ${err?.message || err}`);
+        setIsUploading(false);
+        return;
       } finally {
         setIsUploading(false);
       }
@@ -411,6 +424,16 @@ export default function DailySnapCapture({
         )}
 
         {/* Action Triggers */}
+        {uploadError && (
+          <div className="flex gap-2.5 items-start bg-red-950/40 border border-red-900/40 p-3.5 rounded-xl text-neutral-200">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-left">
+              <p className="text-xs font-bold text-red-400 font-mono">UPLOAD FAILED</p>
+              <p className="text-[11px] leading-relaxed text-neutral-300 font-sans">{uploadError}</p>
+            </div>
+          </div>
+        )}
+
         {capturedUrl && (
           <button
             type="submit"
