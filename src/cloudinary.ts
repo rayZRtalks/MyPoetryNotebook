@@ -37,9 +37,33 @@ function blobToBase64(blob: Blob | File): Promise<string> {
   });
 }
 
+async function uploadToBackend(id: string, blob: Blob | File): Promise<string> {
+  const filename = (blob as File).name || `snap-${id}.jpg`;
+  const base64 = await blobToBase64(blob);
+  
+  const response = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      filename,
+      data: base64,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Server responded with status ${response.status}`);
+  }
+
+  const result = await response.json();
+  if (!result.url) {
+    throw new Error('No URL returned from backend upload API');
+  }
+  return result.url;
+}
+
 /**
  * Uploads a file or snapshot blob directly to Cloudinary.
- * Bypasses to a robust local Base64 URL fallback if Cloudinary is not configured,
+ * Bypasses to a robust local backend disk upload if Cloudinary is not configured,
  * ensuring zero dependencies on any Firebase Storage infrastructure.
  */
 export async function uploadToStorage(id: string, blob: Blob | File): Promise<string> {
@@ -79,12 +103,17 @@ export async function uploadToStorage(id: string, blob: Blob | File): Promise<st
     }
   }
 
-  // Local fallback: convert to a persistent Base64 Data URL or safe Object URL
+  // Local fallback: upload to backend local disk database for multi-session persistence
   try {
-    console.info('Bypassing cloud upload - converting image snap to persistent Base64 string for local offline ledger.');
-    return await blobToBase64(blob);
-  } catch (error) {
-    console.error('Failed to encode image to Base64 data:', error);
-    return URL.createObjectURL(blob);
+    console.info('Uploading file to backend disk database for persistent URL access...');
+    return await uploadToBackend(id, blob);
+  } catch (backendError) {
+    console.error('Failed to upload to backend, falling back to client-side Base64 string:', backendError);
+    try {
+      return await blobToBase64(blob);
+    } catch (error) {
+      console.error('Failed to encode image to Base64 data:', error);
+      return URL.createObjectURL(blob);
+    }
   }
 }

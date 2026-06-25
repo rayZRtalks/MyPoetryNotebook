@@ -151,6 +151,38 @@ app.post('/api/reset', (req, res) => {
   res.json({ poems: [], categories: INITIAL_CATEGORIES });
 });
 
+// Real Persistent Local Upload Endpoint for Incognito and Fallback support
+const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+app.use('/uploads', express.static(UPLOADS_DIR));
+
+app.post('/api/upload', (req, res) => {
+  try {
+    const { filename, data } = req.body;
+    if (!filename || !data) {
+      return res.status(400).json({ error: 'Filename and data are required' });
+    }
+
+    // Strip out the data URL prefix if present (e.g. "data:image/png;base64,")
+    const base64Data = data.replace(/^data:[^;]+;base64,/, '');
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Create a safe, unique filename
+    const safeName = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const filePath = path.join(UPLOADS_DIR, safeName);
+
+    fs.writeFileSync(filePath, buffer);
+
+    console.log(`Successfully persisted file locally to ${filePath}`);
+    res.json({ url: `/uploads/${safeName}` });
+  } catch (err) {
+    console.error('Local server file upload failed:', err);
+    res.status(500).json({ error: 'Failed to save uploaded file on local disk server' });
+  }
+});
+
 // --- Vite Asset / Static Serving Middleware ---
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
