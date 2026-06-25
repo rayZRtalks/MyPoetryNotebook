@@ -9,6 +9,15 @@ const PORT = 3000;
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
+// Log all incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`[SERVER LOG] ${new Date().toISOString()} - ${req.method} ${req.url}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log(`[SERVER LOG] Request body keys: ${Object.keys(req.body).join(', ')}`);
+  }
+  next();
+});
+
 const DATA_DIR = path.join(process.cwd(), 'data');
 const POEMS_FILE = path.join(DATA_DIR, 'poems.json');
 const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');

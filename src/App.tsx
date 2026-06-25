@@ -121,28 +121,101 @@ export default function App() {
         }
       }
 
+      let backendPoems: Poem[] = [];
+      let backendFetchSuccess = false;
       try {
         // Load Poems from backend
         const poemsRes = await fetch('/api/poems');
         if (poemsRes.ok) {
-          const poemsData = await poemsRes.json();
-          setPoems(poemsData);
-          safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(poemsData));
-        } else {
-          throw new Error('Poems fetch not ok');
+          backendPoems = await poemsRes.json();
+          backendFetchSuccess = true;
         }
       } catch (err) {
-        console.warn('Backend poems fetch failed, falling back locally:', err);
-        try {
-          const savedPoems = safeLocalStorage.getItem('poetry_notebook_poems_cache');
-          if (savedPoems) {
-            setPoems(JSON.parse(savedPoems));
-          } else {
-            setPoems(INITIAL_POEMS);
-          }
-        } catch {
-          setPoems(INITIAL_POEMS);
+        console.warn('Backend poems fetch failed:', err);
+      }
+
+      // Load Poems from local cache
+      let localPoems: Poem[] = [];
+      try {
+        const savedPoems = safeLocalStorage.getItem('poetry_notebook_poems_cache');
+        if (savedPoems) {
+          localPoems = JSON.parse(savedPoems);
         }
+      } catch (err) {
+        console.warn('Failed reading local poems cache:', err);
+      }
+
+      if (backendFetchSuccess) {
+        // Double-Safe Sync Engine:
+        // Merge local poems and backend poems based on ID and updatedAt.
+        // If a poem exists in both, keep the one with the newer updatedAt timestamp.
+        const mergedPoemsMap = new Map<string, Poem>();
+        
+        // Load local poems first
+        localPoems.forEach((p) => {
+          if (p && p.id) mergedPoemsMap.set(p.id, p);
+        });
+
+        // Merge backend poems (override if backend has a newer or same timestamp, or if local is old)
+        backendPoems.forEach((bp) => {
+          if (bp && bp.id) {
+            const existing = mergedPoemsMap.get(bp.id);
+            if (!existing) {
+              mergedPoemsMap.set(bp.id, bp);
+            } else {
+              const existingTime = new Date(existing.updatedAt || existing.createdAt || 0).getTime();
+              const backendTime = new Date(bp.updatedAt || bp.createdAt || 0).getTime();
+              if (backendTime >= existingTime) {
+                mergedPoemsMap.set(bp.id, bp);
+              }
+            }
+          }
+        });
+
+        const finalMergedList = Array.from(mergedPoemsMap.values()).sort((a, b) => {
+          const aTime = new Date(a.createdAt).getTime();
+          const bTime = new Date(b.createdAt).getTime();
+          return bTime - aTime; // Newest first
+        });
+
+        setPoems(finalMergedList);
+        safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(finalMergedList));
+
+        // If backend was empty but local had files, push local files to backend so they persist!
+        if (backendPoems.length === 0 && localPoems.length > 0) {
+          console.info('Backend ledger is empty. Uploading local cached entries to backend to sync...');
+          for (const localP of localPoems) {
+            try {
+              await fetch('/api/poems', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(localP),
+              });
+            } catch (postErr) {
+              console.warn('Failed to sync local poem to backend:', localP.id, postErr);
+            }
+          }
+        } else if (finalMergedList.length > backendPoems.length) {
+          // Sync any new local poems to the backend that weren't there
+          console.info('Syncing unsaved local entries to cloud database...');
+          for (const p of finalMergedList) {
+            const inBackend = backendPoems.some((bp) => bp.id === p.id);
+            if (!inBackend) {
+              try {
+                await fetch('/api/poems', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(p),
+                });
+              } catch (postErr) {
+                console.warn('Failed to sync poem to backend:', p.id, postErr);
+              }
+            }
+          }
+        }
+      } else {
+        // Backend load failed entirely, fall back to local cached list
+        setPoems(localPoems.length > 0 ? localPoems : INITIAL_POEMS);
       }
 
       try {
