@@ -145,6 +145,45 @@ export default function App() {
         console.warn('Failed reading local poems cache:', err);
       }
 
+      // Check for and migrate legacy base64 attachments to backend disk storage on startup
+      try {
+        let modified = false;
+        for (const p of localPoems) {
+          if (p.attachments && p.attachments.length > 0) {
+            for (const att of p.attachments) {
+              if (att.url && att.url.startsWith('data:')) {
+                console.info(`Migrating legacy base64 attachment for poem "${p.title}"...`);
+                try {
+                  const uploadRes = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      filename: att.name || 'migrated-image.jpg',
+                      data: att.url
+                    })
+                  });
+                  if (uploadRes.ok) {
+                    const result = await uploadRes.json();
+                    if (result.url) {
+                      att.url = result.url;
+                      modified = true;
+                      console.info(`Successfully migrated legacy base64 attachment to static URL: ${result.url}`);
+                    }
+                  }
+                } catch (e) {
+                  console.error('Failed to upload legacy base64 attachment to backend:', e);
+                }
+              }
+            }
+          }
+        }
+        if (modified) {
+          safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(localPoems));
+        }
+      } catch (err) {
+        console.warn('Failed to perform localPoems base64 migration:', err);
+      }
+
       if (backendFetchSuccess) {
         // Double-Safe Sync Engine:
         // Merge local poems and backend poems based on ID and updatedAt.
@@ -551,12 +590,43 @@ export default function App() {
       try {
         const parsed = JSON.parse(event.target?.result as string);
         if (parsed && Array.isArray(parsed.poems) && Array.isArray(parsed.categories)) {
-          setPoems(parsed.poems);
-          setCategories(parsed.categories);
-          
           // Sync imported data with cloud database
           const syncImport = async () => {
              try {
+                // Pre-cleanse any legacy base64 attachments in imported backup
+                for (const poem of parsed.poems) {
+                  if (poem.attachments && poem.attachments.length > 0) {
+                    for (const att of poem.attachments) {
+                      if (att.url && att.url.startsWith('data:')) {
+                        try {
+                          const uploadRes = await fetch('/api/upload', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                              filename: att.name || 'migrated-image.jpg',
+                              data: att.url
+                            })
+                          });
+                          if (uploadRes.ok) {
+                            const result = await uploadRes.json();
+                            if (result.url) {
+                              att.url = result.url;
+                            }
+                          }
+                        } catch (e) {
+                          console.error('Failed to migrate imported base64 attachment:', e);
+                        }
+                      }
+                    }
+                  }
+                }
+
+                // Update state and cache with cleansed data
+                setPoems(parsed.poems);
+                setCategories(parsed.categories);
+                safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(parsed.poems));
+                safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(parsed.categories));
+
                await Promise.all([
                  ...parsed.categories.map((cat: Category) =>
                    fetch('/api/categories', {

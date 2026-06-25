@@ -65,7 +65,7 @@ async function uploadToBackend(id: string, blob: Blob | File): Promise<string> {
  * Compresses an image file or blob to a standard JPEG of max dimensions and high compression ratio,
  * ensuring it stays well under proxy size limits (e.g., 100KB-150KB instead of 5MB).
  */
-export function compressImage(blob: Blob | File, maxWidth = 1024, maxHeight = 1024, quality = 0.7): Promise<Blob> {
+export function compressImage(blob: Blob | File, maxWidth = 640, maxHeight = 640, quality = 0.5): Promise<Blob> {
   return new Promise((resolve, reject) => {
     // If it's not an image blob or FileReader is missing, return original
     if (!blob.type.startsWith('image/') || typeof window === 'undefined') {
