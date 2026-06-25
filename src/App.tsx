@@ -338,11 +338,22 @@ export default function App() {
       if (response.ok) {
         showToast(isEdit ? 'Poem updated and synchronized in the cloud ledger.' : 'New poem saved and synchronized in the cloud ledger.', 'success');
       } else {
-        throw new Error('Sync failed');
+        let errorDetails = '';
+        try {
+          const errData = await response.json();
+          errorDetails = errData.error || errData.message || JSON.stringify(errData);
+        } catch {
+          try {
+            errorDetails = await response.text();
+          } catch {
+            errorDetails = `${response.status} ${response.statusText}`;
+          }
+        }
+        throw new Error(errorDetails || `${response.status} ${response.statusText}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving poem to backend:', error);
-      showToast('Saved locally. Cloud sync failed.', 'warning');
+      showToast(`Saved locally. Cloud sync failed: ${error?.message || String(error)}`, 'warning');
     } finally {
       setIsFormOpen(false);
       setActivePoemForEditing(null);
@@ -371,11 +382,22 @@ export default function App() {
       if (response.ok) {
         showToast('Poem permanently removed from your ledger.', 'warning');
       } else {
-        throw new Error('Removal failed');
+        let errorDetails = '';
+        try {
+          const errData = await response.json();
+          errorDetails = errData.error || errData.message || JSON.stringify(errData);
+        } catch {
+          try {
+            errorDetails = await response.text();
+          } catch {
+            errorDetails = `${response.status} ${response.statusText}`;
+          }
+        }
+        throw new Error(errorDetails || `${response.status} ${response.statusText}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting poem from backend:', error);
-      showToast('Deleted locally. Cloud removal failed.', 'warning');
+      showToast(`Deleted locally. Cloud removal failed: ${error?.message || String(error)}`, 'warning');
     }
   };
 
@@ -483,11 +505,22 @@ export default function App() {
       if (response.ok) {
         showToast('Category permanently deleted. Affected poems re-routed in cloud ledger.', 'info');
       } else {
-        throw new Error('Removal failed');
+        let errorDetails = '';
+        try {
+          const errData = await response.json();
+          errorDetails = errData.error || errData.message || JSON.stringify(errData);
+        } catch {
+          try {
+            errorDetails = await response.text();
+          } catch {
+            errorDetails = `${response.status} ${response.statusText}`;
+          }
+        }
+        throw new Error(errorDetails || `${response.status} ${response.statusText}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete category from backend:', err);
-      showToast('Deleted locally. Cloud sync failed.', 'warning');
+      showToast(`Deleted locally. Cloud sync failed: ${err?.message || String(err)}`, 'warning');
     }
   };
 
@@ -643,11 +676,22 @@ export default function App() {
         setIsEditingVerse(false);
         showToast('Verse text updated and synchronized inside your cloud ledger.', 'success');
       } else {
-        throw new Error('Sync failed');
+        let errorDetails = '';
+        try {
+          const errData = await response.json();
+          errorDetails = errData.error || errData.message || JSON.stringify(errData);
+        } catch {
+          try {
+            errorDetails = await response.text();
+          } catch {
+            errorDetails = `${response.status} ${response.statusText}`;
+          }
+        }
+        throw new Error(errorDetails || `${response.status} ${response.statusText}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to write verse update to backend server:', error);
-      showToast('Saved locally. Cloud sync failed.', 'warning');
+      showToast(`Saved locally. Cloud sync failed: ${error?.message || String(error)}`, 'warning');
       setIsEditingVerse(false);
     }
   };
@@ -1401,11 +1445,22 @@ export default function App() {
                     if (response.ok) {
                       showToast(isEdit ? "Daily picture snapshot updated and synchronized in cloud ledger." : "Daily picture snapshot saved and synchronized in cloud ledger.", "success");
                     } else {
-                      throw new Error('Sync failed');
+                      let errorDetails = '';
+                      try {
+                        const errData = await response.json();
+                        errorDetails = errData.error || errData.message || JSON.stringify(errData);
+                      } catch {
+                        try {
+                          errorDetails = await response.text();
+                        } catch {
+                          errorDetails = `${response.status} ${response.statusText}`;
+                        }
+                      }
+                      throw new Error(errorDetails || `${response.status} ${response.statusText}`);
                     }
-                  } catch (error) {
+                  } catch (error: any) {
                     console.error('Error saving snapshot to backend:', error);
-                    showToast('Saved locally. Cloud sync failed.', 'warning');
+                    showToast(`Saved locally. Cloud sync failed: ${error?.message || String(error)}`, 'warning');
                   } finally {
                     setIsSnapFormOpen(false);
                     setActivePoemForEditing(null);
