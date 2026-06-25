@@ -415,7 +415,7 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(`/api/poems/${id}`, {
+      const response = await fetch(`/api/poems/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
       if (response.ok) {
@@ -538,7 +538,7 @@ export default function App() {
     });
 
     try {
-      const response = await fetch(`/api/categories/${catId}`, {
+      const response = await fetch(`/api/categories/${encodeURIComponent(catId)}`, {
         method: 'DELETE',
       });
       if (response.ok) {

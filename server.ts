@@ -9,16 +9,28 @@ const PORT = 3000;
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
-// Log all incoming requests for debugging
+// Log all incoming requests to console and to a persistent file for debugging
+const DATA_DIR = path.join(process.cwd(), 'data');
+const REQUESTS_LOG_FILE = path.join(DATA_DIR, 'server_requests.log');
+
 app.use((req, res, next) => {
-  console.log(`[SERVER LOG] ${new Date().toISOString()} - ${req.method} ${req.url}`);
-  if (req.body && Object.keys(req.body).length > 0) {
-    console.log(`[SERVER LOG] Request body keys: ${Object.keys(req.body).join(', ')}`);
-  }
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const logLine = `[${new Date().toISOString()}] ${req.method} ${req.url} - Status: ${res.statusCode} (${duration}ms) - UA: ${req.headers['user-agent'] || 'unknown'}\n`;
+    console.log(`[SERVER LOG] ${logLine.trim()}`);
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      fs.appendFileSync(REQUESTS_LOG_FILE, logLine, 'utf-8');
+    } catch (err) {
+      console.error('Failed to write to request log file:', err);
+    }
+  });
   next();
 });
 
-const DATA_DIR = path.join(process.cwd(), 'data');
 const POEMS_FILE = path.join(DATA_DIR, 'poems.json');
 const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const CLOUDINARY_CONFIG_FILE = path.join(DATA_DIR, 'cloudinary_config.json');
