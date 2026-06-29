@@ -1,1 +1,7 @@
-[]
+[
+  {
+    "id": "test-poem-wildcard/abc%20xyz",
+    "title": "Test Poem",
+    "body": "Hello world"
+  }
+]

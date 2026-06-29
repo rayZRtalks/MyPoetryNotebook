@@ -109,10 +109,10 @@ app.post('/api/categories', (req, res) => {
   res.json(newCat);
 });
 
-app.delete('/api/categories/:id(*)', (req, res) => {
-  const catId = req.params.id;
-  const rawCatId = req.originalUrl.substring(req.originalUrl.indexOf('/api/categories/') + '/api/categories/'.length);
+app.delete('/api/categories/*', (req, res) => {
+  const rawCatId = req.params[0] || req.originalUrl.substring(req.originalUrl.indexOf('/api/categories/') + '/api/categories/'.length);
   const decodedRawCatId = decodeURIComponent(rawCatId);
+  const catId = decodedRawCatId;
 
   const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
   const remainingCats = categories.filter((c: any) => {
@@ -163,10 +163,10 @@ app.post('/api/poems', (req, res) => {
   res.json(newPoem);
 });
 
-app.delete('/api/poems/:id(*)', (req, res) => {
-  const id = req.params.id;
-  const rawId = req.originalUrl.substring(req.originalUrl.indexOf('/api/poems/') + '/api/poems/'.length);
+app.delete('/api/poems/*', (req, res) => {
+  const rawId = req.params[0] || req.originalUrl.substring(req.originalUrl.indexOf('/api/poems/') + '/api/poems/'.length);
   const decodedRawId = decodeURIComponent(rawId);
+  const id = decodedRawId;
 
   const poems = readJSONFile(POEMS_FILE, []);
   const remainingPoems = poems.filter((p: any) => {
@@ -184,7 +184,8 @@ app.post('/api/reset', (req, res) => {
 });
 
 // Real Persistent Local Upload Endpoint for Incognito and Fallback support
-const UPLOADS_DIR = path.join(process.cwd(), 'uploads');
+// Stored inside DATA_DIR to ensure durable cloud persistence on ephemeral Cloud Run containers
+const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
@@ -241,6 +242,11 @@ app.post('/api/cloudinary-config', (req, res) => {
     console.error('Failed to write Cloudinary config:', err);
     res.status(500).json({ error: 'Failed to write Cloudinary config' });
   }
+});
+
+// Catch-all API 404 handler for unmatched routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: `API endpoint not found: ${req.method} ${req.originalUrl}` });
 });
 
 // --- Vite Asset / Static Serving Middleware ---
