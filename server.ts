@@ -109,10 +109,15 @@ app.post('/api/categories', (req, res) => {
   res.json(newCat);
 });
 
-app.delete('/api/categories/:id', (req, res) => {
+app.delete('/api/categories/:id(*)', (req, res) => {
   const catId = req.params.id;
+  const rawCatId = req.originalUrl.substring(req.originalUrl.indexOf('/api/categories/') + '/api/categories/'.length);
+  const decodedRawCatId = decodeURIComponent(rawCatId);
+
   const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
-  const remainingCats = categories.filter((c: any) => c.id !== catId);
+  const remainingCats = categories.filter((c: any) => {
+    return c.id !== catId && c.id !== rawCatId && c.id !== decodedRawCatId;
+  });
   writeJSONFile(CATEGORIES_FILE, remainingCats);
 
   // Fallback category ID for re-routing affected poems
@@ -122,7 +127,7 @@ app.delete('/api/categories/:id', (req, res) => {
   const poems = readJSONFile(POEMS_FILE, []);
   let updated = false;
   const updatedPoems = poems.map((p: any) => {
-    if (p.categoryId === catId) {
+    if (p.categoryId === catId || p.categoryId === rawCatId || p.categoryId === decodedRawCatId) {
       updated = true;
       return { ...p, categoryId: backupCatId, updatedAt: new Date().toISOString() };
     }
@@ -158,10 +163,15 @@ app.post('/api/poems', (req, res) => {
   res.json(newPoem);
 });
 
-app.delete('/api/poems/:id', (req, res) => {
+app.delete('/api/poems/:id(*)', (req, res) => {
   const id = req.params.id;
+  const rawId = req.originalUrl.substring(req.originalUrl.indexOf('/api/poems/') + '/api/poems/'.length);
+  const decodedRawId = decodeURIComponent(rawId);
+
   const poems = readJSONFile(POEMS_FILE, []);
-  const remainingPoems = poems.filter((p: any) => p.id !== id);
+  const remainingPoems = poems.filter((p: any) => {
+    return p.id !== id && p.id !== rawId && p.id !== decodedRawId;
+  });
   writeJSONFile(POEMS_FILE, remainingPoems);
   res.json({ success: true });
 });
