@@ -495,6 +495,45 @@ app.post('/api/cloudinary-config', (req, res) => {
   }
 });
 
+// Real-time Supabase connection diagnostics
+app.get('/api/supabase-status', async (req, res) => {
+  const isConfigured = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
+  let statusError: any = null;
+  let isVerified = false;
+  
+  if (isConfigured) {
+    try {
+      const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      const { error } = await client.from('categories').select('id').limit(1);
+      if (error) {
+        statusError = {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint
+        };
+      } else {
+        isVerified = true;
+      }
+    } catch (err: any) {
+      statusError = {
+        message: err?.message || String(err)
+      };
+    }
+  }
+
+  res.json({
+    configured: isConfigured,
+    enabled: supabaseEnabled,
+    verified: isVerified,
+    url: SUPABASE_URL ? `${SUPABASE_URL.substring(0, 15)}...` : null,
+    keyPrefix: SUPABASE_ANON_KEY ? `${SUPABASE_ANON_KEY.substring(0, 8)}...` : null,
+    keyLength: SUPABASE_ANON_KEY ? SUPABASE_ANON_KEY.length : 0,
+    error: statusError,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Catch-all API 404 handler for unmatched routes
 app.use('/api/*', (req, res) => {
   res.status(404).json({ error: `API endpoint not found: ${req.method} ${req.originalUrl}` });

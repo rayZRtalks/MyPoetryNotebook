@@ -93,10 +93,34 @@ export default function App() {
   const [isCloudinarySettingsOpen, setIsCloudinarySettingsOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [cloudinaryTrigger, setCloudinaryTrigger] = useState(0);
+  const [supabaseStatus, setSupabaseStatus] = useState<{
+    configured: boolean;
+    enabled: boolean;
+    verified: boolean;
+    url: string | null;
+    keyPrefix: string | null;
+    keyLength: number;
+    error: { code?: string; message: string; details?: string; hint?: string } | null;
+    timestamp: string;
+  } | null>(null);
+  const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+
+  const fetchSupabaseStatus = async () => {
+    try {
+      const res = await fetch('/api/supabase-status');
+      if (res.ok) {
+        const data = await res.json();
+        setSupabaseStatus(data);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch Supabase connection status:', err);
+    }
+  };
 
   // --- Load and Sync Cloud Ledger / Database ---
   useEffect(() => {
     setIsDbLoading(true);
+    fetchSupabaseStatus();
 
     const loadData = async () => {
       let tempCategories: Category[] = [];
@@ -1061,6 +1085,36 @@ export default function App() {
                   <span>Cloudinary</span>
                 </button>
 
+                {/* Supabase Connection diagnostics trigger */}
+                <button
+                  id="btn-supabase-status"
+                  onClick={() => {
+                    fetchSupabaseStatus();
+                    setIsSupabaseModalOpen(true);
+                  }}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs border rounded-full font-semibold transition-all cursor-pointer font-mono tracking-wider ${
+                    !supabaseStatus 
+                      ? 'bg-[#111218]/90 border-neutral-800 text-neutral-400' 
+                      : !supabaseStatus.configured 
+                        ? 'bg-[#111218]/90 border-neutral-800 text-neutral-400 hover:border-neutral-700'
+                        : supabaseStatus.verified 
+                          ? 'bg-emerald-950/40 border-emerald-850/50 hover:border-emerald-500 hover:bg-emerald-900/10 text-emerald-400'
+                          : 'bg-red-950/40 border-red-850/50 hover:border-red-500 hover:bg-red-900/10 text-red-400'
+                  }`}
+                  title="Check Supabase Connection, activity ledger and error logs"
+                >
+                  <span className={`w-1.5 h-1.5 rounded-full ${
+                    !supabaseStatus 
+                      ? 'bg-neutral-500' 
+                      : !supabaseStatus.configured 
+                        ? 'bg-neutral-500'
+                        : supabaseStatus.verified 
+                          ? 'bg-emerald-400 animate-pulse'
+                          : 'bg-red-500 animate-pulse'
+                  }`} />
+                  <span>Database Sync</span>
+                </button>
+
                 {/* Revert to demo */}
                 <button
                   id="btn-trigger-reset"
@@ -1976,6 +2030,199 @@ export default function App() {
             }}
             onConfigUpdated={() => setCloudinaryTrigger(prev => prev + 1)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* 3.6 Supabase Database Diagnostics Modal */}
+      <AnimatePresence>
+        {isSupabaseModalOpen && (
+          <div id="modal-container-supabase" className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+            <motion.div
+              id="backdrop-supabase"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSupabaseModalOpen(false)}
+              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
+            />
+            <motion.div
+              id="sheet-supabase"
+              initial={{ scale: 0.95, y: 12, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 12, opacity: 0 }}
+              className="bg-[#0b0c12] border border-neutral-800/80 rounded-3xl p-6 shadow-2xl relative z-10 w-full max-w-lg space-y-5 text-neutral-200 font-sans"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl border ${
+                    !supabaseStatus?.configured 
+                      ? 'bg-neutral-900 border-neutral-800 text-neutral-400' 
+                      : supabaseStatus.verified 
+                        ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-400'
+                        : 'bg-red-950/40 border-red-800/60 text-red-400'
+                  }`}>
+                    <Cloud className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 id="supabase-heading" className="text-base font-display font-bold text-neutral-100 tracking-tight leading-tight">
+                      Supabase Cloud Sync Tracker
+                    </h3>
+                    <p className="text-[9px] text-cyan-400 font-mono tracking-widest font-extrabold uppercase">
+                      Real-time Database Diagnostics
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsSupabaseModalOpen(false)}
+                  className="p-1.5 hover:bg-neutral-800/80 text-neutral-400 hover:text-white rounded-full transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Status Indicator Card */}
+              <div className="bg-[#12131b] border border-neutral-800/60 rounded-2xl p-4 space-y-3.5">
+                <div className="flex items-center justify-between border-b border-neutral-800/50 pb-2.5">
+                  <span className="text-xs font-mono font-bold text-neutral-400 uppercase tracking-wider">Database Status</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full ${
+                      !supabaseStatus?.configured 
+                        ? 'bg-neutral-600' 
+                        : supabaseStatus.verified 
+                          ? 'bg-emerald-500 animate-pulse'
+                          : 'bg-red-500 animate-pulse'
+                    }`} />
+                    <span className="text-xs font-mono font-bold uppercase tracking-widest">
+                      {!supabaseStatus 
+                        ? 'LOADING...' 
+                        : !supabaseStatus.configured 
+                          ? 'NOT CONFIGURED' 
+                          : supabaseStatus.verified 
+                            ? 'ACTIVE & SYNCED' 
+                            : 'CONNECTION ERROR'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 text-xs font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-neutral-550 text-neutral-400">API Endpoint:</span>
+                    <span className="text-neutral-300 font-bold">{supabaseStatus?.url || 'Undefined'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-550 text-neutral-400">Anon Key Prefix:</span>
+                    <span className="text-neutral-300 font-bold">{supabaseStatus?.keyPrefix || 'Undefined'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-550 text-neutral-400">Anon Key Length:</span>
+                    <span className="text-neutral-300 font-bold">{supabaseStatus?.keyLength || 0} characters</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-neutral-550 text-neutral-400">Last Checked:</span>
+                    <span className="text-neutral-400 font-bold text-[10px]">
+                      {supabaseStatus?.timestamp ? new Date(supabaseStatus.timestamp).toLocaleTimeString() : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detailed Error Logger */}
+              {supabaseStatus?.configured && supabaseStatus?.error && (
+                <div className="bg-red-950/20 border border-red-900/30 rounded-2xl p-4.5 space-y-3 text-xs leading-relaxed">
+                  <div className="flex items-center gap-2 text-red-400 font-bold">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span className="font-mono uppercase tracking-wider">Supabase Connection Error Logs</span>
+                  </div>
+                  <div className="font-mono text-red-300 bg-red-950/30 p-2.5 rounded-xl border border-red-900/20 max-h-24 overflow-y-auto whitespace-pre-wrap select-all font-mono text-[11px]">
+                    {`Error Code: ${supabaseStatus.error.code || 'None'}\nMessage: ${supabaseStatus.error.message || 'Unknown error'}\nDetails: ${supabaseStatus.error.details || 'None'}\nHint: ${supabaseStatus.error.hint || 'None'}`}
+                  </div>
+
+                  {/* Troubleshooting Guidance Card */}
+                  <div className="bg-[#12131b]/80 border border-neutral-800/80 p-3 rounded-xl space-y-1.5 text-[11px] text-neutral-300">
+                    <h4 className="font-bold text-amber-400 font-mono uppercase tracking-wide">💡 How to Fix This:</h4>
+                    {supabaseStatus.error.message?.includes('Invalid API key') ? (
+                      <div className="font-sans leading-normal space-y-1">
+                        <p>
+                          Your <code className="text-cyan-400 font-mono">SUPABASE_ANON_KEY</code> is invalid. Currently it begins with <code className="text-red-400 font-mono">"{supabaseStatus.keyPrefix}"</code> and is <code className="text-red-400 font-mono">{supabaseStatus.keyLength} chars</code>, which matches a <strong>Database Password</strong> or <strong>Account Password</strong> rather than the actual anonymous API key.
+                        </p>
+                        <p className="mt-2">
+                          <strong>Fix:</strong> Go to your <strong>Supabase Dashboard</strong> -&gt; <strong>Settings (gear icon)</strong> -&gt; <strong>API</strong>, copy the <strong className="text-emerald-400 font-mono">anon (public) API Key</strong> (a very long JWT string starting with <code className="text-emerald-400 font-mono">eyJ...</code>), and paste it in your AI Studio project settings.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="font-sans leading-normal space-y-1">
+                        <p>
+                          Your connection credentials are correct, but the SQL tables do not exist in your database yet.
+                        </p>
+                        <p className="mt-2">
+                          <strong>Fix:</strong> Open your <strong>Supabase SQL Editor</strong>, paste and run the following script to create your columns and tables:
+                        </p>
+                        <pre className="mt-2 p-2 bg-[#08090c] text-emerald-400 rounded-lg text-[9px] font-mono overflow-x-auto select-all max-h-36">
+{`CREATE TABLE IF NOT EXISTS categories (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  color TEXT
+);
+
+CREATE TABLE IF NOT EXISTS poems (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  poet TEXT,
+  "categoryId" TEXT REFERENCES categories(id),
+  mood TEXT,
+  tags TEXT,
+  "isPhotoCapture" BOOLEAN DEFAULT FALSE,
+  "photoPrompt" TEXT,
+  "isLocalOnly" BOOLEAN DEFAULT FALSE,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);`}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Explanation of Sync tracking and where to watch in Supabase console */}
+              <div className="text-xs text-neutral-400 space-y-2">
+                <span className="font-mono font-bold uppercase tracking-wider text-neutral-300 block">How to Track Activity in Supabase:</span>
+                <p className="leading-relaxed">
+                  Every time you add, edit, or delete a poem or category, the local cache is saved immediately. If your database credentials are fully verified, the server automatically synchronizes those events to your Supabase tables.
+                </p>
+                <ul className="list-disc pl-5 space-y-1 font-mono text-[11px] text-neutral-400 leading-normal">
+                  <li>
+                    To see active data rows: Open your <a href="https://supabase.com" target="_blank" rel="noreferrer" className="text-cyan-400 underline hover:text-cyan-300">Supabase Console</a> -&gt; <strong>Table Editor</strong> -&gt; select the <code>poems</code> or <code>categories</code> table.
+                  </li>
+                  <li>
+                    To see live query traffic: Go to <strong>Project Settings</strong> -&gt; <strong>API Logs</strong> or check your <strong>Database Log explorer</strong> for active SQL select/upsert statements.
+                  </li>
+                </ul>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="border-t border-neutral-850 pt-4 flex items-center justify-between gap-3">
+                <div className="text-[10px] text-neutral-500 font-mono">
+                  Fallback active: {supabaseStatus?.verified ? 'No (Direct Cloud Sync)' : 'Yes (Local Cache)'}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={fetchSupabaseStatus}
+                    className="px-4.5 py-2 hover:bg-neutral-800 text-neutral-300 border border-neutral-850 text-xs font-bold rounded-full transition-colors cursor-pointer font-mono tracking-wider uppercase flex items-center gap-1.5 bg-neutral-900"
+                  >
+                    <span>Refresh</span>
+                  </button>
+                  <button
+                    onClick={() => setIsSupabaseModalOpen(false)}
+                    className="px-5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-100 border border-neutral-800 text-xs font-bold rounded-full transition-colors cursor-pointer font-mono tracking-wider uppercase"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
