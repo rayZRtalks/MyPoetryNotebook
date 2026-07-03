@@ -117,12 +117,11 @@ function handlePostCategory(req: express.Request, res: express.Response) {
     const existingIdx = categories.findIndex((c: any) => c.id === newCat.id);
     if (existingIdx > -1) {
       categories[existingIdx] = newCat;
-      console.log(`Successfully updated existing category "${newCat.name}" (ID: ${newCat.id}) in cloud database.`);
     } else {
       categories.push(newCat);
-      console.log(`Successfully created new category "${newCat.name}" (ID: ${newCat.id}) in cloud database.`);
     }
     writeJSONFile(CATEGORIES_FILE, categories);
+    console.log(`Successfully persisted category "${newCat.name}" (ID: ${newCat.id}).`);
     res.json(newCat);
   } catch (err: any) {
     console.error('Error posting category:', err);
@@ -141,33 +140,26 @@ app.post('/api/categories/*', (req, res) => {
 // Helper for category deletion logic
 function deleteCategoryLogic(rawCatId: string, res: express.Response) {
   try {
-    // Strip query parameters if present in the raw input
     const cleanRawId = rawCatId.split('?')[0];
     const decodedRawCatId = decodeURIComponent(cleanRawId);
     const catId = decodedRawCatId;
 
     const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
-    const remainingCats = categories.filter((c: any) => {
-      return c.id !== catId && c.id !== cleanRawId && c.id !== decodedRawCatId;
-    });
-    writeJSONFile(CATEGORIES_FILE, remainingCats);
+    const filteredCategories = categories.filter((c: any) => c.id !== catId);
+    writeJSONFile(CATEGORIES_FILE, filteredCategories);
+    console.log(`Deleted category ID: ${catId}`);
 
-    // Fallback category ID for re-routing affected poems
-    const backupCatId = remainingCats[0]?.id || 'cat-1';
+    const backupCatId = filteredCategories[0]?.id || 'cat-1';
 
-    // Update affected poems category
+    // Update affected poems category locally
     const poems = readJSONFile(POEMS_FILE, []);
-    let updated = false;
     const updatedPoems = poems.map((p: any) => {
-      if (p.categoryId === catId || p.categoryId === cleanRawId || p.categoryId === decodedRawCatId) {
-        updated = true;
+      if (p.categoryId === catId) {
         return { ...p, categoryId: backupCatId, updatedAt: new Date().toISOString() };
       }
       return p;
     });
-    if (updated) {
-      writeJSONFile(POEMS_FILE, updatedPoems);
-    }
+    writeJSONFile(POEMS_FILE, updatedPoems);
 
     res.json({ success: true, backupCatId });
   } catch (err: any) {
@@ -176,7 +168,7 @@ function deleteCategoryLogic(rawCatId: string, res: express.Response) {
   }
 }
 
-// Categories APIs Delete Handlers (supports both specific parameter and wildcard paths)
+// Categories APIs Delete Handlers
 app.delete('/api/categories/:id', (req, res) => {
   deleteCategoryLogic(req.params.id, res);
 });
@@ -190,9 +182,14 @@ app.delete('/api/categories/*', (req, res) => {
 function handleGetPoems(req: express.Request, res: express.Response) {
   try {
     const poems = readJSONFile(POEMS_FILE, []);
+    poems.sort((a: any, b: any) => {
+      const dateA = new Date(a.createdAt || 0).getTime();
+      const dateB = new Date(b.createdAt || 0).getTime();
+      return dateB - dateA;
+    });
     res.json(poems);
   } catch (err: any) {
-    console.error('Error in GET poems:', err);
+    console.error('Error getting poems:', err);
     res.status(500).json({ error: `Failed to load poems: ${err?.message || String(err)}` });
   }
 }
@@ -216,13 +213,11 @@ function handlePostPoem(req: express.Request, res: express.Response) {
     const existingIdx = poems.findIndex((p: any) => p.id === newPoem.id);
     if (existingIdx > -1) {
       poems[existingIdx] = newPoem;
-      console.log(`Successfully updated existing poem "${newPoem.title}" (ID: ${newPoem.id}) in cloud database.`);
     } else {
-      // New poem prepended
       poems.unshift(newPoem);
-      console.log(`Successfully created new poem "${newPoem.title}" (ID: ${newPoem.id}) in cloud database.`);
     }
     writeJSONFile(POEMS_FILE, poems);
+    console.log(`Successfully persisted poem "${newPoem.title}" (ID: ${newPoem.id}).`);
     res.json(newPoem);
   } catch (err: any) {
     console.error('Error posting poem:', err);
@@ -241,7 +236,6 @@ app.post('/api/poems/*', (req, res) => {
 // Helper for poem deletion logic
 function deletePoemLogic(rawId: string, res: express.Response) {
   try {
-    // Strip query parameters if present in the raw input
     const cleanRawId = rawId.split('?')[0];
     const decodedRawId = decodeURIComponent(cleanRawId);
     const id = decodedRawId;
@@ -249,11 +243,9 @@ function deletePoemLogic(rawId: string, res: express.Response) {
     console.log(`Processing delete request for poem ID: ${id} (raw input: ${rawId})`);
 
     const poems = readJSONFile(POEMS_FILE, []);
-    const remainingPoems = poems.filter((p: any) => {
-      return p.id !== id && p.id !== cleanRawId && p.id !== decodedRawId;
-    });
+    const remainingPoems = poems.filter((p: any) => p.id !== id);
     writeJSONFile(POEMS_FILE, remainingPoems);
-    console.log(`Poem ID ${id} deleted. Remaining poems count: ${remainingPoems.length}`);
+    console.log(`Poem ID ${id} deleted.`);
     res.json({ success: true });
   } catch (err: any) {
     console.error('Error deleting poem:', err);
@@ -261,7 +253,6 @@ function deletePoemLogic(rawId: string, res: express.Response) {
   }
 }
 
-// Poems APIs Delete Handlers (supports both specific parameter and wildcard paths)
 app.delete('/api/poems/:id', (req, res) => {
   deletePoemLogic(req.params.id, res);
 });
@@ -273,13 +264,18 @@ app.delete('/api/poems/*', (req, res) => {
 
 // Reset API
 app.post('/api/reset', (req, res) => {
-  writeJSONFile(POEMS_FILE, []);
-  writeJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
-  res.json({ poems: [], categories: INITIAL_CATEGORIES });
+  try {
+    writeJSONFile(POEMS_FILE, []);
+    writeJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+    console.log('Reset database and re-seeded default categories locally.');
+    res.json({ poems: [], categories: INITIAL_CATEGORIES });
+  } catch (err: any) {
+    console.error('Error resetting database:', err);
+    res.status(500).json({ error: `Failed to reset database: ${err?.message || String(err)}` });
+  }
 });
 
 // Real Persistent Local Upload Endpoint for Incognito and Fallback support
-// Stored inside DATA_DIR to ensure durable cloud persistence on ephemeral Cloud Run containers
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
@@ -293,11 +289,9 @@ function handleUploadLogic(req: express.Request, res: express.Response) {
       return res.status(400).json({ error: 'Filename and data are required' });
     }
 
-    // Strip out the data URL prefix if present (e.g. "data:image/png;base64,")
     const base64Data = data.replace(/^data:[^;]+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
 
-    // Create a safe, unique filename
     const safeName = `${Date.now()}-${filename.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     const filePath = path.join(UPLOADS_DIR, safeName);
 
@@ -319,7 +313,7 @@ app.post('/api/upload/*', (req, res) => {
   handleUploadLogic(req, res);
 });
 
-// Persistent cloud Cloudinary configuration storage
+// Persistent Cloudinary configuration storage locally
 app.get('/api/cloudinary-config', (req, res) => {
   try {
     const config = readJSONFile(CLOUDINARY_CONFIG_FILE, { cloudName: '', uploadPreset: '', enabled: 'false' });
@@ -339,7 +333,7 @@ app.post('/api/cloudinary-config', (req, res) => {
       enabled: enabled || 'false'
     };
     writeJSONFile(CLOUDINARY_CONFIG_FILE, config);
-    console.log('Successfully persisted Cloudinary config to backend file database.');
+    console.log('Successfully persisted Cloudinary config locally.');
     res.json(config);
   } catch (err) {
     console.error('Failed to write Cloudinary config:', err);

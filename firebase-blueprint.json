@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "A poetry category defining its name and badge color",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the category"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the category"
+        },
+        "color": {
+          "type": "string",
+          "description": "Tailwind color class string for visual styling"
+        }
+      },
+      "required": ["id", "name"]
+    },
+    "PoemAttachment": {
+      "title": "PoemAttachment",
+      "description": "Attachment element linked to a poem, e.g., image or video URL",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["image", "video"]
+        },
+        "url": {
+          "type": "string"
+        },
+        "size": {
+          "type": "number"
+        }
+      },
+      "required": ["id", "name", "type", "url"]
+    },
+    "Poem": {
+      "title": "Poem",
+      "description": "A poem or picture snapshot in the notebook",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "categoryId": {
+          "type": "string"
+        },
+        "tags": {
+          "type": "array"
+        },
+        "mood": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        },
+        "attachments": {
+          "type": "array"
+        },
+        "isPhotoCapture": {
+          "type": "boolean"
+        },
+        "isPrivate": {
+          "type": "boolean"
+        }
+      },
+      "required": ["id", "title", "body", "categoryId", "createdAt"]
+    },
+    "CloudinaryConfig": {
+      "title": "CloudinaryConfig",
+      "description": "Cloudinary cloud credentials and integration state",
+      "type": "object",
+      "properties": {
+        "cloudName": {
+          "type": "string"
+        },
+        "uploadPreset": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "string"
+        }
+      },
+      "required": ["cloudName", "uploadPreset", "enabled"]
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Predefined and custom poetry categories"
+    },
+    "/poems/{poemId}": {
+      "schema": "Poem",
+      "description": "The collections of public or private poems"
+    },
+    "/config/cloudinary": {
+      "schema": "CloudinaryConfig",
+      "description": "Global config document for Cloudinary credentials"
+    }
+  }
+}

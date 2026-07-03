@@ -25,6 +25,17 @@ import CloudinarySettingsModal from './components/CloudinarySettingsModal';
 import { uploadToStorage } from './cloudinary';
 import { safeLocalStorage } from './utils/safeStorage';
 
+// Firebase Client SDK
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  setDoc, 
+  deleteDoc, 
+  writeBatch 
+} from 'firebase/firestore';
+import { db } from './firebase';
+
 export default function App() {
   // --- Persistent States ---
   const [isAuthorMode, setIsAuthorMode] = useState<boolean>(() => {
@@ -97,18 +108,27 @@ export default function App() {
     setIsDbLoading(true);
 
     const loadData = async () => {
+      let tempCategories: Category[] = [];
+      let categoriesFetchSuccess = false;
       try {
-        // Load Categories from backend
-        const catsRes = await fetch('/api/categories');
-        if (catsRes.ok) {
-          const catsData = await catsRes.json();
-          setCategories(catsData);
-          safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(catsData));
-        } else {
-          throw new Error('Categories fetch not ok');
+        // Load Categories directly from Firestore
+        const snapshot = await getDocs(collection(db, 'categories'));
+        tempCategories = snapshot.docs.map(doc => doc.data() as Category);
+        categoriesFetchSuccess = true;
+        
+        if (tempCategories.length === 0) {
+          console.log('[Firestore] Categories collection is empty on client. Seeding with default categories...');
+          const batch = writeBatch(db);
+          for (const cat of INITIAL_CATEGORIES) {
+            batch.set(doc(db, 'categories', cat.id), cat);
+          }
+          await batch.commit();
+          tempCategories = [...INITIAL_CATEGORIES];
         }
+        setCategories(tempCategories);
+        safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(tempCategories));
       } catch (err) {
-        console.warn('Backend categories fetch failed, falling back locally:', err);
+        console.warn('Firestore categories fetch failed, falling back locally:', err);
         try {
           const savedCats = safeLocalStorage.getItem('poetry_notebook_categories_cache');
           if (savedCats) {
@@ -124,14 +144,12 @@ export default function App() {
       let backendPoems: Poem[] = [];
       let backendFetchSuccess = false;
       try {
-        // Load Poems from backend
-        const poemsRes = await fetch('/api/poems');
-        if (poemsRes.ok) {
-          backendPoems = await poemsRes.json();
-          backendFetchSuccess = true;
-        }
+        // Load Poems directly from Firestore
+        const snapshot = await getDocs(collection(db, 'poems'));
+        backendPoems = snapshot.docs.map(doc => doc.data() as Poem);
+        backendFetchSuccess = true;
       } catch (err) {
-        console.warn('Backend poems fetch failed:', err);
+        console.warn('Firestore poems fetch failed, falling back locally:', err);
       }
 
       // Load Poems from local cache
@@ -220,33 +238,29 @@ export default function App() {
         setPoems(finalMergedList);
         safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(finalMergedList));
 
-        // Sync Engine: Push any unsaved or updated local entries to the backend cloud database
+        // Sync Engine: Push any unsaved or updated local entries directly to Firestore
         const poemsToSync = finalMergedList.filter((p) => {
           const bp = backendPoems.find((bp) => bp.id === p.id);
-          if (!bp) return true; // Completely missing from backend
+          if (!bp) return true; // Completely missing from Firestore
           
           const localTime = new Date(p.updatedAt || p.createdAt || 0).getTime();
           const backendTime = new Date(bp.updatedAt || bp.createdAt || 0).getTime();
-          return localTime > backendTime; // Local has newer updates than backend
+          return localTime > backendTime; // Local has newer updates than Firestore
         });
 
         if (poemsToSync.length > 0) {
-          console.info(`[Sync Engine] Synchronizing ${poemsToSync.length} unsaved or updated entries to cloud ledger...`);
+          console.info(`[Sync Engine] Synchronizing ${poemsToSync.length} unsaved or updated entries to Firestore...`);
           for (const p of poemsToSync) {
             try {
-              await fetch('/api/poems', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(p),
-              });
-              console.info(`[Sync Engine] Successfully synced poem ID: ${p.id} to cloud backend.`);
+              await setDoc(doc(db, 'poems', p.id), p);
+              console.info(`[Sync Engine] Successfully synced poem ID: ${p.id} to Firestore.`);
             } catch (postErr) {
-              console.warn(`[Sync Engine] Failed to sync poem ID: ${p.id} to cloud backend:`, postErr);
+              console.warn(`[Sync Engine] Failed to sync poem ID: ${p.id} to Firestore:`, postErr);
             }
           }
         }
       } else {
-        // Backend load failed entirely, fall back to local cached list
+        // Firestore load failed entirely, fall back to local cached list
         setPoems(localPoems.length > 0 ? localPoems : INITIAL_POEMS);
       }
 
@@ -362,29 +376,10 @@ export default function App() {
     });
 
     try {
-      const response = await fetch('/api/poems', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalPoem),
-      });
-      if (response.ok) {
-        showToast(isEdit ? 'Poem updated and synchronized in the cloud ledger.' : 'New poem saved and synchronized in the cloud ledger.', 'success');
-      } else {
-        let errorDetails = '';
-        try {
-          const errData = await response.json();
-          errorDetails = errData.error || errData.message || JSON.stringify(errData);
-        } catch {
-          try {
-            errorDetails = await response.text();
-          } catch {
-            errorDetails = `${response.status} ${response.statusText}`;
-          }
-        }
-        throw new Error(errorDetails || `${response.status} ${response.statusText}`);
-      }
+      await setDoc(doc(db, 'poems', id), finalPoem);
+      showToast(isEdit ? 'Poem updated and synchronized in the cloud ledger.' : 'New poem saved and synchronized in the cloud ledger.', 'success');
     } catch (error: any) {
-      console.error('Error saving poem to backend:', error);
+      console.error('Error saving poem to Firestore client:', error);
       showToast(`Saved locally. Cloud sync failed: ${error?.message || String(error)}`, 'warning');
     } finally {
       setIsFormOpen(false);
@@ -408,27 +403,10 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(`/api/poems/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        showToast('Poem permanently removed from your ledger.', 'warning');
-      } else {
-        let errorDetails = '';
-        try {
-          const errData = await response.json();
-          errorDetails = errData.error || errData.message || JSON.stringify(errData);
-        } catch {
-          try {
-            errorDetails = await response.text();
-          } catch {
-            errorDetails = `${response.status} ${response.statusText}`;
-          }
-        }
-        throw new Error(errorDetails || `${response.status} ${response.statusText}`);
-      }
+      await deleteDoc(doc(db, 'poems', id));
+      showToast('Poem permanently removed from your ledger.', 'warning');
     } catch (error: any) {
-      console.error('Error deleting poem from backend:', error);
+      console.error('Error deleting poem from Firestore client:', error);
       showToast(`Deleted locally. Cloud removal failed: ${error?.message || String(error)}`, 'warning');
     }
   };
@@ -472,18 +450,10 @@ export default function App() {
 
     const addCatToBackend = async () => {
       try {
-        const response = await fetch('/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newCat),
-        });
-        if (response.ok) {
-          showToast(`Category "${trimmed}" successfully created.`, 'success');
-        } else {
-          throw new Error('Sync failed');
-        }
+        await setDoc(doc(db, 'categories', newCat.id), newCat);
+        showToast(`Category "${trimmed}" successfully created.`, 'success');
       } catch (err) {
-        console.error('Failed to save category to backend:', err);
+        console.error('Failed to save category to Firestore client:', err);
         showToast(`Category "${trimmed}" created locally.`, 'success');
       }
     };
@@ -531,27 +501,25 @@ export default function App() {
     });
 
     try {
-      const response = await fetch(`/api/categories/${encodeURIComponent(catId)}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        showToast('Category permanently deleted. Affected poems re-routed in cloud ledger.', 'info');
-      } else {
-        let errorDetails = '';
-        try {
-          const errData = await response.json();
-          errorDetails = errData.error || errData.message || JSON.stringify(errData);
-        } catch {
-          try {
-            errorDetails = await response.text();
-          } catch {
-            errorDetails = `${response.status} ${response.statusText}`;
-          }
+      const batch = writeBatch(db);
+      
+      // Delete category
+      batch.delete(doc(db, 'categories', catId));
+      
+      // Re-route any poems associated with this category
+      poems.forEach((p) => {
+        if (p.categoryId === catId) {
+          batch.update(doc(db, 'poems', p.id), {
+            categoryId: backupCatId,
+            updatedAt: new Date().toISOString()
+          });
         }
-        throw new Error(errorDetails || `${response.status} ${response.statusText}`);
-      }
+      });
+      
+      await batch.commit();
+      showToast('Category permanently deleted. Affected poems re-routed in cloud ledger.', 'info');
     } catch (err: any) {
-      console.error('Failed to delete category from backend:', err);
+      console.error('Failed to delete category from Firestore client:', err);
       showToast(`Deleted locally. Cloud sync failed: ${err?.message || String(err)}`, 'warning');
     }
   };
@@ -622,23 +590,15 @@ export default function App() {
 
                await Promise.all([
                  ...parsed.categories.map((cat: Category) =>
-                   fetch('/api/categories', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify(cat),
-                   })
+                   setDoc(doc(db, 'categories', cat.id), cat)
                  ),
                  ...parsed.poems.map((poem: Poem) =>
-                   fetch('/api/poems', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify(poem),
-                   })
+                   setDoc(doc(db, 'poems', poem.id), poem)
                  )
                ]);
                showToast('Import completed. Your ledger is synchronized with the cloud ledger!', 'success');
              } catch (err) {
-               console.error('Failed to sync imported backup to backend:', err);
+               console.error('Failed to sync imported backup to Firestore:', err);
                showToast('Import completed locally. Cloud synchronization failed.', 'warning');
              }
           };
@@ -667,17 +627,30 @@ export default function App() {
     setIsResetConfirmOpen(false);
 
     try {
-      const response = await fetch('/api/reset', { method: 'POST' });
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data.categories || INITIAL_CATEGORIES);
-        setPoems(data.poems || []);
-        safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify([]));
-        safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
-        showToast('Successfully reset and re-seeded default cloud categories with empty ledger.', 'info');
-      } else {
-        throw new Error('Reset request failed');
-      }
+      const batch = writeBatch(db);
+      
+      // Delete existing poems in Firestore
+      poems.forEach((p) => {
+        batch.delete(doc(db, 'poems', p.id));
+      });
+      
+      // Delete existing categories in Firestore
+      categories.forEach((cat) => {
+        batch.delete(doc(db, 'categories', cat.id));
+      });
+      
+      // Seed default categories
+      INITIAL_CATEGORIES.forEach((cat) => {
+        batch.set(doc(db, 'categories', cat.id), cat);
+      });
+      
+      await batch.commit();
+
+      setCategories(INITIAL_CATEGORIES);
+      setPoems([]);
+      safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify([]));
+      safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
+      showToast('Successfully reset and re-seeded default cloud categories with empty ledger.', 'info');
     } catch (err) {
       console.error('Failed to sync cloud ledger factory reset:', err);
       showToast('Notebook reset locally, cloud sync failed.', 'warning');
