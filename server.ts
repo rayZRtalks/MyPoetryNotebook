@@ -14,32 +14,33 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 let supabase: any = null;
 let supabaseEnabled = false;
 
-async function checkSupabaseConnection() {
-  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-    try {
-      const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      // Try a lightweight query to verify the connection & credentials
-      const { data, error } = await client.from('categories').select('id').limit(1);
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  try {
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[Database] Supabase client initialized. Testing connection...');
+    
+    // Perform connection check to verify if the tables are set up
+    supabase.from('categories').select('id').limit(1).then(({ error }: any) => {
       if (error) {
-        console.log(`[Database] Supabase connection check returned an error (likely invalid keys or tables not created yet). Fallback local JSON file storage active. Details: ${error.message}`);
+        console.warn(`[Database] Supabase is connected but tables are not ready yet (Error: ${error.message}).`);
+        console.warn('[Database] Falling back to local file storage. Please run the SQL schema script in your Supabase SQL Editor to enable Cloud Sync.');
         supabaseEnabled = false;
       } else {
-        supabase = client;
         supabaseEnabled = true;
-        console.log('[Database] Supabase cloud sync is active.');
+        console.log('[Database] Supabase tables verified. Cloud ledger synchronization is fully active.');
       }
-    } catch (err: any) {
-      console.log(`[Database] Supabase connection check failed. Fallback local JSON file storage active. Details: ${err?.message || String(err)}`);
+    }).catch((err: any) => {
+      console.warn(`[Database] Supabase connection failed (${err?.message || String(err)}). Fallback local storage is active.`);
       supabaseEnabled = false;
-    }
-  } else {
-    console.log('[Database] Supabase credentials not configured. Local JSON file storage is active.');
+    });
+  } catch (err: any) {
+    console.error('[Database] Failed to initialize Supabase client:', err);
     supabaseEnabled = false;
   }
+} else {
+  console.log('[Database] Supabase credentials not configured. Local JSON file storage is active.');
+  supabaseEnabled = false;
 }
-
-// Perform the check asynchronously on startup
-checkSupabaseConnection();
 
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
@@ -142,8 +143,8 @@ async function handleGetCategories(req: express.Request, res: express.Response) 
             categories = INITIAL_CATEGORIES;
           }
         }
-      } catch (dbErr) {
-        console.warn('[Supabase] Failed to fetch categories from database, falling back to local file:', dbErr);
+      } catch (dbErr: any) {
+        console.warn('[Supabase] Failed to fetch categories from database, falling back to local file:', dbErr?.message || dbErr?.details || JSON.stringify(dbErr) || String(dbErr));
         categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
       }
     } else {
@@ -177,8 +178,8 @@ async function handlePostCategory(req: express.Request, res: express.Response) {
         const { error } = await supabase.from('categories').upsert(newCat);
         if (error) throw error;
         console.log(`[Supabase] Category "${newCat.name}" saved successfully.`);
-      } catch (dbErr) {
-        console.warn('[Supabase] Failed to save category to database, writing only locally:', dbErr);
+      } catch (dbErr: any) {
+        console.warn('[Supabase] Failed to save category to database, writing only locally:', dbErr?.message || dbErr?.details || JSON.stringify(dbErr) || String(dbErr));
       }
     }
 
@@ -218,8 +219,8 @@ async function deleteCategoryLogic(rawCatId: string, res: express.Response) {
         const { error } = await supabase.from('categories').delete().eq('id', catId);
         if (error) throw error;
         console.log(`[Supabase] Category ID: ${catId} deleted successfully.`);
-      } catch (dbErr) {
-        console.warn('[Supabase] Failed to delete category from database, updating only locally:', dbErr);
+      } catch (dbErr: any) {
+        console.warn('[Supabase] Failed to delete category from database, updating only locally:', dbErr?.message || dbErr?.details || JSON.stringify(dbErr) || String(dbErr));
       }
     }
 
@@ -238,8 +239,8 @@ async function deleteCategoryLogic(rawCatId: string, res: express.Response) {
           .update({ categoryId: backupCatId, updatedAt: new Date().toISOString() })
           .eq('categoryId', catId);
         if (error) throw error;
-      } catch (dbErr) {
-        console.warn('[Supabase] Failed to re-route affected poems in database:', dbErr);
+      } catch (dbErr: any) {
+        console.warn('[Supabase] Failed to re-route affected poems in database:', dbErr?.message || dbErr?.details || JSON.stringify(dbErr) || String(dbErr));
       }
     }
 
@@ -279,8 +280,8 @@ async function handleGetPoems(req: express.Request, res: express.Response) {
         const { data, error } = await supabase.from('poems').select('*');
         if (error) throw error;
         poems = data || [];
-      } catch (dbErr) {
-        console.warn('[Supabase] Failed to fetch poems from database, falling back to local file:', dbErr);
+      } catch (dbErr: any) {
+        console.warn('[Supabase] Failed to fetch poems from database, falling back to local file:', dbErr?.message || dbErr?.details || JSON.stringify(dbErr) || String(dbErr));
         poems = readJSONFile(POEMS_FILE, []);
       }
     } else {
@@ -330,8 +331,8 @@ async function handlePostPoem(req: express.Request, res: express.Response) {
         const { error } = await supabase.from('poems').upsert(payload);
         if (error) throw error;
         console.log(`[Supabase] Poem "${newPoem.title}" saved successfully.`);
-      } catch (dbErr) {
-        console.warn('[Supabase] Failed to save poem to database, writing only locally:', dbErr);
+      } catch (dbErr: any) {
+        console.warn('[Supabase] Failed to save poem to database, writing only locally:', dbErr?.message || dbErr?.details || JSON.stringify(dbErr) || String(dbErr));
       }
     }
 
@@ -373,8 +374,8 @@ async function deletePoemLogic(rawId: string, res: express.Response) {
         const { error } = await supabase.from('poems').delete().eq('id', id);
         if (error) throw error;
         console.log(`[Supabase] Poem ID: ${id} deleted successfully.`);
-      } catch (dbErr) {
-        console.warn('[Supabase] Failed to delete poem from database, updating only locally:', dbErr);
+      } catch (dbErr: any) {
+        console.warn('[Supabase] Failed to delete poem from database, updating only locally:', dbErr?.message || dbErr?.details || JSON.stringify(dbErr) || String(dbErr));
       }
     }
 
@@ -413,8 +414,8 @@ app.post('/api/reset', async (req, res) => {
         if (seedError) throw seedError;
 
         console.log('[Supabase] Reset and seeded categories successfully.');
-      } catch (dbErr) {
-        console.warn('[Supabase] Failed to reset database, resetting locally only:', dbErr);
+      } catch (dbErr: any) {
+        console.warn('[Supabase] Failed to reset database, resetting locally only:', dbErr?.message || dbErr?.details || JSON.stringify(dbErr) || String(dbErr));
       }
     }
 
