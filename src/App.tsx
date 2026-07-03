@@ -220,35 +220,28 @@ export default function App() {
         setPoems(finalMergedList);
         safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(finalMergedList));
 
-        // If backend was empty but local had files, push local files to backend so they persist!
-        if (backendPoems.length === 0 && localPoems.length > 0) {
-          console.info('Backend ledger is empty. Uploading local cached entries to backend to sync...');
-          for (const localP of localPoems) {
+        // Sync Engine: Push any unsaved or updated local entries to the backend cloud database
+        const poemsToSync = finalMergedList.filter((p) => {
+          const bp = backendPoems.find((bp) => bp.id === p.id);
+          if (!bp) return true; // Completely missing from backend
+          
+          const localTime = new Date(p.updatedAt || p.createdAt || 0).getTime();
+          const backendTime = new Date(bp.updatedAt || bp.createdAt || 0).getTime();
+          return localTime > backendTime; // Local has newer updates than backend
+        });
+
+        if (poemsToSync.length > 0) {
+          console.info(`[Sync Engine] Synchronizing ${poemsToSync.length} unsaved or updated entries to cloud ledger...`);
+          for (const p of poemsToSync) {
             try {
               await fetch('/api/poems', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(localP),
+                body: JSON.stringify(p),
               });
+              console.info(`[Sync Engine] Successfully synced poem ID: ${p.id} to cloud backend.`);
             } catch (postErr) {
-              console.warn('Failed to sync local poem to backend:', localP.id, postErr);
-            }
-          }
-        } else if (finalMergedList.length > backendPoems.length) {
-          // Sync any new local poems to the backend that weren't there
-          console.info('Syncing unsaved local entries to cloud database...');
-          for (const p of finalMergedList) {
-            const inBackend = backendPoems.some((bp) => bp.id === p.id);
-            if (!inBackend) {
-              try {
-                await fetch('/api/poems', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(p),
-                });
-              } catch (postErr) {
-                console.warn('Failed to sync poem to backend:', p.id, postErr);
-              }
+              console.warn(`[Sync Engine] Failed to sync poem ID: ${p.id} to cloud backend:`, postErr);
             }
           }
         }

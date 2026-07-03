@@ -88,25 +88,54 @@ app.get('/api/health', (req, res) => {
 });
 
 // Categories APIs
+function handleGetCategories(req: express.Request, res: express.Response) {
+  try {
+    const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+    res.json(categories);
+  } catch (err: any) {
+    console.error('Error getting categories:', err);
+    res.status(500).json({ error: `Failed to load categories: ${err?.message || String(err)}` });
+  }
+}
+
 app.get('/api/categories', (req, res) => {
-  const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
-  res.json(categories);
+  handleGetCategories(req, res);
 });
 
+app.get('/api/categories/*', (req, res) => {
+  handleGetCategories(req, res);
+});
+
+function handlePostCategory(req: express.Request, res: express.Response) {
+  try {
+    const newCat = req.body;
+    if (!newCat || !newCat.id || !newCat.name) {
+      console.warn('Invalid category POST payload:', req.body);
+      return res.status(400).json({ error: 'Invalid category format. Ensure id and name are provided.' });
+    }
+    const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+    const existingIdx = categories.findIndex((c: any) => c.id === newCat.id);
+    if (existingIdx > -1) {
+      categories[existingIdx] = newCat;
+      console.log(`Successfully updated existing category "${newCat.name}" (ID: ${newCat.id}) in cloud database.`);
+    } else {
+      categories.push(newCat);
+      console.log(`Successfully created new category "${newCat.name}" (ID: ${newCat.id}) in cloud database.`);
+    }
+    writeJSONFile(CATEGORIES_FILE, categories);
+    res.json(newCat);
+  } catch (err: any) {
+    console.error('Error posting category:', err);
+    res.status(500).json({ error: `Failed to persist category: ${err?.message || String(err)}` });
+  }
+}
+
 app.post('/api/categories', (req, res) => {
-  const newCat = req.body;
-  if (!newCat || !newCat.id || !newCat.name) {
-    return res.status(400).json({ error: 'Invalid category format' });
-  }
-  const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
-  const existingIdx = categories.findIndex((c: any) => c.id === newCat.id);
-  if (existingIdx > -1) {
-    categories[existingIdx] = newCat;
-  } else {
-    categories.push(newCat);
-  }
-  writeJSONFile(CATEGORIES_FILE, categories);
-  res.json(newCat);
+  handlePostCategory(req, res);
+});
+
+app.post('/api/categories/*', (req, res) => {
+  handlePostCategory(req, res);
 });
 
 // Helper for category deletion logic
@@ -158,26 +187,55 @@ app.delete('/api/categories/*', (req, res) => {
 });
 
 // Poems APIs
+function handleGetPoems(req: express.Request, res: express.Response) {
+  try {
+    const poems = readJSONFile(POEMS_FILE, []);
+    res.json(poems);
+  } catch (err: any) {
+    console.error('Error in GET poems:', err);
+    res.status(500).json({ error: `Failed to load poems: ${err?.message || String(err)}` });
+  }
+}
+
 app.get('/api/poems', (req, res) => {
-  const poems = readJSONFile(POEMS_FILE, []);
-  res.json(poems);
+  handleGetPoems(req, res);
 });
 
+app.get('/api/poems/*', (req, res) => {
+  handleGetPoems(req, res);
+});
+
+function handlePostPoem(req: express.Request, res: express.Response) {
+  try {
+    const newPoem = req.body;
+    if (!newPoem || !newPoem.id || !newPoem.title) {
+      console.warn('Invalid poem POST payload received:', req.body);
+      return res.status(400).json({ error: 'Invalid poem format. Ensure id and title are provided.' });
+    }
+    const poems = readJSONFile(POEMS_FILE, []);
+    const existingIdx = poems.findIndex((p: any) => p.id === newPoem.id);
+    if (existingIdx > -1) {
+      poems[existingIdx] = newPoem;
+      console.log(`Successfully updated existing poem "${newPoem.title}" (ID: ${newPoem.id}) in cloud database.`);
+    } else {
+      // New poem prepended
+      poems.unshift(newPoem);
+      console.log(`Successfully created new poem "${newPoem.title}" (ID: ${newPoem.id}) in cloud database.`);
+    }
+    writeJSONFile(POEMS_FILE, poems);
+    res.json(newPoem);
+  } catch (err: any) {
+    console.error('Error posting poem:', err);
+    res.status(500).json({ error: `Failed to persist poem: ${err?.message || String(err)}` });
+  }
+}
+
 app.post('/api/poems', (req, res) => {
-  const newPoem = req.body;
-  if (!newPoem || !newPoem.id || !newPoem.title) {
-    return res.status(400).json({ error: 'Invalid poem format' });
-  }
-  const poems = readJSONFile(POEMS_FILE, []);
-  const existingIdx = poems.findIndex((p: any) => p.id === newPoem.id);
-  if (existingIdx > -1) {
-    poems[existingIdx] = newPoem;
-  } else {
-    // New poem prepended
-    poems.unshift(newPoem);
-  }
-  writeJSONFile(POEMS_FILE, poems);
-  res.json(newPoem);
+  handlePostPoem(req, res);
+});
+
+app.post('/api/poems/*', (req, res) => {
+  handlePostPoem(req, res);
 });
 
 // Helper for poem deletion logic
@@ -188,11 +246,14 @@ function deletePoemLogic(rawId: string, res: express.Response) {
     const decodedRawId = decodeURIComponent(cleanRawId);
     const id = decodedRawId;
 
+    console.log(`Processing delete request for poem ID: ${id} (raw input: ${rawId})`);
+
     const poems = readJSONFile(POEMS_FILE, []);
     const remainingPoems = poems.filter((p: any) => {
       return p.id !== id && p.id !== cleanRawId && p.id !== decodedRawId;
     });
     writeJSONFile(POEMS_FILE, remainingPoems);
+    console.log(`Poem ID ${id} deleted. Remaining poems count: ${remainingPoems.length}`);
     res.json({ success: true });
   } catch (err: any) {
     console.error('Error deleting poem:', err);
