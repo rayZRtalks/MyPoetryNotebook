@@ -2,9 +2,26 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createServer as createViteServer } from 'vite';
+import { createClient } from '@supabase/supabase-js';
 
 const app = express();
 const PORT = 3000;
+
+// Retrieve Supabase environment variables
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
+
+let supabase: any = null;
+if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+  try {
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('[Supabase] Client initialized successfully.');
+  } catch (err) {
+    console.error('[Supabase] Failed to initialize Supabase client:', err);
+  }
+} else {
+  console.log('[Supabase] Environment variables missing. Falling back entirely to local JSON file storage.');
+}
 
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
@@ -88,9 +105,32 @@ app.get('/api/health', (req, res) => {
 });
 
 // Categories APIs
-function handleGetCategories(req: express.Request, res: express.Response) {
+async function handleGetCategories(req: express.Request, res: express.Response) {
   try {
-    const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+    let categories = [];
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.from('categories').select('*');
+        if (error) throw error;
+        if (data && data.length > 0) {
+          categories = data;
+        } else {
+          console.log('[Supabase] Categories table is empty. Seeding defaults...');
+          const { error: insertError } = await supabase.from('categories').insert(INITIAL_CATEGORIES);
+          if (insertError) {
+            console.warn('[Supabase] Seeding categories failed:', insertError);
+            categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+          } else {
+            categories = INITIAL_CATEGORIES;
+          }
+        }
+      } catch (dbErr) {
+        console.warn('[Supabase] Failed to fetch categories from database, falling back to local file:', dbErr);
+        categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+      }
+    } else {
+      categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
+    }
     res.json(categories);
   } catch (err: any) {
     console.error('Error getting categories:', err);
@@ -106,13 +146,24 @@ app.get('/api/categories/*', (req, res) => {
   handleGetCategories(req, res);
 });
 
-function handlePostCategory(req: express.Request, res: express.Response) {
+async function handlePostCategory(req: express.Request, res: express.Response) {
   try {
     const newCat = req.body;
     if (!newCat || !newCat.id || !newCat.name) {
       console.warn('Invalid category POST payload:', req.body);
       return res.status(400).json({ error: 'Invalid category format. Ensure id and name are provided.' });
     }
+
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('categories').upsert(newCat);
+        if (error) throw error;
+        console.log(`[Supabase] Category "${newCat.name}" saved successfully.`);
+      } catch (dbErr) {
+        console.warn('[Supabase] Failed to save category to database, writing only locally:', dbErr);
+      }
+    }
+
     const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
     const existingIdx = categories.findIndex((c: any) => c.id === newCat.id);
     if (existingIdx > -1) {
@@ -121,7 +172,7 @@ function handlePostCategory(req: express.Request, res: express.Response) {
       categories.push(newCat);
     }
     writeJSONFile(CATEGORIES_FILE, categories);
-    console.log(`Successfully persisted category "${newCat.name}" (ID: ${newCat.id}).`);
+    console.log(`Successfully persisted category "${newCat.name}" (ID: ${newCat.id}) locally.`);
     res.json(newCat);
   } catch (err: any) {
     console.error('Error posting category:', err);
@@ -138,18 +189,41 @@ app.post('/api/categories/*', (req, res) => {
 });
 
 // Helper for category deletion logic
-function deleteCategoryLogic(rawCatId: string, res: express.Response) {
+async function deleteCategoryLogic(rawCatId: string, res: express.Response) {
   try {
     const cleanRawId = rawCatId.split('?')[0];
     const decodedRawCatId = decodeURIComponent(cleanRawId);
     const catId = decodedRawCatId;
 
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('categories').delete().eq('id', catId);
+        if (error) throw error;
+        console.log(`[Supabase] Category ID: ${catId} deleted successfully.`);
+      } catch (dbErr) {
+        console.warn('[Supabase] Failed to delete category from database, updating only locally:', dbErr);
+      }
+    }
+
     const categories = readJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
     const filteredCategories = categories.filter((c: any) => c.id !== catId);
     writeJSONFile(CATEGORIES_FILE, filteredCategories);
-    console.log(`Deleted category ID: ${catId}`);
+    console.log(`Deleted category ID: ${catId} locally`);
 
     const backupCatId = filteredCategories[0]?.id || 'cat-1';
+
+    // Update affected poems category in Supabase
+    if (supabase) {
+      try {
+        const { error } = await supabase
+          .from('poems')
+          .update({ categoryId: backupCatId, updatedAt: new Date().toISOString() })
+          .eq('categoryId', catId);
+        if (error) throw error;
+      } catch (dbErr) {
+        console.warn('[Supabase] Failed to re-route affected poems in database:', dbErr);
+      }
+    }
 
     // Update affected poems category locally
     const poems = readJSONFile(POEMS_FILE, []);
@@ -179,9 +253,22 @@ app.delete('/api/categories/*', (req, res) => {
 });
 
 // Poems APIs
-function handleGetPoems(req: express.Request, res: express.Response) {
+async function handleGetPoems(req: express.Request, res: express.Response) {
   try {
-    const poems = readJSONFile(POEMS_FILE, []);
+    let poems = [];
+    if (supabase) {
+      try {
+        const { data, error } = await supabase.from('poems').select('*');
+        if (error) throw error;
+        poems = data || [];
+      } catch (dbErr) {
+        console.warn('[Supabase] Failed to fetch poems from database, falling back to local file:', dbErr);
+        poems = readJSONFile(POEMS_FILE, []);
+      }
+    } else {
+      poems = readJSONFile(POEMS_FILE, []);
+    }
+
     poems.sort((a: any, b: any) => {
       const dateA = new Date(a.createdAt || 0).getTime();
       const dateB = new Date(b.createdAt || 0).getTime();
@@ -202,13 +289,34 @@ app.get('/api/poems/*', (req, res) => {
   handleGetPoems(req, res);
 });
 
-function handlePostPoem(req: express.Request, res: express.Response) {
+async function handlePostPoem(req: express.Request, res: express.Response) {
   try {
     const newPoem = req.body;
     if (!newPoem || !newPoem.id || !newPoem.title) {
       console.warn('Invalid poem POST payload received:', req.body);
       return res.status(400).json({ error: 'Invalid poem format. Ensure id and title are provided.' });
     }
+
+    if (supabase) {
+      try {
+        const payload = {
+          id: newPoem.id,
+          title: newPoem.title,
+          body: newPoem.body || '',
+          categoryId: newPoem.categoryId || '',
+          mood: newPoem.mood || '',
+          createdAt: newPoem.createdAt || new Date().toISOString(),
+          updatedAt: newPoem.updatedAt || new Date().toISOString(),
+          attachments: newPoem.attachments || []
+        };
+        const { error } = await supabase.from('poems').upsert(payload);
+        if (error) throw error;
+        console.log(`[Supabase] Poem "${newPoem.title}" saved successfully.`);
+      } catch (dbErr) {
+        console.warn('[Supabase] Failed to save poem to database, writing only locally:', dbErr);
+      }
+    }
+
     const poems = readJSONFile(POEMS_FILE, []);
     const existingIdx = poems.findIndex((p: any) => p.id === newPoem.id);
     if (existingIdx > -1) {
@@ -217,7 +325,7 @@ function handlePostPoem(req: express.Request, res: express.Response) {
       poems.unshift(newPoem);
     }
     writeJSONFile(POEMS_FILE, poems);
-    console.log(`Successfully persisted poem "${newPoem.title}" (ID: ${newPoem.id}).`);
+    console.log(`Successfully persisted poem "${newPoem.title}" (ID: ${newPoem.id}) locally.`);
     res.json(newPoem);
   } catch (err: any) {
     console.error('Error posting poem:', err);
@@ -234,7 +342,7 @@ app.post('/api/poems/*', (req, res) => {
 });
 
 // Helper for poem deletion logic
-function deletePoemLogic(rawId: string, res: express.Response) {
+async function deletePoemLogic(rawId: string, res: express.Response) {
   try {
     const cleanRawId = rawId.split('?')[0];
     const decodedRawId = decodeURIComponent(cleanRawId);
@@ -242,10 +350,20 @@ function deletePoemLogic(rawId: string, res: express.Response) {
 
     console.log(`Processing delete request for poem ID: ${id} (raw input: ${rawId})`);
 
+    if (supabase) {
+      try {
+        const { error } = await supabase.from('poems').delete().eq('id', id);
+        if (error) throw error;
+        console.log(`[Supabase] Poem ID: ${id} deleted successfully.`);
+      } catch (dbErr) {
+        console.warn('[Supabase] Failed to delete poem from database, updating only locally:', dbErr);
+      }
+    }
+
     const poems = readJSONFile(POEMS_FILE, []);
     const remainingPoems = poems.filter((p: any) => p.id !== id);
     writeJSONFile(POEMS_FILE, remainingPoems);
-    console.log(`Poem ID ${id} deleted.`);
+    console.log(`Poem ID ${id} deleted locally.`);
     res.json({ success: true });
   } catch (err: any) {
     console.error('Error deleting poem:', err);
@@ -263,8 +381,25 @@ app.delete('/api/poems/*', (req, res) => {
 });
 
 // Reset API
-app.post('/api/reset', (req, res) => {
+app.post('/api/reset', async (req, res) => {
   try {
+    if (supabase) {
+      try {
+        const { error: poemsError } = await supabase.from('poems').delete().neq('id', 'dummy_non_existent_id');
+        if (poemsError) throw poemsError;
+
+        const { error: catsError } = await supabase.from('categories').delete().neq('id', 'dummy_non_existent_id');
+        if (catsError) throw catsError;
+
+        const { error: seedError } = await supabase.from('categories').insert(INITIAL_CATEGORIES);
+        if (seedError) throw seedError;
+
+        console.log('[Supabase] Reset and seeded categories successfully.');
+      } catch (dbErr) {
+        console.warn('[Supabase] Failed to reset database, resetting locally only:', dbErr);
+      }
+    }
+
     writeJSONFile(POEMS_FILE, []);
     writeJSONFile(CATEGORIES_FILE, INITIAL_CATEGORIES);
     console.log('Reset database and re-seeded default categories locally.');
