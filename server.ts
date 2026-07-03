@@ -12,16 +12,34 @@ const SUPABASE_URL = process.env.SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
 
 let supabase: any = null;
-if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-  try {
-    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('[Supabase] Client initialized successfully.');
-  } catch (err) {
-    console.error('[Supabase] Failed to initialize Supabase client:', err);
+let supabaseEnabled = false;
+
+async function checkSupabaseConnection() {
+  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+    try {
+      const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // Try a lightweight query to verify the connection & credentials
+      const { data, error } = await client.from('categories').select('id').limit(1);
+      if (error) {
+        console.log(`[Database] Supabase connection check returned an error (likely invalid keys or tables not created yet). Fallback local JSON file storage active. Details: ${error.message}`);
+        supabaseEnabled = false;
+      } else {
+        supabase = client;
+        supabaseEnabled = true;
+        console.log('[Database] Supabase cloud sync is active.');
+      }
+    } catch (err: any) {
+      console.log(`[Database] Supabase connection check failed. Fallback local JSON file storage active. Details: ${err?.message || String(err)}`);
+      supabaseEnabled = false;
+    }
+  } else {
+    console.log('[Database] Supabase credentials not configured. Local JSON file storage is active.');
+    supabaseEnabled = false;
   }
-} else {
-  console.log('[Supabase] Environment variables missing. Falling back entirely to local JSON file storage.');
 }
+
+// Perform the check asynchronously on startup
+checkSupabaseConnection();
 
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
@@ -108,7 +126,7 @@ app.get('/api/health', (req, res) => {
 async function handleGetCategories(req: express.Request, res: express.Response) {
   try {
     let categories = [];
-    if (supabase) {
+    if (supabase && supabaseEnabled) {
       try {
         const { data, error } = await supabase.from('categories').select('*');
         if (error) throw error;
@@ -154,7 +172,7 @@ async function handlePostCategory(req: express.Request, res: express.Response) {
       return res.status(400).json({ error: 'Invalid category format. Ensure id and name are provided.' });
     }
 
-    if (supabase) {
+    if (supabase && supabaseEnabled) {
       try {
         const { error } = await supabase.from('categories').upsert(newCat);
         if (error) throw error;
@@ -195,7 +213,7 @@ async function deleteCategoryLogic(rawCatId: string, res: express.Response) {
     const decodedRawCatId = decodeURIComponent(cleanRawId);
     const catId = decodedRawCatId;
 
-    if (supabase) {
+    if (supabase && supabaseEnabled) {
       try {
         const { error } = await supabase.from('categories').delete().eq('id', catId);
         if (error) throw error;
@@ -213,7 +231,7 @@ async function deleteCategoryLogic(rawCatId: string, res: express.Response) {
     const backupCatId = filteredCategories[0]?.id || 'cat-1';
 
     // Update affected poems category in Supabase
-    if (supabase) {
+    if (supabase && supabaseEnabled) {
       try {
         const { error } = await supabase
           .from('poems')
@@ -256,7 +274,7 @@ app.delete('/api/categories/*', (req, res) => {
 async function handleGetPoems(req: express.Request, res: express.Response) {
   try {
     let poems = [];
-    if (supabase) {
+    if (supabase && supabaseEnabled) {
       try {
         const { data, error } = await supabase.from('poems').select('*');
         if (error) throw error;
@@ -297,7 +315,7 @@ async function handlePostPoem(req: express.Request, res: express.Response) {
       return res.status(400).json({ error: 'Invalid poem format. Ensure id and title are provided.' });
     }
 
-    if (supabase) {
+    if (supabase && supabaseEnabled) {
       try {
         const payload = {
           id: newPoem.id,
@@ -350,7 +368,7 @@ async function deletePoemLogic(rawId: string, res: express.Response) {
 
     console.log(`Processing delete request for poem ID: ${id} (raw input: ${rawId})`);
 
-    if (supabase) {
+    if (supabase && supabaseEnabled) {
       try {
         const { error } = await supabase.from('poems').delete().eq('id', id);
         if (error) throw error;
@@ -383,7 +401,7 @@ app.delete('/api/poems/*', (req, res) => {
 // Reset API
 app.post('/api/reset', async (req, res) => {
   try {
-    if (supabase) {
+    if (supabase && supabaseEnabled) {
       try {
         const { error: poemsError } = await supabase.from('poems').delete().neq('id', 'dummy_non_existent_id');
         if (poemsError) throw poemsError;
