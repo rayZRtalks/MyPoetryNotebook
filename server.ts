@@ -1,7 +1,6 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
-import { createServer as createViteServer } from 'vite';
 import { createClient } from '@supabase/supabase-js';
 
 const app = express();
@@ -46,7 +45,9 @@ app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
 // Log all incoming requests to console and to a persistent file for debugging
-const DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = process.env.VERCEL
+  ? path.join('/tmp', 'data')
+  : path.join(process.cwd(), 'data');
 const REQUESTS_LOG_FILE = path.join(DATA_DIR, 'server_requests.log');
 
 app.use((req, res, next) => {
@@ -542,7 +543,8 @@ app.use('/api/*', (req, res) => {
 // --- Vite Asset / Static Serving Middleware ---
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
+    const { createServer } = await import('vite');
+    const vite = await createServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
