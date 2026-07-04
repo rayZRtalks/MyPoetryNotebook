@@ -24,6 +24,21 @@ import CloudinarySettingsModal from './components/CloudinarySettingsModal';
 // Cloud Ledger & Local Media Setup
 import { uploadToStorage } from './cloudinary';
 import { safeLocalStorage } from './utils/safeStorage';
+import { createClient } from '@supabase/supabase-js';
+
+// Client-side Supabase fallback client
+const clientSupabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const clientSupabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+let clientSupabase: any = null;
+
+if (clientSupabaseUrl && clientSupabaseAnonKey) {
+  try {
+    clientSupabase = createClient(clientSupabaseUrl, clientSupabaseAnonKey);
+    console.log('[Supabase Client Fallback] Initialized direct browser connection client.');
+  } catch (err) {
+    console.error('[Supabase Client Fallback] Failed to initialize:', err);
+  }
+}
 
 // Firebase imports removed. Now using clean REST APIs.
 
@@ -118,6 +133,36 @@ export default function App() {
         const data = await res.json();
         console.log('[Supabase Diagnostic] Parsed status JSON successfully:', data);
         setSupabaseStatus(data);
+      } else if (res.status === 404 && clientSupabase) {
+        console.log('[Supabase Diagnostic] Backend returned 404. Checking client-side direct connection fallback...');
+        try {
+          const { error } = await clientSupabase.from('categories').select('id').limit(1);
+          if (error) throw error;
+          
+          setSupabaseStatus({
+            configured: true,
+            enabled: true,
+            verified: true,
+            url: clientSupabaseUrl,
+            keyPrefix: clientSupabaseAnonKey.substring(0, Math.min(10, clientSupabaseAnonKey.length)) + '...',
+            keyLength: clientSupabaseAnonKey.length,
+            error: null,
+            timestamp: new Date().toISOString()
+          });
+          console.log('[Supabase Diagnostic] Client-side direct connection verified successfully!');
+        } catch (clientErr: any) {
+          console.error('[Supabase Diagnostic] Client-side direct connection check failed:', clientErr);
+          setSupabaseStatus({
+            configured: true,
+            enabled: false,
+            verified: false,
+            url: clientSupabaseUrl,
+            keyPrefix: clientSupabaseAnonKey.substring(0, Math.min(10, clientSupabaseAnonKey.length)) + '...',
+            keyLength: clientSupabaseAnonKey.length,
+            error: { message: clientErr?.message || String(clientErr) },
+            timestamp: new Date().toISOString()
+          });
+        }
       } else {
         const errText = await res.text().catch(() => 'No response body');
         const errMsg = `Server returned status ${res.status}: ${errText}`;
@@ -126,7 +171,39 @@ export default function App() {
       }
     } catch (err: any) {
       console.error('[Supabase Diagnostic] Network or parsing exception:', err);
-      setSupabaseFetchError(err?.message || String(err));
+      if (clientSupabase) {
+        console.log('[Supabase Diagnostic] Network error. Testing client-side direct connection fallback...');
+        try {
+          const { error } = await clientSupabase.from('categories').select('id').limit(1);
+          if (error) throw error;
+          
+          setSupabaseStatus({
+            configured: true,
+            enabled: true,
+            verified: true,
+            url: clientSupabaseUrl,
+            keyPrefix: clientSupabaseAnonKey.substring(0, Math.min(10, clientSupabaseAnonKey.length)) + '...',
+            keyLength: clientSupabaseAnonKey.length,
+            error: null,
+            timestamp: new Date().toISOString()
+          });
+          console.log('[Supabase Diagnostic] Client-side direct connection verified successfully!');
+        } catch (clientErr: any) {
+          console.error('[Supabase Diagnostic] Client-side direct connection check failed:', clientErr);
+          setSupabaseStatus({
+            configured: true,
+            enabled: false,
+            verified: false,
+            url: clientSupabaseUrl,
+            keyPrefix: clientSupabaseAnonKey.substring(0, Math.min(10, clientSupabaseAnonKey.length)) + '...',
+            keyLength: clientSupabaseAnonKey.length,
+            error: { message: clientErr?.message || String(clientErr) },
+            timestamp: new Date().toISOString()
+          });
+        }
+      } else {
+        setSupabaseFetchError(err?.message || String(err));
+      }
     } finally {
       setIsFetchingStatus(false);
     }
@@ -148,20 +225,53 @@ export default function App() {
           categoriesFetchSuccess = true;
           setCategories(tempCategories);
           safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(tempCategories));
+        } else if (catsRes.status === 404 && clientSupabase) {
+          console.log('[Load Categories] Backend returned 404. Trying client-side Supabase direct fetch...');
+          const { data, error } = await clientSupabase.from('categories').select('*');
+          if (error) throw error;
+          if (data && data.length > 0) {
+            tempCategories = data;
+          } else {
+            console.log('[Load Categories] Supabase categories table is empty. Seeding...');
+            const { error: seedErr } = await clientSupabase.from('categories').insert(INITIAL_CATEGORIES);
+            if (seedErr) throw seedErr;
+            tempCategories = INITIAL_CATEGORIES;
+          }
+          categoriesFetchSuccess = true;
+          setCategories(tempCategories);
+          safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(tempCategories));
         } else {
           throw new Error('Categories fetch not ok');
         }
       } catch (err) {
-        console.warn('Backend categories fetch failed, falling back locally:', err);
-        try {
-          const savedCats = safeLocalStorage.getItem('poetry_notebook_categories_cache');
-          if (savedCats) {
-            setCategories(JSON.parse(savedCats));
-          } else {
+        console.warn('Backend categories fetch failed, falling back locally/client:', err);
+        let clientFetched = false;
+        if (clientSupabase) {
+          try {
+            console.log('[Load Categories] Catch block fallback. Trying client-side Supabase direct fetch...');
+            const { data, error } = await clientSupabase.from('categories').select('*');
+            if (!error && data && data.length > 0) {
+              tempCategories = data;
+              setCategories(tempCategories);
+              safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(tempCategories));
+              clientFetched = true;
+              categoriesFetchSuccess = true;
+            }
+          } catch (e) {
+            console.error('[Load Categories] Direct fetch failed:', e);
+          }
+        }
+        if (!clientFetched) {
+          try {
+            const savedCats = safeLocalStorage.getItem('poetry_notebook_categories_cache');
+            if (savedCats) {
+              setCategories(JSON.parse(savedCats));
+            } else {
+              setCategories(INITIAL_CATEGORIES);
+            }
+          } catch {
             setCategories(INITIAL_CATEGORIES);
           }
-        } catch {
-          setCategories(INITIAL_CATEGORIES);
         }
       }
 
@@ -173,9 +283,30 @@ export default function App() {
         if (poemsRes.ok) {
           backendPoems = await poemsRes.json();
           backendFetchSuccess = true;
+        } else if (poemsRes.status === 404 && clientSupabase) {
+          console.log('[Load Poems] Backend returned 404. Trying client-side Supabase direct fetch...');
+          const { data, error } = await clientSupabase.from('poems').select('*');
+          if (!error) {
+            backendPoems = data || [];
+            backendFetchSuccess = true;
+          } else {
+            throw error;
+          }
         }
       } catch (err) {
-        console.warn('Backend poems fetch failed, falling back locally:', err);
+        console.warn('Backend poems fetch failed, falling back locally/client:', err);
+        if (clientSupabase) {
+          try {
+            console.log('[Load Poems] Catch block fallback. Trying client-side Supabase direct fetch...');
+            const { data, error } = await clientSupabase.from('poems').select('*');
+            if (!error) {
+              backendPoems = data || [];
+              backendFetchSuccess = true;
+            }
+          } catch (e) {
+            console.error('[Load Poems] Direct fetch failed:', e);
+          }
+        }
       }
 
       // Load Poems from local cache
@@ -278,12 +409,18 @@ export default function App() {
           console.info(`[Sync Engine] Synchronizing ${poemsToSync.length} unsaved or updated entries to cloud ledger...`);
           for (const p of poemsToSync) {
             try {
-              await fetch('/api/poems', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(p),
-              });
-              console.info(`[Sync Engine] Successfully synced poem ID: ${p.id} to cloud backend.`);
+              if (clientSupabase) {
+                const { error } = await clientSupabase.from('poems').upsert(p);
+                if (error) throw error;
+                console.info(`[Sync Engine] Successfully synced poem ID: ${p.id} directly to Supabase.`);
+              } else {
+                await fetch('/api/poems', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(p),
+                });
+                console.info(`[Sync Engine] Successfully synced poem ID: ${p.id} to cloud backend.`);
+              }
             } catch (postErr) {
               console.warn(`[Sync Engine] Failed to sync poem ID: ${p.id} to cloud backend:`, postErr);
             }
@@ -406,18 +543,24 @@ export default function App() {
     });
 
     try {
-      const response = await fetch('/api/poems', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalPoem),
-      });
-      if (response.ok) {
-        showToast(isEdit ? 'Poem updated and synchronized in the cloud ledger.' : 'New poem saved and synchronized in the cloud ledger.', 'success');
+      if (clientSupabase) {
+        const { error } = await clientSupabase.from('poems').upsert(finalPoem);
+        if (error) throw error;
+        showToast(isEdit ? 'Poem updated and synchronized in Supabase directly.' : 'New poem saved and synchronized in Supabase directly.', 'success');
       } else {
-        throw new Error('Save to cloud failed');
+        const response = await fetch('/api/poems', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(finalPoem),
+        });
+        if (response.ok) {
+          showToast(isEdit ? 'Poem updated and synchronized in the cloud ledger.' : 'New poem saved and synchronized in the cloud ledger.', 'success');
+        } else {
+          throw new Error('Save to cloud failed');
+        }
       }
     } catch (error: any) {
-      console.error('Error saving poem to backend:', error);
+      console.error('Error saving poem to backend/database:', error);
       showToast(`Saved locally. Cloud sync failed: ${error?.message || String(error)}`, 'warning');
     } finally {
       setIsFormOpen(false);
@@ -441,16 +584,22 @@ export default function App() {
     }
 
     try {
-      const response = await fetch(`/api/poems/${encodeURIComponent(id)}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        showToast('Poem permanently removed from your ledger.', 'warning');
+      if (clientSupabase) {
+        const { error } = await clientSupabase.from('poems').delete().eq('id', id);
+        if (error) throw error;
+        showToast('Poem permanently removed from Supabase directly.', 'warning');
       } else {
-        throw new Error('Delete from cloud failed');
+        const response = await fetch(`/api/poems/${encodeURIComponent(id)}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          showToast('Poem permanently removed from your ledger.', 'warning');
+        } else {
+          throw new Error('Delete from cloud failed');
+        }
       }
     } catch (error: any) {
-      console.error('Error deleting poem from backend:', error);
+      console.error('Error deleting poem from backend/database:', error);
       showToast(`Deleted locally. Cloud removal failed: ${error?.message || String(error)}`, 'warning');
     }
   };
@@ -494,18 +643,24 @@ export default function App() {
 
     const addCatToBackend = async () => {
       try {
-        const response = await fetch('/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newCat),
-        });
-        if (response.ok) {
-          showToast(`Category "${trimmed}" successfully created.`, 'success');
+        if (clientSupabase) {
+          const { error } = await clientSupabase.from('categories').upsert(newCat);
+          if (error) throw error;
+          showToast(`Category "${trimmed}" successfully created directly in Supabase.`, 'success');
         } else {
-          throw new Error('Sync failed');
+          const response = await fetch('/api/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newCat),
+          });
+          if (response.ok) {
+            showToast(`Category "${trimmed}" successfully created.`, 'success');
+          } else {
+            throw new Error('Sync failed');
+          }
         }
       } catch (err) {
-        console.error('Failed to save category to backend:', err);
+        console.error('Failed to save category to backend/database:', err);
         showToast(`Category "${trimmed}" created locally.`, 'success');
       }
     };
@@ -553,16 +708,27 @@ export default function App() {
     });
 
     try {
-      const response = await fetch(`/api/categories/${encodeURIComponent(catId)}`, {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        showToast('Category permanently deleted. Affected poems re-routed in cloud ledger.', 'info');
+      if (clientSupabase) {
+        const { error: catErr } = await clientSupabase.from('categories').delete().eq('id', catId);
+        if (catErr) throw catErr;
+        const { error: poemsErr } = await clientSupabase
+          .from('poems')
+          .update({ categoryId: backupCatId, updatedAt: new Date().toISOString() })
+          .eq('categoryId', catId);
+        if (poemsErr) throw poemsErr;
+        showToast('Category permanently deleted directly from Supabase. Affected poems re-routed.', 'info');
       } else {
-        throw new Error('Delete category failed');
+        const response = await fetch(`/api/categories/${encodeURIComponent(catId)}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          showToast('Category permanently deleted. Affected poems re-routed in cloud ledger.', 'info');
+        } else {
+          throw new Error('Delete category failed');
+        }
       }
     } catch (err: any) {
-      console.error('Failed to delete category from backend:', err);
+      console.error('Failed to delete category from backend/database:', err);
       showToast(`Deleted locally. Cloud sync failed: ${err?.message || String(err)}`, 'warning');
     }
   };
@@ -631,22 +797,33 @@ export default function App() {
                 safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(parsed.poems));
                 safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(parsed.categories));
 
-               await Promise.all([
-                 ...parsed.categories.map((cat: Category) =>
-                   fetch('/api/categories', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify(cat),
-                   })
-                 ),
-                 ...parsed.poems.map((poem: Poem) =>
-                   fetch('/api/poems', {
-                     method: 'POST',
-                     headers: { 'Content-Type': 'application/json' },
-                     body: JSON.stringify(poem),
-                   })
-                 )
-               ]);
+               if (clientSupabase) {
+                 await Promise.all([
+                   ...parsed.categories.map((cat: Category) =>
+                     clientSupabase.from('categories').upsert(cat).then(({ error }: any) => { if (error) throw error; })
+                   ),
+                   ...parsed.poems.map((poem: Poem) =>
+                     clientSupabase.from('poems').upsert(poem).then(({ error }: any) => { if (error) throw error; })
+                   )
+                 ]);
+               } else {
+                 await Promise.all([
+                   ...parsed.categories.map((cat: Category) =>
+                     fetch('/api/categories', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify(cat),
+                     })
+                   ),
+                   ...parsed.poems.map((poem: Poem) =>
+                     fetch('/api/poems', {
+                       method: 'POST',
+                       headers: { 'Content-Type': 'application/json' },
+                       body: JSON.stringify(poem),
+                     })
+                   )
+                 ]);
+               }
                showToast('Import completed. Your ledger is synchronized with the cloud ledger!', 'success');
              } catch (err) {
                console.error('Failed to sync imported backup to backend:', err);
@@ -678,18 +855,35 @@ export default function App() {
     setIsResetConfirmOpen(false);
 
     try {
-      const response = await fetch('/api/reset', { method: 'POST' });
-      if (response.ok) {
+      if (clientSupabase) {
+        const { error: poemsError } = await clientSupabase.from('poems').delete().neq('id', 'dummy_non_existent_id');
+        if (poemsError) throw poemsError;
+
+        const { error: catsError } = await clientSupabase.from('categories').delete().neq('id', 'dummy_non_existent_id');
+        if (catsError) throw catsError;
+
+        const { error: seedError } = await clientSupabase.from('categories').insert(INITIAL_CATEGORIES);
+        if (seedError) throw seedError;
+
         setCategories(INITIAL_CATEGORIES);
         setPoems([]);
         safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify([]));
         safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
-        showToast('Successfully reset and re-seeded default cloud categories with empty ledger.', 'info');
+        showToast('Successfully reset and re-seeded default categories in Supabase directly.', 'info');
       } else {
-        throw new Error('Reset request failed');
+        const response = await fetch('/api/reset', { method: 'POST' });
+        if (response.ok) {
+          setCategories(INITIAL_CATEGORIES);
+          setPoems([]);
+          safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify([]));
+          safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
+          showToast('Successfully reset and re-seeded default cloud categories with empty ledger.', 'info');
+        } else {
+          throw new Error('Reset request failed');
+        }
       }
     } catch (err) {
-      console.error('Failed to sync cloud ledger factory reset:', err);
+      console.error('Failed to sync database/backend factory reset:', err);
       showToast('Notebook reset locally, cloud sync failed.', 'warning');
     }
   };
@@ -1540,29 +1734,35 @@ export default function App() {
                   });
 
                   try {
-                    const response = await fetch('/api/poems', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(finalSnap),
-                    });
-                    if (response.ok) {
-                      showToast(isEdit ? "Daily picture snapshot updated and synchronized in cloud ledger." : "Daily picture snapshot saved and synchronized in cloud ledger.", "success");
+                    if (clientSupabase) {
+                      const { error } = await clientSupabase.from('poems').upsert(finalSnap);
+                      if (error) throw error;
+                      showToast(isEdit ? "Daily picture snapshot updated directly in Supabase." : "Daily picture snapshot saved directly in Supabase.", "success");
                     } else {
-                      let errorDetails = '';
-                      try {
-                        const errData = await response.json();
-                        errorDetails = errData.error || errData.message || JSON.stringify(errData);
-                      } catch {
+                      const response = await fetch('/api/poems', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(finalSnap),
+                      });
+                      if (response.ok) {
+                        showToast(isEdit ? "Daily picture snapshot updated and synchronized in cloud ledger." : "Daily picture snapshot saved and synchronized in cloud ledger.", "success");
+                      } else {
+                        let errorDetails = '';
                         try {
-                          errorDetails = await response.text();
+                          const errData = await response.json();
+                          errorDetails = errData.error || errData.message || JSON.stringify(errData);
                         } catch {
-                          errorDetails = `${response.status} ${response.statusText}`;
+                          try {
+                            errorDetails = await response.text();
+                          } catch {
+                            errorDetails = `${response.status} ${response.statusText}`;
+                          }
                         }
+                        throw new Error(errorDetails || `${response.status} ${response.statusText}`);
                       }
-                      throw new Error(errorDetails || `${response.status} ${response.statusText}`);
                     }
                   } catch (error: any) {
-                    console.error('Error saving snapshot to backend:', error);
+                    console.error('Error saving snapshot to backend/database:', error);
                     showToast(`Saved locally. Cloud sync failed: ${error?.message || String(error)}`, 'warning');
                   } finally {
                     setIsSnapFormOpen(false);
@@ -2123,19 +2323,44 @@ export default function App() {
                             : !supabaseStatus.configured 
                               ? 'NOT CONFIGURED' 
                               : supabaseStatus.verified 
-                                ? 'ACTIVE & SYNCED' 
+                                ? (clientSupabaseUrl && supabaseStatus.url === clientSupabaseUrl ? 'DIRECT BROWSER SYNC' : 'ACTIVE & SYNCED') 
                                 : 'CONNECTION ERROR'}
                     </span>
                   </div>
                 </div>
 
+                {clientSupabaseUrl && supabaseStatus?.verified && supabaseStatus.url === clientSupabaseUrl && (
+                  <div className="p-3 bg-emerald-950/20 border border-emerald-900/30 rounded-xl text-[11px] font-mono text-emerald-300">
+                    <span className="font-bold uppercase tracking-wider block mb-1">⚡ Direct Browser Sync Active:</span>
+                    <p className="leading-normal">
+                      The application detected that the Express backend is not running on this hosting platform (e.g. static host like Vercel).
+                    </p>
+                    <p className="mt-1.5 text-neutral-300">
+                      We have automatically established a direct secure connection from your browser to Supabase using your Vercel project environment variables! All features are fully functional.
+                    </p>
+                  </div>
+                )}
+
                 {supabaseFetchError && (
                   <div className="p-3 bg-amber-950/20 border border-amber-900/30 rounded-xl text-[11px] font-mono text-amber-300">
                     <span className="font-bold uppercase tracking-wider block mb-1">⚠️ Client Fetch Error:</span>
                     <p className="leading-normal break-all select-all">{supabaseFetchError}</p>
-                    <p className="mt-1.5 text-neutral-400 font-sans text-[10px]">
-                      Tip: Ensure you are accessing the app via the <strong>Development App URL</strong> or <strong>Shared App URL</strong>, and that your browser is not blocking local API requests.
-                    </p>
+                    <div className="mt-2.5 text-neutral-300 space-y-1.5 font-sans text-[11px] leading-relaxed">
+                      <p>
+                        <strong>Root Cause:</strong> This 404 error (NOT_FOUND) indicates you are running the app on a static hosting platform like <strong>Vercel</strong>, which only serves static frontend files and does not execute the Node.js Express server.
+                      </p>
+                      <p>
+                        <strong>How to Fix This:</strong>
+                      </p>
+                      <ul className="list-disc pl-4 space-y-1">
+                        <li>
+                          <strong>Option A (Easiest):</strong> Deploy your app directly from the Google AI Studio <strong>"Share" / "Deploy to Cloud Run"</strong> menu. This automatically hosts the full-stack container on Google Cloud where the backend is fully active and synchronized!
+                        </li>
+                        <li>
+                          <strong>Option B (Self-Hosted Vercel):</strong> Add <code className="text-cyan-300 font-mono select-all">VITE_SUPABASE_URL</code> and <code className="text-cyan-300 font-mono select-all">VITE_SUPABASE_ANON_KEY</code> to your Environment Variables in your Vercel project settings. The app will automatically detect these and switch to <strong>Direct Browser Sync</strong>!
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 )}
 
