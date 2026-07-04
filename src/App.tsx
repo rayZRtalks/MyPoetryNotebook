@@ -104,16 +104,31 @@ export default function App() {
     timestamp: string;
   } | null>(null);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [supabaseFetchError, setSupabaseFetchError] = useState<string | null>(null);
+  const [isFetchingStatus, setIsFetchingStatus] = useState(false);
 
   const fetchSupabaseStatus = async () => {
+    setIsFetchingStatus(true);
+    setSupabaseFetchError(null);
+    console.log('[Supabase Diagnostic] Initiating fetch to /api/supabase-status...');
     try {
       const res = await fetch('/api/supabase-status');
+      console.log('[Supabase Diagnostic] Fetch response received. Status:', res.status, res.statusText);
       if (res.ok) {
         const data = await res.json();
+        console.log('[Supabase Diagnostic] Parsed status JSON successfully:', data);
         setSupabaseStatus(data);
+      } else {
+        const errText = await res.text().catch(() => 'No response body');
+        const errMsg = `Server returned status ${res.status}: ${errText}`;
+        console.error('[Supabase Diagnostic] Response not OK:', errMsg);
+        setSupabaseFetchError(errMsg);
       }
-    } catch (err) {
-      console.warn('Failed to fetch Supabase connection status:', err);
+    } catch (err: any) {
+      console.error('[Supabase Diagnostic] Network or parsing exception:', err);
+      setSupabaseFetchError(err?.message || String(err));
+    } finally {
+      setIsFetchingStatus(false);
     }
   };
 
@@ -2086,23 +2101,43 @@ export default function App() {
                   <span className="text-xs font-mono font-bold text-neutral-400 uppercase tracking-wider">Database Status</span>
                   <div className="flex items-center gap-2">
                     <span className={`w-2.5 h-2.5 rounded-full ${
-                      !supabaseStatus?.configured 
-                        ? 'bg-neutral-600' 
-                        : supabaseStatus.verified 
-                          ? 'bg-emerald-500 animate-pulse'
-                          : 'bg-red-500 animate-pulse'
+                      isFetchingStatus
+                        ? 'bg-cyan-500 animate-pulse'
+                        : supabaseFetchError
+                          ? 'bg-amber-500 animate-bounce'
+                          : !supabaseStatus
+                            ? 'bg-neutral-600'
+                            : !supabaseStatus.configured 
+                              ? 'bg-neutral-600' 
+                              : supabaseStatus.verified 
+                                ? 'bg-emerald-500 animate-pulse'
+                                : 'bg-red-500 animate-pulse'
                     }`} />
                     <span className="text-xs font-mono font-bold uppercase tracking-widest">
-                      {!supabaseStatus 
-                        ? 'LOADING...' 
-                        : !supabaseStatus.configured 
-                          ? 'NOT CONFIGURED' 
-                          : supabaseStatus.verified 
-                            ? 'ACTIVE & SYNCED' 
-                            : 'CONNECTION ERROR'}
+                      {isFetchingStatus
+                        ? 'FETCHING...'
+                        : supabaseFetchError
+                          ? 'FETCH BLOCKED / ERROR'
+                          : !supabaseStatus 
+                            ? 'LOADING...' 
+                            : !supabaseStatus.configured 
+                              ? 'NOT CONFIGURED' 
+                              : supabaseStatus.verified 
+                                ? 'ACTIVE & SYNCED' 
+                                : 'CONNECTION ERROR'}
                     </span>
                   </div>
                 </div>
+
+                {supabaseFetchError && (
+                  <div className="p-3 bg-amber-950/20 border border-amber-900/30 rounded-xl text-[11px] font-mono text-amber-300">
+                    <span className="font-bold uppercase tracking-wider block mb-1">⚠️ Client Fetch Error:</span>
+                    <p className="leading-normal break-all select-all">{supabaseFetchError}</p>
+                    <p className="mt-1.5 text-neutral-400 font-sans text-[10px]">
+                      Tip: Ensure you are accessing the app via the <strong>Development App URL</strong> or <strong>Shared App URL</strong>, and that your browser is not blocking local API requests.
+                    </p>
+                  </div>
+                )}
 
                 <div className="space-y-2 text-xs font-mono">
                   <div className="flex justify-between">
@@ -2209,9 +2244,12 @@ CREATE TABLE IF NOT EXISTS poems (
                 <div className="flex items-center gap-3">
                   <button
                     onClick={fetchSupabaseStatus}
-                    className="px-4.5 py-2 hover:bg-neutral-800 text-neutral-300 border border-neutral-850 text-xs font-bold rounded-full transition-colors cursor-pointer font-mono tracking-wider uppercase flex items-center gap-1.5 bg-neutral-900"
+                    disabled={isFetchingStatus}
+                    className={`px-4.5 py-2 text-neutral-300 border border-neutral-850 text-xs font-bold rounded-full transition-colors font-mono tracking-wider uppercase flex items-center gap-1.5 bg-neutral-900 ${
+                      isFetchingStatus ? 'opacity-50 cursor-not-allowed' : 'hover:bg-neutral-800 cursor-pointer'
+                    }`}
                   >
-                    <span>Refresh</span>
+                    <span>{isFetchingStatus ? 'Refreshing...' : 'Refresh'}</span>
                   </button>
                   <button
                     onClick={() => setIsSupabaseModalOpen(false)}
