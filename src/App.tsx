@@ -106,7 +106,6 @@ export default function App() {
   const [isSnapFormOpen, setIsSnapFormOpen] = useState(false);
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
   const [isCloudinarySettingsOpen, setIsCloudinarySettingsOpen] = useState(false);
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
   const [cloudinaryTrigger, setCloudinaryTrigger] = useState(0);
   const [supabaseStatus, setSupabaseStatus] = useState<{
     configured: boolean;
@@ -845,50 +844,6 @@ export default function App() {
     }
   };
 
-  // --- Reset/Factory Revert ---
-  const handleRevertToDemo = async () => {
-    setPoems([]);
-    setCategories(INITIAL_CATEGORIES);
-    setSelectedCatId('all');
-    setSelectedMood('all');
-    setSortBy('newest');
-    setIsResetConfirmOpen(false);
-
-    try {
-      if (clientSupabase) {
-        const { error: poemsError } = await clientSupabase.from('poems').delete().neq('id', 'dummy_non_existent_id');
-        if (poemsError) throw poemsError;
-
-        const { error: catsError } = await clientSupabase.from('categories').delete().neq('id', 'dummy_non_existent_id');
-        if (catsError) throw catsError;
-
-        const { error: seedError } = await clientSupabase.from('categories').insert(INITIAL_CATEGORIES);
-        if (seedError) throw seedError;
-
-        setCategories(INITIAL_CATEGORIES);
-        setPoems([]);
-        safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify([]));
-        safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
-        showToast('Successfully reset and re-seeded default categories in Supabase directly.', 'info');
-      } else {
-        const response = await fetch('/api/reset', { method: 'POST' });
-        if (response.ok) {
-          setCategories(INITIAL_CATEGORIES);
-          setPoems([]);
-          safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify([]));
-          safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(INITIAL_CATEGORIES));
-          showToast('Successfully reset and re-seeded default cloud categories with empty ledger.', 'info');
-        } else {
-          throw new Error('Reset request failed');
-        }
-      }
-    } catch (err) {
-      console.error('Failed to sync database/backend factory reset:', err);
-      showToast('Notebook reset locally, cloud sync failed.', 'warning');
-    }
-  };
-
-
   // --- Author Mode Handlers ---
   const handleVerifyPasscode = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -1324,15 +1279,6 @@ export default function App() {
                   <span>Database Sync</span>
                 </button>
 
-                {/* Revert to demo */}
-                <button
-                  id="btn-trigger-reset"
-                  onClick={() => setIsResetConfirmOpen(true)}
-                  className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-full border border-transparent hover:border-neutral-850 transition-all cursor-pointer"
-                  title="Reset notebook state back to demo poems"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
 
                 {/* Capture Day Snapshot trigger */}
                 <button
@@ -2489,54 +2435,6 @@ CREATE TABLE IF NOT EXISTS poems (
         )}
       </AnimatePresence>
 
-      {/* 4. Factory Reset Confirmation Modal */}
-      <AnimatePresence>
-        {isResetConfirmOpen && (
-          <div id="modal-container-reset-confirm" className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              id="backdrop-reset-confirm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsResetConfirmOpen(false)}
-              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
-            />
-            <motion.div
-              id="sheet-reset-confirm"
-              initial={{ scale: 0.95, y: 12, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 12, opacity: 0 }}
-              className="bg-[#0c0d14] border border-[#ff0055]/30 rounded-2xl p-6 shadow-2xl relative z-10 w-full max-w-sm space-y-4 text-neutral-200"
-            >
-              <div className="flex items-center gap-3 text-red-400">
-                <AlertCircle className="w-6 h-6 shrink-0 text-red-400" />
-                <h3 id="reset-confirm-heading" className="text-lg font-display font-bold text-neutral-100 tracking-tight">
-                  Revert to Demo?
-                </h3>
-              </div>
-              <p className="text-neutral-400 text-xs leading-relaxed font-mono">
-                This will overwrite current storage entries with the Frost, Burns, and Dickinson classical demo verses.
-              </p>
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  id="btn-cancel-reset"
-                  onClick={() => setIsResetConfirmOpen(false)}
-                  className="px-4.5 py-2 border border-neutral-800 text-neutral-400 hover:bg-neutral-800 hover:text-white text-xs font-bold rounded-full transition-colors cursor-pointer font-mono tracking-widest uppercase"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="btn-confirm-reset"
-                  onClick={handleRevertToDemo}
-                  className="px-4.5 py-2 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded-full shadow-md transition-colors cursor-pointer font-mono tracking-widest uppercase"
-                >
-                  Revert
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* 5. Author Portal Passcode Entry Modal */}
       <AnimatePresence>
