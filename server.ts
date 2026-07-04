@@ -16,22 +16,8 @@ let supabaseEnabled = false;
 if (SUPABASE_URL && SUPABASE_ANON_KEY) {
   try {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('[Database] Supabase client initialized. Testing connection...');
-    
-    // Perform connection check to verify if the tables are set up
-    supabase.from('categories').select('id').limit(1).then(({ error }: any) => {
-      if (error) {
-        console.warn(`[Database] Supabase is connected but tables are not ready yet (Error: ${error.message}).`);
-        console.warn('[Database] Falling back to local file storage. Please run the SQL schema script in your Supabase SQL Editor to enable Cloud Sync.');
-        supabaseEnabled = false;
-      } else {
-        supabaseEnabled = true;
-        console.log('[Database] Supabase tables verified. Cloud ledger synchronization is fully active.');
-      }
-    }).catch((err: any) => {
-      console.warn(`[Database] Supabase connection failed (${err?.message || String(err)}). Fallback local storage is active.`);
-      supabaseEnabled = false;
-    });
+    supabaseEnabled = true;
+    console.log('[Database] Supabase client initialized. Lazy verification active.');
   } catch (err: any) {
     console.error('[Database] Failed to initialize Supabase client:', err);
     supabaseEnabled = false;
@@ -57,10 +43,12 @@ app.use((req, res, next) => {
     const logLine = `[${new Date().toISOString()}] ${req.method} ${req.url} - Status: ${res.statusCode} (${duration}ms) - UA: ${req.headers['user-agent'] || 'unknown'}\n`;
     console.log(`[SERVER LOG] ${logLine.trim()}`);
     try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
+      if (!process.env.VERCEL) {
+        if (!fs.existsSync(DATA_DIR)) {
+          fs.mkdirSync(DATA_DIR, { recursive: true });
+        }
+        fs.appendFileSync(REQUESTS_LOG_FILE, logLine, 'utf-8');
       }
-      fs.appendFileSync(REQUESTS_LOG_FILE, logLine, 'utf-8');
     } catch (err) {
       console.error('Failed to write to request log file:', err);
     }
@@ -82,14 +70,18 @@ const INITIAL_CATEGORIES = [
 ];
 
 function initDataFiles() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(POEMS_FILE)) {
-    fs.writeFileSync(POEMS_FILE, JSON.stringify([], null, 2), 'utf-8');
-  }
-  if (!fs.existsSync(CATEGORIES_FILE)) {
-    fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(INITIAL_CATEGORIES, null, 2), 'utf-8');
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    if (!fs.existsSync(POEMS_FILE)) {
+      fs.writeFileSync(POEMS_FILE, JSON.stringify([], null, 2), 'utf-8');
+    }
+    if (!fs.existsSync(CATEGORIES_FILE)) {
+      fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(INITIAL_CATEGORIES, null, 2), 'utf-8');
+    }
+  } catch (err) {
+    console.error('[Data Init] Failed to initialize local data files:', err);
   }
 }
 
@@ -432,8 +424,12 @@ app.post('/api/reset', async (req, res) => {
 
 // Real Persistent Local Upload Endpoint for Incognito and Fallback support
 const UPLOADS_DIR = path.join(DATA_DIR, 'uploads');
-if (!fs.existsSync(UPLOADS_DIR)) {
-  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+  }
+} catch (err) {
+  console.error('[Uploads Init] Failed to create uploads directory:', err);
 }
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -543,7 +539,8 @@ app.use('/api/*', (req, res) => {
 // --- Vite Asset / Static Serving Middleware ---
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
-    const { createServer } = await import('vite');
+    const viteModule = 'vite';
+    const { createServer } = await import(viteModule);
     const vite = await createServer({
       server: { middlewareMode: true },
       appType: 'spa',
