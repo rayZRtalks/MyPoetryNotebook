@@ -319,6 +319,49 @@ export default function App() {
         console.warn('Failed reading local poems cache:', err);
       }
 
+      // Self-Healing Cleanup: Expunge and bypass classic demo poems from cache & backend completely
+      const isDemoPoem = (p: Poem) => {
+        if (!p) return false;
+        const authorLower = (p.author || '').toLowerCase().trim();
+        const titleLower = (p.title || '').toLowerCase().trim();
+        const matchesAuthor = ['robert frost', 'robert burns', 'emily dickinson', 'frost', 'burns', 'dickinson'].includes(authorLower);
+        const matchesTitle = [
+          'the road not taken', 
+          'a red, red rose', 
+          'i\'m nobody! who are you?',
+          'i’m nobody! who are you?',
+          'stopping by woods on a snowy evening'
+        ].includes(titleLower);
+        return matchesAuthor || matchesTitle;
+      };
+
+      const originalLocalCount = localPoems.length;
+      localPoems = localPoems.filter(p => !isDemoPoem(p));
+      if (localPoems.length !== originalLocalCount) {
+        safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(localPoems));
+        console.info(`[Cleanup] Removed ${originalLocalCount - localPoems.length} lingering demo poems from local cache.`);
+      }
+
+      const originalBackendCount = backendPoems.length;
+      const demoPoemsInBackend = backendPoems.filter(isDemoPoem);
+      backendPoems = backendPoems.filter(p => !isDemoPoem(p));
+      
+      if (demoPoemsInBackend.length > 0) {
+        console.info(`[Cleanup] Found ${demoPoemsInBackend.length} demo poems in backend list. Initiating direct cloud deletion...`);
+        for (const dp of demoPoemsInBackend) {
+          try {
+            if (clientSupabase) {
+              await clientSupabase.from('poems').delete().eq('id', dp.id);
+            } else {
+              await fetch(`/api/poems/${encodeURIComponent(dp.id)}`, { method: 'DELETE' });
+            }
+            console.info(`[Cleanup] Successfully expunged demo poem ID: ${dp.id} from cloud.`);
+          } catch (delErr) {
+            console.warn(`[Cleanup] Failed to expunge demo poem ID: ${dp.id} from cloud:`, delErr);
+          }
+        }
+      }
+
       // Check for and migrate legacy base64 attachments to backend disk storage on startup
       try {
         let modified = false;
