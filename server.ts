@@ -319,7 +319,11 @@ async function handlePostPoem(req: express.Request, res: express.Response) {
           mood: newPoem.mood || '',
           createdAt: newPoem.createdAt || new Date().toISOString(),
           updatedAt: newPoem.updatedAt || new Date().toISOString(),
-          attachments: newPoem.attachments || []
+          attachments: newPoem.attachments || [],
+          tags: newPoem.tags || [],
+          author: newPoem.author || '',
+          isPhotoCapture: newPoem.isPhotoCapture ?? false,
+          isPrivate: newPoem.isPrivate ?? false
         };
         const { error } = await supabase.from('poems').upsert(payload);
         if (error) throw error;

@@ -2427,14 +2427,14 @@ export default function App() {
 CREATE TABLE IF NOT EXISTS poems (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  poet TEXT,
+  body TEXT NOT NULL,
+  author TEXT,
   "categoryId" TEXT REFERENCES categories(id),
   mood TEXT,
-  tags TEXT,
+  tags JSONB,
+  attachments JSONB,
   "isPhotoCapture" BOOLEAN DEFAULT FALSE,
-  "photoPrompt" TEXT,
-  "isLocalOnly" BOOLEAN DEFAULT FALSE,
+  "isPrivate" BOOLEAN DEFAULT FALSE,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()),
   "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );`}
