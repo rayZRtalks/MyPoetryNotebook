@@ -10,18 +10,27 @@ interface PoemCardProps {
   onDelete: (id: string) => void;
   isEditable?: boolean;
   onSelectMedia?: (poem: Poem) => void; // Triggered when the media thumbnail is clicked for lightbox
-  appTheme?: 'dark' | 'light';
+  appTheme?: 'dark' | 'light' | 'sankofa';
   gridOverlayEnabled?: boolean;
   isWide?: boolean;
 }
 
-const getMoodColor = (mood?: string, appTheme: 'dark' | 'light' = 'dark') => {
+const getMoodColor = (mood?: string, appTheme: 'dark' | 'light' | 'sankofa' = 'dark') => {
   if (appTheme === 'light') {
     return {
       badge: 'bg-[#ede9df] text-neutral-800 border-[#dad4c5] font-bold shadow-xs',
       glow: 'hover:border-neutral-800 hover:shadow-[0_8px_30px_rgba(28,28,30,0.08)] hover:bg-[#fafaf9] focus-within:ring-neutral-900/10',
       accentText: 'text-neutral-800',
       accentBg: 'bg-[#ede9df]'
+    };
+  }
+
+  if (appTheme === 'sankofa') {
+    return {
+      badge: 'bg-[#331c17] text-[#ebd6bc] border-[#bf3f27]/30 font-semibold shadow-xs',
+      glow: 'hover:border-[#bf3f27]/50 hover:shadow-[0_8px_30px_rgba(191,63,39,0.18)] hover:bg-[#251815] focus-within:ring-[#bf3f27]/10',
+      accentText: 'text-[#ebd6bc]',
+      accentBg: 'bg-[#b33925]/20'
     };
   }
 
@@ -127,6 +136,8 @@ export default function PoemCard({
         className={`group relative flex flex-col md:flex-row gap-6 md:items-stretch min-h-[380px] h-full transition-all duration-300 border rounded-2xl p-6 focus-within:ring-2 ${
           appTheme === 'light'
             ? 'bg-white border-[#e0d6be] text-[#1b1c20] shadow-[0_4px_24px_rgba(28,28,30,0.04)] focus-within:ring-neutral-900/10'
+            : appTheme === 'sankofa'
+            ? 'bg-[#1c1412] border-[#3a221d] text-[#f6eedf] shadow-[0_4px_24px_rgba(0,0,0,0.2)] focus-within:ring-[#bf3f27]/20'
             : 'bg-[#111218]/95 border-neutral-800/80 text-[#e4e4e7] shadow-2xl backdrop-blur-md focus-within:ring-cyan-500/30'
         } ${mColors.glow} ${!isEditable ? 'select-none' : ''}`}
         onCopy={(e) => {
@@ -151,6 +162,8 @@ export default function PoemCard({
             className={`relative w-full h-full min-h-[180px] rounded-xl overflow-hidden cursor-pointer shadow-md group/thumb transition-all duration-300 border ${
               appTheme === 'light'
                 ? 'bg-[#14151b] border-[#e0d6be]'
+                : appTheme === 'sankofa'
+                ? 'bg-[#0d0706] border-[#3a221d]'
                 : 'bg-neutral-950 border-neutral-800/80'
             }`}
           >
@@ -161,6 +174,8 @@ export default function PoemCard({
             <div className={`absolute inset-0 transition-all duration-500 z-1 pointer-events-none ${
               appTheme === 'light'
                 ? 'bg-[radial-gradient(circle_at_center,rgba(224,214,190,0.05)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(224,214,190,0.15)_0%,transparent_60%)]'
+                : appTheme === 'sankofa'
+                ? 'bg-[radial-gradient(circle_at_center,rgba(191,63,39,0.05)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(191,63,39,0.15)_0%,transparent_60%)]'
                 : 'bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.02)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.08)_0%,transparent_60%)]'
             }`} />
 
@@ -169,6 +184,8 @@ export default function PoemCard({
               <span className={`font-sans font-black text-[6.5rem] leading-none text-neutral-900/50 tracking-tighter uppercase transition-all duration-750 ease-out group-hover/thumb:scale-110 ${
                 appTheme === 'light'
                   ? 'text-neutral-800/40 group-hover/thumb:text-[#ff0055]/10'
+                  : appTheme === 'sankofa'
+                  ? 'text-[#bf3f27]/10 group-hover/thumb:text-[#bf3f27]/20'
                   : 'group-hover/thumb:text-cyan-500/10'
               }`}>
                 {leadInitials}
@@ -237,14 +254,18 @@ export default function PoemCard({
                 <div className={`flex items-center gap-1.5 border px-2 py-1 rounded font-semibold uppercase ${
                   appTheme === 'light'
                     ? 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                    : appTheme === 'sankofa'
+                    ? 'bg-[#251815] border-[#3a221d] text-[#ebd6bc]/70'
                     : 'bg-neutral-950/80 border-neutral-900 text-neutral-400'
                 }`}>
-                  <span className="text-cyan-400">⊕</span>
+                  <span className={appTheme === 'sankofa' ? 'text-[#bf3f27]' : 'text-cyan-400'}>⊕</span>
                   <span>SYS_{poem.id.toUpperCase().slice(-5)}</span>
                 </div>
                 <div className={`border px-2 py-1 rounded uppercase font-semibold ${
                   appTheme === 'light'
                     ? 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                    : appTheme === 'sankofa'
+                    ? 'bg-[#251815] border-[#3a221d] text-[#ebd6bc]/70'
                     : 'bg-neutral-955/80 border-neutral-900 text-neutral-400'
                 }`}>
                   {poem.attachments && poem.attachments.length > 0 
@@ -256,22 +277,38 @@ export default function PoemCard({
               {/* Middle Focal Target Crosshair Box */}
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/thumb:opacity-100 transition-all duration-500 scale-95 group-hover/thumb:scale-100 pointer-events-none">
                 <div className={`w-12 h-12 border flex items-center justify-center relative bg-neutral-950/40 backdrop-blur-xs rounded-lg ${
-                  appTheme === 'light' ? 'border-orange-400/40' : 'border-cyan-500/30'
+                  appTheme === 'light'
+                    ? 'border-orange-400/40'
+                    : appTheme === 'sankofa'
+                    ? 'border-[#bf3f27]/40'
+                    : 'border-cyan-500/30'
                 }`}>
-                  <Maximize2 className={`w-3.5 h-3.5 animate-pulse ${appTheme === 'light' ? 'text-orange-400' : 'text-cyan-400'}`} />
+                  <Maximize2 className={`w-3.5 h-3.5 animate-pulse ${
+                    appTheme === 'light'
+                      ? 'text-orange-400'
+                      : appTheme === 'sankofa'
+                      ? 'text-[#bf3f27]'
+                      : 'text-cyan-400'
+                  }`} />
                 </div>
               </div>
 
               {/* Bottom Row specs */}
               <div className="flex items-end justify-between font-mono text-[8.5px] leading-none tracking-widest text-neutral-500">
                 <div className={`flex items-center gap-1.5 border px-2 py-1 rounded font-semibold ${
-                  appTheme === 'light' ? 'bg-neutral-900 border-neutral-800 text-neutral-350' : 'bg-neutral-955/80 border-neutral-900 text-neutral-400'
+                  appTheme === 'light'
+                    ? 'bg-neutral-900 border-neutral-800 text-neutral-350'
+                    : appTheme === 'sankofa'
+                    ? 'bg-[#251815] border-[#3a221d] text-[#ebd6bc]/70'
+                    : 'bg-neutral-955/80 border-neutral-900 text-neutral-400'
                 }`}>
                   <span>STZ // 0{previewLines.length}</span>
                 </div>
                 <div className={`flex items-center gap-1 font-bold border px-2 py-1 rounded backdrop-blur-xs transition-colors duration-300 ${
                   appTheme === 'light'
                     ? 'text-orange-400 bg-neutral-900/90 border-[#e0d6be]/20 group-hover/thumb:bg-orange-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-orange-400'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc] bg-[#251815] border-[#bf3f27]/30 group-hover/thumb:bg-[#bf3f27] group-hover/thumb:text-[#f6eedf] group-hover/thumb:border-[#bf3f27]'
                     : 'text-cyan-400 bg-cyan-950/60 border-cyan-900/60 group-hover/thumb:bg-cyan-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-cyan-400'
                 }`}>
                   <span>✦ ENLARGE</span>
@@ -291,6 +328,8 @@ export default function PoemCard({
                 className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold truncate flex-1 text-center font-display uppercase tracking-widest border transition-colors ${
                   appTheme === 'light'
                     ? 'bg-[#f4eee1] text-neutral-800 border-[#e0d6be]'
+                    : appTheme === 'sankofa'
+                    ? 'bg-[#331c17] text-[#ebd6bc] border-[#bf3f27]/30'
                     : 'bg-[#181920] text-zinc-300 border-[#272832]'
                 }`}
               >
@@ -302,7 +341,11 @@ export default function PoemCard({
                   <span
                     id={`card-private-badge-${poem.id}`}
                     className={`text-[9px] font-bold px-2 py-1 rounded-full border flex items-center gap-1 font-mono tracking-wider ${
-                      appTheme === 'light' ? 'text-amber-800 bg-amber-50 border-amber-200' : 'text-amber-500 bg-amber-950/30 border-amber-900/40'
+                      appTheme === 'light'
+                        ? 'text-amber-800 bg-amber-50 border-amber-200'
+                        : appTheme === 'sankofa'
+                        ? 'text-[#bf3f27] bg-[#2a130f] border-[#421f19]'
+                        : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
                     }`}
                   >
                     <Lock className="w-2.5 h-2.5 text-amber-500" />
@@ -314,7 +357,11 @@ export default function PoemCard({
                   <span
                     id={`card-attach-badge-${poem.id}`}
                     className={`text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-0.5 font-sans ${
-                      appTheme === 'light' ? 'text-neutral-700 bg-[#ede6d4] border-[#d8cdb8]' : 'text-cyan-400 bg-cyan-950/30 border-cyan-850/40'
+                      appTheme === 'light'
+                        ? 'text-neutral-700 bg-[#ede6d4] border-[#d8cdb8]'
+                        : appTheme === 'sankofa'
+                        ? 'text-[#ebd6bc] bg-[#331c17] border-[#bf3f27]/30'
+                        : 'text-cyan-400 bg-cyan-950/30 border-cyan-850/40'
                     }`}
                   >
                     <Paperclip className="w-3 h-3" />
@@ -339,13 +386,13 @@ export default function PoemCard({
                 id={`card-title-${poem.id}`}
                 onClick={() => onSelect(poem)}
                 className={`text-lg font-extrabold tracking-tight group-hover:${mColors.accentText} cursor-pointer transition-colors leading-snug line-clamp-2 ${
-                  appTheme === 'light' ? 'text-neutral-900' : 'text-neutral-100'
+                  appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#ebd6bc]' : 'text-neutral-100'
                 }`}
               >
                 {poem.title}
               </h4>
               <span id={`card-author-${poem.id}`} className="text-xs text-neutral-400 font-mono tracking-tight block">
-                by <span className={`font-medium ${appTheme === 'light' ? 'text-neutral-700' : 'text-neutral-200'}`}>{poem.author || 'Anonymous'}</span>
+                by <span className={`font-medium ${appTheme === 'light' ? 'text-neutral-700' : appTheme === 'sankofa' ? 'text-[#f6eedf]' : 'text-neutral-200'}`}>{poem.author || 'Anonymous'}</span>
               </span>
             </div>
 
@@ -355,7 +402,11 @@ export default function PoemCard({
                 id={`card-excerpt-${poem.id}`}
                 onClick={() => onSelect(poem)}
                 className={`relative text-[13px] font-sans leading-relaxed cursor-pointer focus:outline-none pl-3 border-l-2 hover:border-l-current ${mColors.accentText} transition-all duration-300 ${
-                  appTheme === 'light' ? 'border-[#e0d6be] text-neutral-600' : 'border-neutral-800/80 text-neutral-350'
+                  appTheme === 'light'
+                    ? 'border-[#e0d6be] text-neutral-600'
+                    : appTheme === 'sankofa'
+                    ? 'border-[#bf3f27] text-[#ebd6bc]/80'
+                    : 'border-neutral-800/80 text-neutral-350'
                 }`}
               >
                 <div className="space-y-1.5">
@@ -374,7 +425,7 @@ export default function PoemCard({
 
           {/* Footer details & action buttons */}
           <div className={`border-t pt-4 flex items-center justify-between mt-6 transition-colors ${
-            appTheme === 'light' ? 'border-[#e0d6be]' : 'border-neutral-800/80'
+            appTheme === 'light' ? 'border-[#e0d6be]' : appTheme === 'sankofa' ? 'border-[#3a221d]' : 'border-neutral-800/80'
           }`}>
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 font-mono tracking-wider uppercase">
               <Calendar className="w-3.5 h-3.5 text-neutral-500" />
@@ -386,7 +437,11 @@ export default function PoemCard({
                 id={`btn-select-poem-${poem.id}`}
                 onClick={() => onSelect(poem)}
                 className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
-                  appTheme === 'light' ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100' : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
+                  appTheme === 'light'
+                    ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]/70 hover:text-[#dca626] hover:bg-[#331c17]'
+                    : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
                 }`}
                 title="Read Full Details"
               >
@@ -399,7 +454,11 @@ export default function PoemCard({
                     id={`btn-edit-poem-${poem.id}`}
                     onClick={() => onEdit(poem)}
                     className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
-                      appTheme === 'light' ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100' : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
+                      appTheme === 'light'
+                        ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                        : appTheme === 'sankofa'
+                        ? 'text-[#ebd6bc]/70 hover:text-[#dca626] hover:bg-[#331c17]'
+                        : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
                     }`}
                     title="Edit Entry"
                   >
@@ -408,7 +467,11 @@ export default function PoemCard({
 
                   {confirmDelete ? (
                     <div className={`flex items-center gap-1 rounded-lg p-1 animate-pulse border ${
-                      appTheme === 'light' ? 'bg-red-50 border-red-200' : 'bg-red-950/40 border-red-900/50'
+                      appTheme === 'light'
+                        ? 'bg-red-50 border-red-200'
+                        : appTheme === 'sankofa'
+                        ? 'bg-[#2a130f] border-[#bf3f27]/30'
+                        : 'bg-red-950/40 border-red-900/50'
                     }`}>
                       <button
                         id={`btn-confirm-delete-${poem.id}`}
@@ -417,7 +480,7 @@ export default function PoemCard({
                           setConfirmDelete(false);
                         }}
                         className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                          appTheme === 'light' ? 'text-red-700 hover:bg-red-100' : 'text-red-400 hover:bg-red-900/40'
+                          appTheme === 'light' ? 'text-red-700 hover:bg-red-100' : appTheme === 'sankofa' ? 'text-[#bf3f27] hover:bg-[#3d1a14]' : 'text-red-400 hover:bg-red-900/40'
                         }`}
                       >
                         Confirm
@@ -426,7 +489,7 @@ export default function PoemCard({
                         id={`btn-cancel-delete-${poem.id}`}
                         onClick={() => setConfirmDelete(false)}
                         className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                          appTheme === 'light' ? 'text-neutral-600 hover:bg-neutral-100' : 'text-neutral-400 hover:text-neutral-800'
+                          appTheme === 'light' ? 'text-neutral-600 hover:bg-neutral-100' : appTheme === 'sankofa' ? 'text-[#ebd6bc] hover:bg-[#331c17]' : 'text-neutral-400 hover:text-neutral-800'
                         }`}
                       >
                         Cancel
@@ -437,7 +500,11 @@ export default function PoemCard({
                       id={`btn-trigger-delete-${poem.id}`}
                       onClick={() => setConfirmDelete(true)}
                       className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                        appTheme === 'light' ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50' : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
+                        appTheme === 'light'
+                          ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50'
+                          : appTheme === 'sankofa'
+                          ? 'text-[#ebd6bc]/70 hover:text-[#bf3f27] hover:bg-[#331c17]'
+                          : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
                       }`}
                       title="Delete Entry"
                     >
@@ -459,6 +526,8 @@ export default function PoemCard({
       className={`group relative flex flex-col justify-between min-h-[340px] h-full transition-all duration-300 border rounded-2xl p-6 focus-within:ring-2 ${
         appTheme === 'light'
           ? 'bg-white border-[#e0d6be] text-[#1b1c20] shadow-[0_4px_24px_rgba(28,28,30,0.04)] focus-within:ring-neutral-900/10'
+          : appTheme === 'sankofa'
+          ? 'bg-[#1c1412] border-[#3a221d] text-[#f6eedf] shadow-[0_4px_24px_rgba(0,0,0,0.2)] focus-within:ring-[#bf3f27]/20'
           : 'bg-[#111218]/95 border-neutral-800/80 text-[#e4e4e7] shadow-2xl backdrop-blur-md focus-within:ring-cyan-500/30'
       } ${mColors.glow} ${!isEditable ? 'select-none' : ''}`}
       onCopy={(e) => {
@@ -480,6 +549,8 @@ export default function PoemCard({
             className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold truncate flex-1 text-center font-display uppercase tracking-widest border transition-colors ${
               appTheme === 'light'
                 ? 'bg-[#f4eee1] text-neutral-800 border-[#e0d6be]'
+                : appTheme === 'sankofa'
+                ? 'bg-[#331c17] text-[#ebd6bc] border-[#bf3f27]/30'
                 : 'bg-[#181920] text-zinc-300 border-[#272832]'
             }`}
           >
@@ -493,7 +564,9 @@ export default function PoemCard({
                 className={`text-[9px] font-bold px-2 py-1 rounded-full border flex items-center gap-1 font-mono tracking-wider ${
                   appTheme === 'light'
                     ? 'text-amber-800 bg-amber-50 border-amber-200'
-                    : 'text-amber-500 bg-amber-950/30 border-amber-900/40'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#bf3f27] bg-[#2a130f] border-[#421f19]'
+                    : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
                 }`}
                 title="Private Settings (Visible in Author Mode)"
               >
@@ -508,6 +581,8 @@ export default function PoemCard({
                 className={`text-[10px] font-bold px-2.5 py-1 rounded-full border flex items-center gap-0.5 font-sans ${
                   appTheme === 'light'
                     ? 'text-neutral-700 bg-[#ede6d4] border-[#d8cdb8]'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc] bg-[#331c17] border-[#bf3f27]/30'
                     : 'text-cyan-400 bg-cyan-950/30 border-cyan-850/40'
                 }`}
                 title={`${poem.attachments.length} media items`}
@@ -515,6 +590,8 @@ export default function PoemCard({
                 <Paperclip className={`w-3 h-3 ${
                   appTheme === 'light'
                     ? 'text-neutral-700'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]'
                     : 'text-cyan-400'
                 }`} />
                 <span>{poem.attachments.length}</span>
@@ -546,6 +623,8 @@ export default function PoemCard({
           className={`relative w-full h-44 rounded-xl overflow-hidden shrink-0 cursor-pointer shadow-md group/thumb transition-all duration-300 border ${
             appTheme === 'light'
               ? 'bg-[#14151b] border-[#e0d6be]'
+              : appTheme === 'sankofa'
+              ? 'bg-[#0d0706] border-[#3a221d]'
               : 'bg-neutral-950 border-neutral-800/80'
           }`}
         >
@@ -556,6 +635,8 @@ export default function PoemCard({
           <div className={`absolute inset-0 transition-all duration-500 z-1 pointer-events-none ${
             appTheme === 'light'
               ? 'bg-[radial-gradient(circle_at_center,rgba(224,214,190,0.05)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(224,214,190,0.15)_0%,transparent_60%)]'
+              : appTheme === 'sankofa'
+              ? 'bg-[radial-gradient(circle_at_center,rgba(191,63,39,0.05)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(191,63,39,0.15)_0%,transparent_60%)]'
               : 'bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.02)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.08)_0%,transparent_60%)]'
           }`} />
 
@@ -564,6 +645,8 @@ export default function PoemCard({
             <span className={`font-sans font-black text-[6.5rem] leading-none text-neutral-900/50 tracking-tighter uppercase transition-all duration-750 ease-out group-hover/thumb:scale-110 ${
               appTheme === 'light'
                 ? 'text-neutral-800/40 group-hover/thumb:text-orange-400/20'
+                : appTheme === 'sankofa'
+                ? 'text-[#bf3f27]/10 group-hover/thumb:text-[#bf3f27]/20'
                 : 'group-hover/thumb:text-cyan-500/10'
             }`}>
               {leadInitials}
@@ -594,8 +677,10 @@ export default function PoemCard({
                     controlsList={!isEditable ? "nodownload nofullscreen noremoteplayback" : undefined}
                     onContextMenu={(e) => { if (!isEditable) e.preventDefault(); }}
                   />
-                  <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 bg-neutral-950/80 px-2 py-0.5 rounded-md border border-neutral-800 text-[8px] uppercase tracking-wider font-mono text-cyan-400">
-                    <span className="w-1 h-1 rounded-full animate-pulse bg-cyan-400" />
+                  <div className={`absolute top-2.5 left-2.5 z-10 flex items-center gap-1 bg-neutral-950/80 px-2 py-0.5 rounded-md border text-[8px] uppercase tracking-wider font-mono ${
+                    appTheme === 'sankofa' ? 'border-[#bf3f27]/30 text-[#dca626]' : 'border-neutral-800 text-cyan-400'
+                  }`}>
+                    <span className={`w-1 h-1 rounded-full animate-pulse ${appTheme === 'sankofa' ? 'bg-[#bf3f27]' : 'bg-cyan-400'}`} />
                     Live Motion
                   </div>
                 </div>
@@ -608,6 +693,8 @@ export default function PoemCard({
             <div className={`absolute inset-0 w-full h-full z-2 object-cover transition-all duration-500 ${
               appTheme === 'light'
                 ? 'bg-[#12131a] group-hover/thumb:bg-[#161822]'
+                : appTheme === 'sankofa'
+                ? 'bg-[#1c1412] group-hover/thumb:bg-[#251815]'
                 : 'bg-[#0c0d14]/70 group-hover/thumb:bg-cyan-950/10'
             }`}>
               {/* Render dynamic background glyph grids typical of font spec sheets */}
@@ -625,8 +712,8 @@ export default function PoemCard({
               <div className="absolute top-0 bottom-0 left-[75%] border-l border-dashed border-red-500/15" />
               <div className="absolute left-0 right-0 top-[38%] border-t border-dashed border-cyan-500/15" />
               <div className="absolute left-0 right-0 top-[68%] border-t border-dashed border-cyan-500/15" />
-              <div className="absolute left-2.5 top-[32%] text-[6.5px] text-cyan-400/40 font-mono scale-90 uppercase">H-Height</div>
-              <div className="absolute left-2.5 top-[62%] text-[6.5px] text-cyan-400/40 font-mono scale-90 uppercase">Baseline</div>
+              <div className={`absolute left-2.5 top-[32%] text-[6.5px] font-mono scale-90 uppercase ${appTheme === 'sankofa' ? 'text-[#bf3f27]/40' : 'text-cyan-400/40'}`}>H-Height</div>
+              <div className={`absolute left-2.5 top-[62%] text-[6.5px] font-mono scale-90 uppercase ${appTheme === 'sankofa' ? 'text-[#bf3f27]/40' : 'text-cyan-400/40'}`}>Baseline</div>
               <div className="absolute right-2.5 top-[5%] text-[6.5px] text-rose-400/40 font-mono scale-90 uppercase">Grid_16px</div>
             </div>
           )}
@@ -638,14 +725,18 @@ export default function PoemCard({
               <div className={`flex items-center gap-1.5 border px-2 py-1 rounded font-semibold uppercase ${
                 appTheme === 'light'
                   ? 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                  : appTheme === 'sankofa'
+                  ? 'bg-[#251815] border-[#3a221d] text-[#ebd6bc]/70'
                   : 'bg-neutral-950/80 border-neutral-900 text-neutral-400'
               }`}>
-                <span className="text-cyan-400">⊕</span>
+                <span className={appTheme === 'sankofa' ? 'text-[#bf3f27]' : 'text-cyan-400'}>⊕</span>
                 <span>SYS_{poem.id.toUpperCase().slice(-5)}</span>
               </div>
               <div className={`border px-2 py-1 rounded uppercase font-semibold ${
                 appTheme === 'light'
                   ? 'bg-neutral-900 border-neutral-800 text-neutral-300'
+                  : appTheme === 'sankofa'
+                  ? 'bg-[#251815] border-[#3a221d] text-[#ebd6bc]/70'
                   : 'bg-neutral-955/80 border-neutral-900 text-neutral-400'
               }`}>
                 {poem.attachments && poem.attachments.length > 0 
@@ -659,18 +750,20 @@ export default function PoemCard({
               <div className={`w-12 h-12 border flex items-center justify-center relative bg-neutral-950/40 backdrop-blur-xs rounded-lg ${
                 appTheme === 'light'
                   ? 'border-orange-400/40'
+                  : appTheme === 'sankofa'
+                  ? 'border-[#bf3f27]/40'
                   : 'border-cyan-500/30'
               }`}>
-                <div className={`absolute top-0 left-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-orange-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute top-0 left-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-orange-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute top-0 right-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-orange-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute top-0 right-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-orange-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 left-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-orange-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 left-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-orange-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 right-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-orange-400' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 right-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-orange-400' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 left-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-orange-400' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 left-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-orange-400' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 right-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-orange-400' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 right-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-orange-400' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 left-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-orange-400' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 left-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-orange-400' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 right-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-orange-400' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 right-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-orange-400' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : 'bg-cyan-400'}`} />
                 <Maximize2 className={`w-3.5 h-3.5 animate-pulse ${
-                  appTheme === 'light' ? 'text-orange-400' : 'text-cyan-400'
+                  appTheme === 'light' ? 'text-orange-400' : appTheme === 'sankofa' ? 'text-[#bf3f27]' : 'text-cyan-400'
                 }`} />
               </div>
             </div>
@@ -680,7 +773,9 @@ export default function PoemCard({
               <div className={`flex items-center gap-1.5 border px-2 py-1 rounded font-semibold ${
                 appTheme === 'light'
                   ? 'bg-neutral-900 border-neutral-800 text-neutral-350'
-                  : 'bg-neutral-950/80 border-neutral-900 text-neutral-400'
+                  : appTheme === 'sankofa'
+                  ? 'bg-[#251815] border-[#3a221d] text-[#ebd6bc]/70'
+                  : 'bg-neutral-955/80 border-neutral-900 text-neutral-400'
               }`}>
                 <span>STZ // 0{previewLines.length}</span>
                 <span className="text-neutral-800">|</span>
@@ -689,6 +784,8 @@ export default function PoemCard({
               <div className={`flex items-center gap-1 font-bold border px-2 py-1 rounded backdrop-blur-xs transition-colors duration-300 ${
                 appTheme === 'light'
                   ? 'text-orange-400 bg-neutral-900/90 border-[#e0d6be]/20 group-hover/thumb:bg-orange-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-orange-400'
+                  : appTheme === 'sankofa'
+                  ? 'text-[#ebd6bc] bg-[#251815] border-[#bf3f27]/30 group-hover/thumb:bg-[#bf3f27] group-hover/thumb:text-[#f6eedf] group-hover/thumb:border-[#bf3f27]'
                   : 'text-cyan-400 bg-cyan-950/60 border-cyan-900/60 group-hover/thumb:bg-cyan-500 group-hover/thumb:text-neutral-950 group-hover/thumb:border-cyan-400'
               }`}>
                 <span>✦</span>
@@ -714,13 +811,13 @@ export default function PoemCard({
             id={`card-title-${poem.id}`}
             onClick={() => onSelect(poem)}
             className={`text-base font-bold tracking-tight group-hover:${mColors.accentText} cursor-pointer transition-colors leading-snug line-clamp-1 ${
-              appTheme === 'light' ? 'text-neutral-900' : 'text-neutral-100'
+              appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#ebd6bc]' : 'text-neutral-100'
             }`}
           >
             {poem.title}
           </h4>
           <span id={`card-author-${poem.id}`} className="text-xs text-neutral-400 font-mono tracking-tight block">
-            by <span className={`font-medium ${appTheme === 'light' ? 'text-neutral-700' : 'text-neutral-200'}`}>{poem.author || 'Anonymous'}</span>
+            by <span className={`font-medium ${appTheme === 'light' ? 'text-neutral-700' : appTheme === 'sankofa' ? 'text-[#f6eedf]' : 'text-neutral-200'}`}>{poem.author || 'Anonymous'}</span>
           </span>
         </div>
 
@@ -732,6 +829,8 @@ export default function PoemCard({
             className={`relative text-[13px] font-sans leading-relaxed cursor-pointer focus:outline-none pl-3 border-l-2 hover:border-l-current ${mColors.accentText} transition-all duration-300 ${
               appTheme === 'light'
                 ? 'border-[#e0d6be] text-neutral-600'
+                : appTheme === 'sankofa'
+                ? 'border-[#bf3f27] text-[#ebd6bc]/80'
                 : 'border-neutral-800/80 text-neutral-350'
             }`}
           >
@@ -751,7 +850,7 @@ export default function PoemCard({
 
       {/* Footer Details & Quick Action buttons */}
       <div className={`border-t pt-4 flex items-center justify-between mt-6 transition-colors ${
-        appTheme === 'light' ? 'border-[#e0d6be]' : 'border-neutral-800/80'
+        appTheme === 'light' ? 'border-[#e0d6be]' : appTheme === 'sankofa' ? 'border-[#3a221d]' : 'border-neutral-800/80'
       }`}>
         {/* Creation Date indicator */}
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 font-mono tracking-wider uppercase">
@@ -767,6 +866,8 @@ export default function PoemCard({
             className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
               appTheme === 'light'
                 ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                : appTheme === 'sankofa'
+                ? 'text-[#ebd6bc]/70 hover:text-[#dca626] hover:bg-[#331c17]'
                 : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
             }`}
             title="Read Full Details"
@@ -782,6 +883,8 @@ export default function PoemCard({
                 className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
                   appTheme === 'light'
                     ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]/70 hover:text-[#dca626] hover:bg-[#331c17]'
                     : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
                 }`}
                 title="Edit Entry"
@@ -793,6 +896,8 @@ export default function PoemCard({
                 <div className={`flex items-center gap-1 rounded-lg p-1 animate-pulse border ${
                   appTheme === 'light'
                     ? 'bg-red-50 border-red-200'
+                    : appTheme === 'sankofa'
+                    ? 'bg-[#2a130f] border-[#bf3f27]/30'
                     : 'bg-red-950/40 border-red-900/50'
                 }`}>
                   <button
@@ -802,9 +907,7 @@ export default function PoemCard({
                       setConfirmDelete(false);
                     }}
                     className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                      appTheme === 'light'
-                        ? 'text-red-700 hover:bg-red-100'
-                        : 'text-red-400 hover:bg-red-900/40'
+                      appTheme === 'light' ? 'text-red-700 hover:bg-red-100' : appTheme === 'sankofa' ? 'text-[#bf3f27] hover:bg-[#3d1a14]' : 'text-red-400 hover:bg-red-900/40'
                     }`}
                   >
                     Confirm
@@ -814,7 +917,7 @@ export default function PoemCard({
                     onClick={() => setConfirmDelete(false)}
                     className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
                       appTheme === 'light'
-                        ? 'text-neutral-600 hover:bg-neutral-100'
+                        ? 'text-neutral-600 hover:bg-neutral-100' : appTheme === 'sankofa' ? 'text-[#ebd6bc] hover:bg-[#331c17]'
                         : 'text-neutral-400 hover:bg-neutral-800'
                     }`}
                   >
@@ -828,6 +931,8 @@ export default function PoemCard({
                   className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                     appTheme === 'light'
                       ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50'
+                      : appTheme === 'sankofa'
+                      ? 'text-[#ebd6bc]/70 hover:text-[#bf3f27] hover:bg-[#331c17]'
                       : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
                   }`}
                   title="Delete Entry"

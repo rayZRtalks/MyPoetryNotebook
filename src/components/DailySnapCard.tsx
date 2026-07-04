@@ -8,7 +8,7 @@ interface DailySnapCardProps {
   onDelete: (id: string) => void;
   onEdit?: (poem: Poem) => void;
   isEditable?: boolean;
-  appTheme?: 'dark' | 'light';
+  appTheme?: 'dark' | 'light' | 'sankofa';
   gridOverlayEnabled?: boolean;
   isWide?: boolean;
 }
@@ -40,6 +40,8 @@ export default function DailySnapCard({
         className={`relative group flex flex-col md:flex-row gap-6 md:items-stretch min-h-[380px] h-full transition-all duration-500 border rounded-2xl p-6 shadow-lg select-none ${
           appTheme === 'light'
             ? 'bg-white border-[#e0d6be] text-neutral-800 hover:shadow-[0_12px_32px_rgba(28,28,30,0.06)]'
+            : appTheme === 'sankofa'
+            ? 'bg-[#1c1412] border-[#3a221d] text-[#f6eedf] hover:border-[#bf3f27]/40 hover:shadow-[0_0_30px_rgba(191,63,39,0.15)]'
             : 'bg-[#111218]/95 border-neutral-800/80 text-zinc-300 hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
         }`}
         onContextMenu={(e) => {
@@ -57,8 +59,8 @@ export default function DailySnapCard({
           <div
             id={`snap-frame-${poem.id}`}
             onClick={() => onSelectMedia(poem)}
-            className={`relative aspect-square w-full rounded-xl overflow-hidden cursor-pointer border shadow-md group/snap-img flex flex-col justify-center bg-neutral-950 ${
-              appTheme === 'light' ? 'border-[#e3dac4]' : 'border-neutral-900'
+            className={`relative aspect-square w-full rounded-xl overflow-hidden cursor-pointer border shadow-md group/snap-img flex flex-col justify-center bg-[#0d0706] ${
+              appTheme === 'light' ? 'border-[#e3dac4]' : appTheme === 'sankofa' ? 'border-[#2a1a17]' : 'border-neutral-900'
             }`}
           >
             {/* Background matrix scanlines */}
@@ -90,8 +92,8 @@ export default function DailySnapCard({
 
             {/* Hover overlay crosshair */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/snap-img:opacity-100 transition-all duration-500 scale-95 pointer-events-none z-10">
-              <div className="w-10 h-10 border border-cyan-500/30 flex items-center justify-center relative bg-neutral-950/50 backdrop-blur-xs rounded-full">
-                <Maximize2 className="w-4 h-4 text-cyan-400 animate-pulse" />
+              <div className="w-10 h-10 border border-current flex items-center justify-center relative bg-neutral-950/50 backdrop-blur-xs rounded-full">
+                <Maximize2 className={`w-4 h-4 animate-pulse ${appTheme === 'sankofa' ? 'text-[#dca626]' : appTheme === 'light' ? 'text-amber-600' : 'text-cyan-400'}`} />
               </div>
             </div>
           </div>
@@ -106,16 +108,22 @@ export default function DailySnapCard({
                 className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold font-mono uppercase tracking-widest border ${
                   appTheme === 'light'
                     ? 'bg-[#f4efe1] border-[#dfd5be] text-neutral-700'
+                    : appTheme === 'sankofa'
+                    ? 'bg-[#331c17] border-[#bf3f27]/30 text-[#dca626]'
                     : 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400'
                 }`}
               >
-                <Camera className="w-3 h-3 text-cyan-400 animate-pulse" />
+                <Camera className={`w-3 h-3 animate-pulse ${appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'light' ? 'text-amber-500' : 'text-cyan-400'}`} />
                 <span>Daily Snapshot</span>
               </span>
               <div className="flex items-center gap-1.5 font-mono text-[8px] font-semibold text-neutral-500 uppercase">
                 {poem.isPrivate && (
                   <span className={`inline-flex items-center gap-0.5 font-bold px-1.5 py-0.5 rounded border ${
-                    appTheme === 'light' ? 'text-amber-800 bg-amber-50 border-amber-200' : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
+                    appTheme === 'light'
+                      ? 'text-amber-800 bg-amber-50 border-amber-200'
+                      : appTheme === 'sankofa'
+                      ? 'text-[#bf3f27] bg-[#2a130f] border-[#421f19]'
+                      : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
                   }`}>
                     <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
                     <span>PVT</span>
@@ -129,7 +137,7 @@ export default function DailySnapCard({
             {poem.title && (
               <div className="space-y-0.5">
                 <h4 className={`text-base font-bold font-display tracking-tight truncate ${
-                  appTheme === 'light' ? 'text-neutral-900' : 'text-neutral-100'
+                  appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#ebd6bc]' : 'text-neutral-100'
                 }`}>
                   {poem.title}
                 </h4>
@@ -144,8 +152,12 @@ export default function DailySnapCard({
             {/* Written Day Note Caption */}
             <div className="pt-2">
               <p
-                className={`font-serif text-[14px] leading-relaxed italic border-l border-cyan-500/30 pl-3 ${
-                  appTheme === 'light' ? 'text-neutral-700 font-medium' : 'text-neutral-200'
+                className={`font-serif text-[14px] leading-relaxed italic border-l pl-3 ${
+                  appTheme === 'light'
+                    ? 'text-neutral-700 font-medium border-[#dfd5be]'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc] border-[#bf3f27]'
+                    : 'text-neutral-200 border-cyan-500/30'
                 }`}
               >
                 {poem.body}
@@ -155,7 +167,7 @@ export default function DailySnapCard({
 
           {/* Footer controls */}
           <div className={`border-t pt-4 flex items-center justify-between mt-6 transition-colors ${
-            appTheme === 'light' ? 'border-[#e0d6be]' : 'border-neutral-800/80'
+            appTheme === 'light' ? 'border-[#e0d6be]' : appTheme === 'sankofa' ? 'border-[#3a221d]' : 'border-neutral-800/80'
           }`}>
             {/* Creation Date indicator */}
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 font-mono tracking-wider uppercase">
@@ -170,6 +182,8 @@ export default function DailySnapCard({
                 className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
                   appTheme === 'light'
                     ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#f6eedf]/70 hover:text-[#dca626] hover:bg-[#331c17]'
                     : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
                 }`}
                 title="View Enlarged"
@@ -183,6 +197,8 @@ export default function DailySnapCard({
                   className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
                     appTheme === 'light'
                       ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                      : appTheme === 'sankofa'
+                      ? 'text-[#f6eedf]/70 hover:text-[#dca626] hover:bg-[#331c17]'
                       : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
                   }`}
                   title="Edit Caption Note"
@@ -194,7 +210,11 @@ export default function DailySnapCard({
               {isEditable && (
                 confirmDelete ? (
                   <div className={`flex items-center gap-1 rounded-lg p-1 animate-pulse border ${
-                    appTheme === 'light' ? 'bg-red-50 border-red-200' : 'bg-red-950/40 border-red-900/50'
+                    appTheme === 'light'
+                      ? 'bg-red-50 border-red-200'
+                      : appTheme === 'sankofa'
+                      ? 'bg-[#2a130f] border-[#bf3f27]/30'
+                      : 'bg-red-950/40 border-red-900/50'
                   }`}>
                     <button
                       onClick={() => {
@@ -202,7 +222,7 @@ export default function DailySnapCard({
                         setConfirmDelete(false);
                       }}
                       className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                        appTheme === 'light' ? 'text-red-700 hover:bg-red-100' : 'text-red-400 hover:bg-red-900/40'
+                        appTheme === 'light' ? 'text-red-700 hover:bg-red-100' : appTheme === 'sankofa' ? 'text-[#bf3f27] hover:bg-[#3d1a14]' : 'text-red-400 hover:bg-red-900/40'
                       }`}
                     >
                       Confirm
@@ -210,7 +230,7 @@ export default function DailySnapCard({
                     <button
                       onClick={() => setConfirmDelete(false)}
                       className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                        appTheme === 'light' ? 'text-neutral-600 hover:bg-neutral-100' : 'text-neutral-400 hover:text-neutral-800'
+                        appTheme === 'light' ? 'text-neutral-600 hover:bg-neutral-100' : appTheme === 'sankofa' ? 'text-[#ebd6bc] hover:bg-[#331c17]' : 'text-neutral-400 hover:text-neutral-800'
                       }`}
                     >
                       Cancel
@@ -220,7 +240,11 @@ export default function DailySnapCard({
                   <button
                     onClick={() => setConfirmDelete(true)}
                     className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-                      appTheme === 'light' ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50' : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
+                      appTheme === 'light'
+                        ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50'
+                        : appTheme === 'sankofa'
+                        ? 'text-[#ebd6bc]/70 hover:text-[#bf3f27] hover:bg-[#331c17]'
+                        : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
                     }`}
                     title="Delete Snapshot Entry"
                   >
@@ -241,6 +265,8 @@ export default function DailySnapCard({
       className={`relative group flex flex-col justify-between min-h-[340px] h-full transition-all duration-500 border rounded-2xl p-6 shadow-lg select-none ${
         appTheme === 'light'
           ? 'bg-white border-[#e0d6be] text-neutral-800 hover:shadow-[0_12px_32px_rgba(28,28,30,0.06)]'
+          : appTheme === 'sankofa'
+          ? 'bg-[#1c1412] border-[#3a221d] text-[#f6eedf] hover:border-[#bf3f27]/40 hover:shadow-[0_0_30px_rgba(191,63,39,0.15)]'
           : 'bg-[#111218]/95 border-neutral-800/80 text-zinc-300 hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
       }`}
       onContextMenu={(e) => {
@@ -260,10 +286,12 @@ export default function DailySnapCard({
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-bold font-mono uppercase tracking-widest border ${
               appTheme === 'light'
                 ? 'bg-[#f4efe1] border-[#dfd5be] text-neutral-700'
+                : appTheme === 'sankofa'
+                ? 'bg-[#331c17] border-[#bf3f27]/30 text-[#dca626]'
                 : 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400'
             }`}
           >
-            <Camera className="w-3 h-3 text-cyan-400 animate-pulse" />
+            <Camera className={`w-3 h-3 animate-pulse ${appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'light' ? 'text-amber-500' : 'text-cyan-400'}`} />
             <span>Daily Snapshot</span>
           </span>
           <div className="flex items-center gap-1.5 font-mono text-[8px] font-semibold text-neutral-500 uppercase">
@@ -271,6 +299,8 @@ export default function DailySnapCard({
               <span className={`inline-flex items-center gap-0.5 font-bold px-1.5 py-0.5 rounded border ${
                 appTheme === 'light'
                   ? 'text-amber-800 bg-amber-50 border-amber-200'
+                  : appTheme === 'sankofa'
+                  ? 'text-[#bf3f27] bg-[#2a130f] border-[#421f19]'
                   : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
               }`}>
                 <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
@@ -285,8 +315,8 @@ export default function DailySnapCard({
         <div
           id={`snap-frame-${poem.id}`}
           onClick={() => onSelectMedia(poem)}
-          className={`relative aspect-square w-full rounded-xl overflow-hidden cursor-pointer border shadow-md group/snap-img flex flex-col justify-center bg-neutral-950 ${
-            appTheme === 'light' ? 'border-[#e3dac4]' : 'border-neutral-900'
+          className={`relative aspect-square w-full rounded-xl overflow-hidden cursor-pointer border shadow-md group/snap-img flex flex-col justify-center bg-[#0d0706] ${
+            appTheme === 'light' ? 'border-[#e3dac4]' : appTheme === 'sankofa' ? 'border-[#2a1a17]' : 'border-neutral-900'
           }`}
         >
           {/* Background matrix scanlines */}
@@ -318,8 +348,8 @@ export default function DailySnapCard({
 
           {/* Hover overlay crosshair */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/snap-img:opacity-100 transition-all duration-500 scale-95 pointer-events-none z-10">
-            <div className="w-10 h-10 border border-cyan-500/30 flex items-center justify-center relative bg-neutral-950/50 backdrop-blur-xs rounded-full">
-              <Maximize2 className="w-4 h-4 text-cyan-400 animate-pulse" />
+            <div className="w-10 h-10 border border-current flex items-center justify-center relative bg-neutral-950/50 backdrop-blur-xs rounded-full">
+              <Maximize2 className={`w-4 h-4 animate-pulse ${appTheme === 'sankofa' ? 'text-[#dca626]' : appTheme === 'light' ? 'text-amber-600' : 'text-cyan-400'}`} />
             </div>
           </div>
         </div>
@@ -327,8 +357,12 @@ export default function DailySnapCard({
         {/* Written Day Note Caption */}
         <div className="pt-1.5 px-1">
           <p
-            className={`font-serif text-[13.5px] leading-relaxed italic border-l border-cyan-500/30 pl-3 ${
-              appTheme === 'light' ? 'text-neutral-700' : 'text-neutral-200'
+            className={`font-serif text-[13.5px] leading-relaxed italic border-l pl-3 ${
+              appTheme === 'light'
+                ? 'text-neutral-700 border-[#dfd5be]'
+                : appTheme === 'sankofa'
+                ? 'text-[#ebd6bc] border-[#bf3f27]'
+                : 'text-neutral-200 border-cyan-500/30'
             }`}
           >
             {poem.body}
@@ -338,7 +372,7 @@ export default function DailySnapCard({
 
       {/* Footer Details & Quick Action buttons */}
       <div className={`border-t pt-4 flex items-center justify-between mt-6 transition-colors ${
-        appTheme === 'light' ? 'border-[#e0d6be]' : 'border-neutral-800/80'
+        appTheme === 'light' ? 'border-[#e0d6be]' : appTheme === 'sankofa' ? 'border-[#3a221d]' : 'border-neutral-800/80'
       }`}>
         {/* Creation Date indicator */}
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 font-mono tracking-wider uppercase">
@@ -353,6 +387,8 @@ export default function DailySnapCard({
             className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
               appTheme === 'light'
                 ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                : appTheme === 'sankofa'
+                ? 'text-[#f6eedf]/70 hover:text-[#dca626] hover:bg-[#331c17]'
                 : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
             }`}
             title="View Enlarged"
@@ -366,6 +402,8 @@ export default function DailySnapCard({
               className={`p-1.5 rounded-full transition-colors cursor-pointer select-none ${
                 appTheme === 'light'
                   ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
+                  : appTheme === 'sankofa'
+                  ? 'text-[#f6eedf]/70 hover:text-[#dca626] hover:bg-[#331c17]'
                   : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
               }`}
               title="Edit Caption Note"
@@ -379,6 +417,8 @@ export default function DailySnapCard({
               <div className={`flex items-center gap-1 rounded-lg p-1 animate-pulse border ${
                 appTheme === 'light'
                   ? 'bg-red-50 border-red-200'
+                  : appTheme === 'sankofa'
+                  ? 'bg-[#2a130f] border-[#bf3f27]/30'
                   : 'bg-red-950/40 border-red-900/50'
               }`}>
                 <button
@@ -387,9 +427,7 @@ export default function DailySnapCard({
                     setConfirmDelete(false);
                   }}
                   className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                    appTheme === 'light'
-                      ? 'text-red-700 hover:bg-red-100'
-                      : 'text-red-400 hover:bg-red-900/40'
+                    appTheme === 'light' ? 'text-red-700 hover:bg-red-100' : appTheme === 'sankofa' ? 'text-[#bf3f27] hover:bg-[#3d1a14]' : 'text-red-400 hover:bg-red-900/40'
                   }`}
                 >
                   Confirm
@@ -397,9 +435,7 @@ export default function DailySnapCard({
                 <button
                   onClick={() => setConfirmDelete(false)}
                   className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                    appTheme === 'light'
-                      ? 'text-neutral-600 hover:bg-neutral-100'
-                      : 'text-neutral-400 hover:text-neutral-800'
+                    appTheme === 'light' ? 'text-neutral-600 hover:bg-neutral-100' : appTheme === 'sankofa' ? 'text-[#ebd6bc] hover:bg-[#331c17]' : 'text-neutral-400 hover:text-neutral-800'
                   }`}
                 >
                   Cancel
@@ -411,6 +447,8 @@ export default function DailySnapCard({
                 className={`p-1.5 rounded-full transition-colors cursor-pointer ${
                   appTheme === 'light'
                     ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]/70 hover:text-[#bf3f27] hover:bg-[#331c17]'
                     : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
                 }`}
                 title="Delete Snapshot Entry"

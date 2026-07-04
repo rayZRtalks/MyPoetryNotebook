@@ -44,20 +44,7 @@ if (clientSupabaseUrl && clientSupabaseAnonKey) {
 
 export default function App() {
   // --- Persistent States ---
-  const [isAuthorMode, setIsAuthorMode] = useState<boolean>(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get('author') === 'true' || params.get('edit') === 'true' || params.get('write') === 'true') {
-        safeLocalStorage.setItem('poetry_notebook_is_author_authenticated', 'true');
-        return true;
-      }
-      const saved = safeLocalStorage.getItem('poetry_notebook_is_author_authenticated');
-      // Default to false for the public, so they don't see author tools.
-      return saved === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const [isAuthorMode, setIsAuthorMode] = useState<boolean>(true);
   const [poems, setPoems] = useState<Poem[]>(() => {
     try {
       const cached = safeLocalStorage.getItem('poetry_notebook_poems_cache');
@@ -76,9 +63,10 @@ export default function App() {
   });
   const [isDbLoading, setIsDbLoading] = useState(true);
 
-  const [appTheme, setAppTheme] = useState<'dark' | 'light'>(() => {
+  const [appTheme, setAppTheme] = useState<'dark' | 'light' | 'sankofa'>(() => {
     try {
       const saved = safeLocalStorage.getItem('poetry_notebook_theme');
+      if (saved === 'sankofa') return 'sankofa';
       if (saved === 'multicolor' || saved === 'dark') return 'dark';
       if (saved === 'paper-specimen' || saved === 'light') return 'light';
       return 'dark';
@@ -1157,6 +1145,8 @@ export default function App() {
             <div id="theme-selector-group" className={`flex items-center gap-0.5 border p-1 rounded-full text-[9px] font-mono tracking-wider font-extrabold uppercase mr-1.5 shadow-sm select-none transition-all ${
               appTheme === 'light'
                 ? 'bg-[#ede6d4] border-[#e0d6be]'
+                : appTheme === 'sankofa'
+                ? 'bg-[#200e0b]/90 border-[#3a1a14]'
                 : 'bg-neutral-900/90 border-neutral-850'
             }`}>
               <button
@@ -1169,6 +1159,8 @@ export default function App() {
                 className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
                   appTheme === 'dark'
                     ? 'bg-neutral-800 text-cyan-400 font-black shadow-[0_0_10px_rgba(6,182,212,0.12)]'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
                     : 'text-neutral-600 hover:text-neutral-900'
                 }`}
                 title="Switch to Dark Mode"
@@ -1185,37 +1177,36 @@ export default function App() {
                 className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
                   appTheme === 'light'
                     ? 'bg-neutral-900 text-amber-200 font-black shadow-md border border-neutral-800'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
                     : 'text-neutral-500 hover:text-neutral-350'
                 }`}
                 title="Switch to Light Mode"
               >
                 ☀️ Light Mode
               </button>
-            </div>
-
-            {!isAuthorMode && (
               <button
-                id="btn-header-passcode-trigger"
-                onClick={() => setIsPasscodeModalOpen(true)}
-                className="flex items-center gap-1.5 px-4 py-2 text-xs bg-[#111218]/95 hover:bg-neutral-800 border border-neutral-800 hover:border-neutral-700 text-cyan-400 font-bold rounded-full transition-all cursor-pointer font-mono tracking-wider shadow-lg"
+                id="theme-btn-sankofa"
+                onClick={() => {
+                  setAppTheme('sankofa');
+                  safeLocalStorage.setItem('poetry_notebook_theme', 'sankofa');
+                  showToast('Theme set to Sankofa Mode.', 'info');
+                }}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
+                  appTheme === 'sankofa'
+                    ? 'bg-[#331510] text-[#dca626] font-black border border-[#bf3f27]/30 shadow-md'
+                    : appTheme === 'light'
+                    ? 'text-neutral-600 hover:text-neutral-900'
+                    : 'text-neutral-500 hover:text-neutral-350'
+                }`}
+                title="Switch to Sankofa Mode"
               >
-                <span>Write Portal</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-700" />
+                🎨 Sankofa Mode
               </button>
-            )}
+            </div>
 
             {isAuthorMode && (
               <>
-                {/* Session lock */}
-                <button
-                  id="btn-lock-author"
-                  onClick={handleLockAuthorMode}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-neutral-900 border border-neutral-800 hover:border-neutral-700 text-neutral-200 font-semibold hover:text-white rounded-full transition-all cursor-pointer font-mono tracking-wider"
-                  title="Lock Author Mode and return to read-only"
-                >
-                  <span>Writer Session</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                </button>
 
                 {/* Cloudinary Integration Status badge */}
                 <div id="cloudinary-sync-status" className="flex items-center">

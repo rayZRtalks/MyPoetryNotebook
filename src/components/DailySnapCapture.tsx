@@ -7,7 +7,7 @@ import { uploadToStorage } from '../cloudinary';
 interface DailySnapCaptureProps {
   onSave: (snapData: Omit<Poem, 'id' | 'createdAt'> & { createdAt?: string; isPrivate?: boolean }) => void;
   onCancel: () => void;
-  appTheme?: 'dark' | 'light';
+  appTheme?: 'dark' | 'light' | 'sankofa';
   editPoem?: Poem | null;
 }
 
