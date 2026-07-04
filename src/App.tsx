@@ -1536,48 +1536,54 @@ export default function App() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 tabIndex={0}
-                className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-max grid-flow-row-dense"
               >
-                {sortedPoems.map((poem, index) => (
-                  <motion.div
-                    id={`poem-grid-item-${poem.id}`}
-                    key={poem.id}
-                    layoutId={`poem-${poem.id}`}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(index * 0.05, 0.4) }}
-                  >
-                    {poem.isPhotoCapture ? (
-                      <DailySnapCard
-                        poem={poem}
-                        onSelectMedia={(p) => setActivePoemForLightbox(p)}
-                        onDelete={handleDeletePoem}
-                        onEdit={(p) => {
-                          setActivePoemForEditing(p);
-                          setIsSnapFormOpen(true);
-                        }}
-                        isEditable={isAuthorMode}
-                        appTheme={appTheme}
-                        gridOverlayEnabled={gridOverlayEnabled}
-                      />
-                    ) : (
-                      <PoemCard
-                        poem={poem}
-                        categories={categories}
-                        onSelect={(p) => setActivePoemForReading(p)}
-                        onEdit={(p) => {
-                          setActivePoemForEditing(p);
-                          setIsFormOpen(true);
-                        }}
-                        onDelete={handleDeletePoem}
-                        isEditable={isAuthorMode}
-                        onSelectMedia={(p) => setActivePoemForLightbox(p)}
-                        appTheme={appTheme}
-                        gridOverlayEnabled={gridOverlayEnabled}
-                      />
-                    )}
-                  </motion.div>
-                ))}
+                {sortedPoems.map((poem, index) => {
+                  const isWide = index % 4 === 0 && sortedPoems.length > 2;
+                  return (
+                    <motion.div
+                      id={`poem-grid-item-${poem.id}`}
+                      key={poem.id}
+                      layoutId={`poem-${poem.id}`}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(index * 0.05, 0.4) }}
+                      className={isWide ? "md:col-span-2 col-span-1" : "col-span-1"}
+                    >
+                      {poem.isPhotoCapture ? (
+                        <DailySnapCard
+                          poem={poem}
+                          onSelectMedia={(p) => setActivePoemForLightbox(p)}
+                          onDelete={handleDeletePoem}
+                          onEdit={(p) => {
+                            setActivePoemForEditing(p);
+                            setIsSnapFormOpen(true);
+                          }}
+                          isEditable={isAuthorMode}
+                          appTheme={appTheme}
+                          gridOverlayEnabled={gridOverlayEnabled}
+                          isWide={isWide}
+                        />
+                      ) : (
+                        <PoemCard
+                          poem={poem}
+                          categories={categories}
+                          onSelect={(p) => setActivePoemForReading(p)}
+                          onEdit={(p) => {
+                            setActivePoemForEditing(p);
+                            setIsFormOpen(true);
+                          }}
+                          onDelete={handleDeletePoem}
+                          isEditable={isAuthorMode}
+                          onSelectMedia={(p) => setActivePoemForLightbox(p)}
+                          appTheme={appTheme}
+                          gridOverlayEnabled={gridOverlayEnabled}
+                          isWide={isWide}
+                        />
+                      )}
+                    </motion.div>
+                  );
+                })}
               </motion.div>
             )}
           </AnimatePresence>
