@@ -8,7 +8,7 @@ interface DailySnapCardProps {
   onDelete: (id: string) => void;
   onEdit?: (poem: Poem) => void;
   isEditable?: boolean;
-  appTheme?: 'dark' | 'light' | 'sankofa';
+  appTheme?: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid';
   gridOverlayEnabled?: boolean;
   isWide?: boolean;
 }
@@ -41,8 +41,12 @@ export default function DailySnapCard({
           appTheme === 'light'
             ? 'bg-white border-[#e0d6be] text-neutral-800 hover:shadow-[0_12px_32px_rgba(28,28,30,0.06)]'
             : appTheme === 'sankofa'
-            ? 'bg-[#1c1412] border-[#3a221d] text-[#f6eedf] hover:border-[#bf3f27]/40 hover:shadow-[0_0_30px_rgba(191,63,39,0.15)]'
-            : 'bg-[#111218]/95 border-neutral-800/80 text-zinc-300 hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
+            ? 'bg-[#2a1d1a] border-[#4a2e28] text-[#f6eedf] hover:border-[#bf3f27]/40 hover:shadow-[0_0_30px_rgba(191,63,39,0.15)]'
+            : appTheme === 'momoamo'
+            ? 'bg-[#1e2e23] border-[#FAF6F0]/20 text-[#FAF6F0] hover:border-[#E1FE35]/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]'
+            : appTheme === 'madrid'
+            ? 'bg-[#181825] border-[#2c2c44] text-white hover:border-[#E1FE35]/40 hover:shadow-[0_0_30px_rgba(225,254,53,0.12)]'
+            : 'bg-[#1c1e27] border-neutral-800/90 text-zinc-300 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
         }`}
         onContextMenu={(e) => {
           if (!isEditable) e.preventDefault();
@@ -60,7 +64,15 @@ export default function DailySnapCard({
             id={`snap-frame-${poem.id}`}
             onClick={() => onSelectMedia(poem)}
             className={`relative aspect-square w-full rounded-xl overflow-hidden cursor-pointer border shadow-md group/snap-img flex flex-col justify-center bg-[#0d0706] ${
-              appTheme === 'light' ? 'border-[#e3dac4]' : appTheme === 'sankofa' ? 'border-[#2a1a17]' : 'border-neutral-900'
+              appTheme === 'light'
+                ? 'border-[#e3dac4]'
+                : appTheme === 'sankofa'
+                ? 'border-[#2a1a17]'
+                : appTheme === 'momoamo'
+                ? 'border-[#FAF6F0]/15'
+                : appTheme === 'madrid'
+                ? 'border-[#252538]'
+                : 'border-neutral-900'
             }`}
           >
             {/* Background matrix scanlines */}
@@ -93,7 +105,15 @@ export default function DailySnapCard({
             {/* Hover overlay crosshair */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/snap-img:opacity-100 transition-all duration-500 scale-95 pointer-events-none z-10">
               <div className="w-10 h-10 border border-current flex items-center justify-center relative bg-neutral-950/50 backdrop-blur-xs rounded-full">
-                <Maximize2 className={`w-4 h-4 animate-pulse ${appTheme === 'sankofa' ? 'text-[#dca626]' : appTheme === 'light' ? 'text-amber-600' : 'text-cyan-400'}`} />
+                <Maximize2 className={`w-4 h-4 animate-pulse ${
+                  appTheme === 'sankofa'
+                    ? 'text-[#dca626]'
+                    : appTheme === 'light'
+                    ? 'text-amber-600'
+                    : appTheme === 'momoamo' || appTheme === 'madrid'
+                    ? 'text-[#E1FE35]'
+                    : 'text-cyan-400'
+                }`} />
               </div>
             </div>
           </div>
@@ -110,10 +130,22 @@ export default function DailySnapCard({
                     ? 'bg-[#f4efe1] border-[#dfd5be] text-neutral-700'
                     : appTheme === 'sankofa'
                     ? 'bg-[#331c17] border-[#bf3f27]/30 text-[#dca626]'
+                    : appTheme === 'momoamo'
+                    ? 'bg-[#141C16] border-[#E1FE35]/20 text-[#E1FE35]'
+                    : appTheme === 'madrid'
+                    ? 'bg-[#0E0E15] border-[#E1FE35]/30 text-[#E1FE35]'
                     : 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400'
                 }`}
               >
-                <Camera className={`w-3 h-3 animate-pulse ${appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'light' ? 'text-amber-500' : 'text-cyan-400'}`} />
+                <Camera className={`w-3 h-3 animate-pulse ${
+                  appTheme === 'sankofa'
+                    ? 'text-[#bf3f27]'
+                    : appTheme === 'light'
+                    ? 'text-amber-500'
+                    : appTheme === 'momoamo' || appTheme === 'madrid'
+                    ? 'text-[#E1FE35]'
+                    : 'text-cyan-400'
+                }`} />
                 <span>Daily Snapshot</span>
               </span>
               <div className="flex items-center gap-1.5 font-mono text-[8px] font-semibold text-neutral-500 uppercase">
@@ -123,6 +155,10 @@ export default function DailySnapCard({
                       ? 'text-amber-800 bg-amber-50 border-amber-200'
                       : appTheme === 'sankofa'
                       ? 'text-[#bf3f27] bg-[#2a130f] border-[#421f19]'
+                      : appTheme === 'momoamo'
+                      ? 'text-[#E1FE35] bg-[#141C16] border-[#E1FE35]/20'
+                      : appTheme === 'madrid'
+                      ? 'text-[#E1FE35] bg-black border-[#252538]'
                       : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
                   }`}>
                     <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
@@ -137,7 +173,13 @@ export default function DailySnapCard({
             {poem.title && (
               <div className="space-y-0.5">
                 <h4 className={`text-base font-bold font-display tracking-tight truncate ${
-                  appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#ebd6bc]' : 'text-neutral-100'
+                  appTheme === 'light'
+                    ? 'text-neutral-900'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]'
+                    : appTheme === 'momoamo'
+                    ? 'text-[#FAF6F0]'
+                    : 'text-white'
                 }`}>
                   {poem.title}
                 </h4>
@@ -157,6 +199,10 @@ export default function DailySnapCard({
                     ? 'text-neutral-700 font-medium border-[#dfd5be]'
                     : appTheme === 'sankofa'
                     ? 'text-[#ebd6bc] border-[#bf3f27]'
+                    : appTheme === 'momoamo'
+                    ? 'text-[#FAF6F0]/85 border-[#E1FE35]/30'
+                    : appTheme === 'madrid'
+                    ? 'text-[#f2f4f7]/80 border-[#E1FE35]/30'
                     : 'text-neutral-200 border-cyan-500/30'
                 }`}
               >
@@ -167,7 +213,15 @@ export default function DailySnapCard({
 
           {/* Footer controls */}
           <div className={`border-t pt-4 flex items-center justify-between mt-6 transition-colors ${
-            appTheme === 'light' ? 'border-[#e0d6be]' : appTheme === 'sankofa' ? 'border-[#3a221d]' : 'border-neutral-800/80'
+            appTheme === 'light'
+              ? 'border-[#e0d6be]'
+              : appTheme === 'sankofa'
+              ? 'border-[#3a221d]'
+              : appTheme === 'momoamo'
+              ? 'border-[#FAF6F0]/15'
+              : appTheme === 'madrid'
+              ? 'border-[#252538]'
+              : 'border-neutral-800/80'
           }`}>
             {/* Creation Date indicator */}
             <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 font-mono tracking-wider uppercase">
@@ -184,6 +238,10 @@ export default function DailySnapCard({
                     ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
                     : appTheme === 'sankofa'
                     ? 'text-[#f6eedf]/70 hover:text-[#dca626] hover:bg-[#331c17]'
+                    : appTheme === 'momoamo'
+                    ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-[#1C291E]'
+                    : appTheme === 'madrid'
+                    ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-neutral-900'
                     : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
                 }`}
                 title="View Enlarged"
@@ -199,6 +257,10 @@ export default function DailySnapCard({
                       ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
                       : appTheme === 'sankofa'
                       ? 'text-[#f6eedf]/70 hover:text-[#dca626] hover:bg-[#331c17]'
+                      : appTheme === 'momoamo'
+                      ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-[#1C291E]'
+                      : appTheme === 'madrid'
+                      ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-neutral-900'
                       : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
                   }`}
                   title="Edit Caption Note"
@@ -214,6 +276,10 @@ export default function DailySnapCard({
                       ? 'bg-red-50 border-red-200'
                       : appTheme === 'sankofa'
                       ? 'bg-[#2a130f] border-[#bf3f27]/30'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] border-[#FAF6F0]/25'
+                      : appTheme === 'madrid'
+                      ? 'bg-[#0E0E15] border-[#252538]'
                       : 'bg-red-950/40 border-red-900/50'
                   }`}>
                     <button
@@ -222,7 +288,15 @@ export default function DailySnapCard({
                         setConfirmDelete(false);
                       }}
                       className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                        appTheme === 'light' ? 'text-red-700 hover:bg-red-100' : appTheme === 'sankofa' ? 'text-[#bf3f27] hover:bg-[#3d1a14]' : 'text-red-400 hover:bg-red-900/40'
+                        appTheme === 'light'
+                          ? 'text-red-700 hover:bg-red-100'
+                          : appTheme === 'sankofa'
+                          ? 'text-[#bf3f27] hover:bg-[#3d1a14]'
+                          : appTheme === 'momoamo'
+                          ? 'text-red-500 hover:bg-red-950/20'
+                          : appTheme === 'madrid'
+                          ? 'text-[#FF3E6C] hover:bg-[#FF3E6C]/15'
+                          : 'text-red-400 hover:bg-red-900/40'
                       }`}
                     >
                       Confirm
@@ -230,7 +304,15 @@ export default function DailySnapCard({
                     <button
                       onClick={() => setConfirmDelete(false)}
                       className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                        appTheme === 'light' ? 'text-neutral-600 hover:bg-neutral-100' : appTheme === 'sankofa' ? 'text-[#ebd6bc] hover:bg-[#331c17]' : 'text-neutral-400 hover:text-neutral-800'
+                        appTheme === 'light'
+                          ? 'text-neutral-600 hover:bg-neutral-100'
+                          : appTheme === 'sankofa'
+                          ? 'text-[#ebd6bc] hover:bg-[#331c17]'
+                          : appTheme === 'momoamo'
+                          ? 'text-[#FAF6F0]/70 hover:bg-[#1C291E]'
+                          : appTheme === 'madrid'
+                          ? 'text-[#E1FE35]/70 hover:bg-neutral-900'
+                          : 'text-neutral-400 hover:text-neutral-800'
                       }`}
                     >
                       Cancel
@@ -244,6 +326,10 @@ export default function DailySnapCard({
                         ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50'
                         : appTheme === 'sankofa'
                         ? 'text-[#ebd6bc]/70 hover:text-[#bf3f27] hover:bg-[#331c17]'
+                        : appTheme === 'momoamo'
+                        ? 'text-red-500 hover:bg-red-950/20'
+                        : appTheme === 'madrid'
+                        ? 'text-[#FF3E6C] hover:bg-[#FF3E6C]/15'
                         : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
                     }`}
                     title="Delete Snapshot Entry"
@@ -266,8 +352,12 @@ export default function DailySnapCard({
         appTheme === 'light'
           ? 'bg-white border-[#e0d6be] text-neutral-800 hover:shadow-[0_12px_32px_rgba(28,28,30,0.06)]'
           : appTheme === 'sankofa'
-          ? 'bg-[#1c1412] border-[#3a221d] text-[#f6eedf] hover:border-[#bf3f27]/40 hover:shadow-[0_0_30px_rgba(191,63,39,0.15)]'
-          : 'bg-[#111218]/95 border-neutral-800/80 text-zinc-300 hover:border-cyan-500/30 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
+          ? 'bg-[#2a1d1a] border-[#4a2e28] text-[#f6eedf] hover:border-[#bf3f27]/40 hover:shadow-[0_0_30px_rgba(191,63,39,0.15)]'
+          : appTheme === 'momoamo'
+          ? 'bg-[#1e2e23] border-[#FAF6F0]/20 text-[#FAF6F0] hover:border-[#E1FE35]/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]'
+          : appTheme === 'madrid'
+          ? 'bg-[#181825] border-[#2c2c44] text-white hover:border-[#E1FE35]/40 hover:shadow-[0_0_30px_rgba(225,254,53,0.12)]'
+          : 'bg-[#1c1e27] border-neutral-800/90 text-zinc-300 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
       }`}
       onContextMenu={(e) => {
         if (!isEditable) e.preventDefault();
@@ -288,10 +378,22 @@ export default function DailySnapCard({
                 ? 'bg-[#f4efe1] border-[#dfd5be] text-neutral-700'
                 : appTheme === 'sankofa'
                 ? 'bg-[#331c17] border-[#bf3f27]/30 text-[#dca626]'
+                : appTheme === 'momoamo'
+                ? 'bg-[#141C16] border-[#E1FE35]/20 text-[#E1FE35]'
+                : appTheme === 'madrid'
+                ? 'bg-[#0E0E15] border-[#E1FE35]/30 text-[#E1FE35]'
                 : 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400'
             }`}
           >
-            <Camera className={`w-3 h-3 animate-pulse ${appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'light' ? 'text-amber-500' : 'text-cyan-400'}`} />
+            <Camera className={`w-3 h-3 animate-pulse ${
+              appTheme === 'sankofa'
+                ? 'text-[#bf3f27]'
+                : appTheme === 'light'
+                ? 'text-amber-500'
+                : appTheme === 'momoamo' || appTheme === 'madrid'
+                ? 'text-[#E1FE35]'
+                : 'text-cyan-400'
+            }`} />
             <span>Daily Snapshot</span>
           </span>
           <div className="flex items-center gap-1.5 font-mono text-[8px] font-semibold text-neutral-500 uppercase">
@@ -301,6 +403,10 @@ export default function DailySnapCard({
                   ? 'text-amber-800 bg-amber-50 border-amber-200'
                   : appTheme === 'sankofa'
                   ? 'text-[#bf3f27] bg-[#2a130f] border-[#421f19]'
+                  : appTheme === 'momoamo'
+                  ? 'text-[#E1FE35] bg-[#141C16] border-[#E1FE35]/20'
+                  : appTheme === 'madrid'
+                  ? 'text-[#E1FE35] bg-black border-[#252538]'
                   : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
               }`}>
                 <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
@@ -316,7 +422,15 @@ export default function DailySnapCard({
           id={`snap-frame-${poem.id}`}
           onClick={() => onSelectMedia(poem)}
           className={`relative aspect-square w-full rounded-xl overflow-hidden cursor-pointer border shadow-md group/snap-img flex flex-col justify-center bg-[#0d0706] ${
-            appTheme === 'light' ? 'border-[#e3dac4]' : appTheme === 'sankofa' ? 'border-[#2a1a17]' : 'border-neutral-900'
+            appTheme === 'light'
+              ? 'border-[#e3dac4]'
+              : appTheme === 'sankofa'
+              ? 'border-[#2a1a17]'
+              : appTheme === 'momoamo'
+              ? 'border-[#FAF6F0]/15'
+              : appTheme === 'madrid'
+              ? 'border-[#252538]'
+              : 'border-neutral-900'
           }`}
         >
           {/* Background matrix scanlines */}
@@ -349,7 +463,15 @@ export default function DailySnapCard({
           {/* Hover overlay crosshair */}
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/snap-img:opacity-100 transition-all duration-500 scale-95 pointer-events-none z-10">
             <div className="w-10 h-10 border border-current flex items-center justify-center relative bg-neutral-950/50 backdrop-blur-xs rounded-full">
-              <Maximize2 className={`w-4 h-4 animate-pulse ${appTheme === 'sankofa' ? 'text-[#dca626]' : appTheme === 'light' ? 'text-amber-600' : 'text-cyan-400'}`} />
+              <Maximize2 className={`w-4 h-4 animate-pulse ${
+                appTheme === 'sankofa'
+                  ? 'text-[#dca626]'
+                  : appTheme === 'light'
+                  ? 'text-amber-600'
+                  : appTheme === 'momoamo' || appTheme === 'madrid'
+                  ? 'text-[#E1FE35]'
+                  : 'text-cyan-400'
+              }`} />
             </div>
           </div>
         </div>
@@ -362,6 +484,10 @@ export default function DailySnapCard({
                 ? 'text-neutral-700 border-[#dfd5be]'
                 : appTheme === 'sankofa'
                 ? 'text-[#ebd6bc] border-[#bf3f27]'
+                : appTheme === 'momoamo'
+                ? 'text-[#FAF6F0]/85 border-[#E1FE35]/30'
+                : appTheme === 'madrid'
+                ? 'text-[#f2f4f7]/80 border-[#E1FE35]/30'
                 : 'text-neutral-200 border-cyan-500/30'
             }`}
           >
@@ -372,7 +498,15 @@ export default function DailySnapCard({
 
       {/* Footer Details & Quick Action buttons */}
       <div className={`border-t pt-4 flex items-center justify-between mt-6 transition-colors ${
-        appTheme === 'light' ? 'border-[#e0d6be]' : appTheme === 'sankofa' ? 'border-[#3a221d]' : 'border-neutral-800/80'
+        appTheme === 'light'
+          ? 'border-[#e0d6be]'
+          : appTheme === 'sankofa'
+          ? 'border-[#3a221d]'
+          : appTheme === 'momoamo'
+          ? 'border-[#FAF6F0]/15'
+          : appTheme === 'madrid'
+          ? 'border-[#252538]'
+          : 'border-neutral-800/80'
       }`}>
         {/* Creation Date indicator */}
         <div className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-400 font-mono tracking-wider uppercase">
@@ -389,6 +523,10 @@ export default function DailySnapCard({
                 ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
                 : appTheme === 'sankofa'
                 ? 'text-[#f6eedf]/70 hover:text-[#dca626] hover:bg-[#331c17]'
+                : appTheme === 'momoamo'
+                ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-[#1C291E]'
+                : appTheme === 'madrid'
+                ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-neutral-900'
                 : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
             }`}
             title="View Enlarged"
@@ -404,6 +542,10 @@ export default function DailySnapCard({
                   ? 'text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100'
                   : appTheme === 'sankofa'
                   ? 'text-[#f6eedf]/70 hover:text-[#dca626] hover:bg-[#331c17]'
+                  : appTheme === 'momoamo'
+                  ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-[#1C291E]'
+                  : appTheme === 'madrid'
+                  ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-neutral-900'
                   : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
               }`}
               title="Edit Caption Note"
@@ -419,6 +561,10 @@ export default function DailySnapCard({
                   ? 'bg-red-50 border-red-200'
                   : appTheme === 'sankofa'
                   ? 'bg-[#2a130f] border-[#bf3f27]/30'
+                  : appTheme === 'momoamo'
+                  ? 'bg-[#141C16] border-[#FAF6F0]/25'
+                  : appTheme === 'madrid'
+                  ? 'bg-[#0E0E15] border-[#252538]'
                   : 'bg-red-950/40 border-red-900/50'
               }`}>
                 <button
@@ -427,7 +573,15 @@ export default function DailySnapCard({
                     setConfirmDelete(false);
                   }}
                   className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                    appTheme === 'light' ? 'text-red-700 hover:bg-red-100' : appTheme === 'sankofa' ? 'text-[#bf3f27] hover:bg-[#3d1a14]' : 'text-red-400 hover:bg-red-900/40'
+                    appTheme === 'light'
+                      ? 'text-red-700 hover:bg-red-100'
+                      : appTheme === 'sankofa'
+                      ? 'text-[#bf3f27] hover:bg-[#3d1a14]'
+                      : appTheme === 'momoamo'
+                      ? 'text-red-500 hover:bg-red-950/20'
+                      : appTheme === 'madrid'
+                      ? 'text-[#FF3E6C] hover:bg-[#FF3E6C]/15'
+                      : 'text-red-400 hover:bg-red-900/40'
                   }`}
                 >
                   Confirm
@@ -435,7 +589,15 @@ export default function DailySnapCard({
                 <button
                   onClick={() => setConfirmDelete(false)}
                   className={`text-[9px] font-extrabold px-2 py-0.5 rounded-md cursor-pointer uppercase font-mono tracking-widest ${
-                    appTheme === 'light' ? 'text-neutral-600 hover:bg-neutral-100' : appTheme === 'sankofa' ? 'text-[#ebd6bc] hover:bg-[#331c17]' : 'text-neutral-400 hover:text-neutral-800'
+                    appTheme === 'light'
+                      ? 'text-neutral-600 hover:bg-neutral-100'
+                      : appTheme === 'sankofa'
+                      ? 'text-[#ebd6bc] hover:bg-[#331c17]'
+                      : appTheme === 'momoamo'
+                      ? 'text-[#FAF6F0]/70 hover:bg-[#1C291E]'
+                      : appTheme === 'madrid'
+                      ? 'text-[#E1FE35]/70 hover:bg-neutral-900'
+                      : 'text-neutral-400 hover:text-neutral-800'
                   }`}
                 >
                   Cancel
@@ -449,6 +611,10 @@ export default function DailySnapCard({
                     ? 'text-neutral-500 hover:text-red-600 hover:bg-red-50'
                     : appTheme === 'sankofa'
                     ? 'text-[#ebd6bc]/70 hover:text-[#bf3f27] hover:bg-[#331c17]'
+                    : appTheme === 'momoamo'
+                    ? 'text-red-500 hover:bg-red-950/20'
+                    : appTheme === 'madrid'
+                    ? 'text-[#FF3E6C] hover:bg-[#FF3E6C]/15'
                     : 'text-neutral-400 hover:text-red-400 hover:bg-red-950/40'
                 }`}
                 title="Delete Snapshot Entry"

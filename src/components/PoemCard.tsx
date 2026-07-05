@@ -17,12 +17,65 @@ interface PoemCardProps {
 
 const getMoodColor = (mood?: string, appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid' = 'dark') => {
   if (appTheme === 'light') {
-    return {
-      badge: 'bg-[#E2D9CF] text-[#2E2A27] border-[#C97F65]/35 font-mono text-[10px] uppercase font-bold shadow-xs',
-      glow: 'hover:border-[#C97F65] hover:shadow-[0_8px_24px_rgba(201,127,101,0.08)] hover:bg-[#FAF6F0] focus-within:ring-[#C97F65]/10',
-      accentText: 'text-[#C97F65]',
-      accentBg: 'bg-[#C97F65]/10'
-    };
+    const glowColor = 'hover:border-[#C97F65] hover:shadow-[0_8px_24px_rgba(201,127,101,0.08)] hover:bg-[#FAF6F0] focus-within:ring-[#C97F65]/10';
+    switch (mood) {
+      case 'Reflective':
+        return {
+          badge: 'bg-cyan-50 text-cyan-700 border-cyan-200 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-cyan-600',
+          accentBg: 'bg-cyan-100/45'
+        };
+      case 'Melancholy':
+        return {
+          badge: 'bg-indigo-50 text-indigo-700 border-indigo-200 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-indigo-600',
+          accentBg: 'bg-indigo-100/45'
+        };
+      case 'Romantic':
+        return {
+          badge: 'bg-rose-50 text-rose-700 border-rose-200 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-rose-600',
+          accentBg: 'bg-rose-100/45'
+        };
+      case 'Hopeful':
+        return {
+          badge: 'bg-teal-50 text-teal-700 border-teal-200 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-teal-600',
+          accentBg: 'bg-teal-100/45'
+        };
+      case 'Whimsical':
+        return {
+          badge: 'bg-amber-50 text-amber-800 border-amber-200 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-amber-700',
+          accentBg: 'bg-amber-100/45'
+        };
+      case 'Mystical':
+        return {
+          badge: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-fuchsia-600',
+          accentBg: 'bg-fuchsia-100/45'
+        };
+      case 'Free':
+        return {
+          badge: 'bg-emerald-50 text-emerald-700 border-emerald-200 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-emerald-600',
+          accentBg: 'bg-emerald-100/45'
+        };
+      default:
+        return {
+          badge: 'bg-[#E2D9CF] text-[#2E2A27] border-[#C97F65]/35 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-[#C97F65]',
+          accentBg: 'bg-[#C97F65]/10'
+        };
+    }
   }
 
   if (appTheme === 'sankofa') {
@@ -35,23 +88,129 @@ const getMoodColor = (mood?: string, appTheme: 'dark' | 'light' | 'sankofa' | 'm
   }
 
   if (appTheme === 'momoamo') {
-    return {
-      badge: 'bg-[#1C291E] text-[#FAF6F0] border-[#E1FE35]/30 font-mono text-[10px] uppercase font-bold shadow-xs',
-      glow: 'hover:border-[#E1FE35] hover:shadow-[0_8px_24px_rgba(225,254,53,0.12)] hover:bg-[#142217] focus-within:ring-[#E1FE35]/15',
-      accentText: 'text-[#E1FE35]',
-      accentBg: 'bg-[#E1FE35]/10'
-    };
+    const glowColor = 'hover:border-[#E1FE35] hover:shadow-[0_8px_24px_rgba(225,254,53,0.12)] hover:bg-[#142217] focus-within:ring-[#E1FE35]/15';
+    switch (mood) {
+      case 'Reflective':
+        return {
+          badge: 'bg-cyan-950/45 text-cyan-400 border-cyan-800/40 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-cyan-400',
+          accentBg: 'bg-cyan-500/10'
+        };
+      case 'Melancholy':
+        return {
+          badge: 'bg-indigo-950/45 text-indigo-400 border-indigo-800/40 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-indigo-400',
+          accentBg: 'bg-indigo-500/10'
+        };
+      case 'Romantic':
+        return {
+          badge: 'bg-rose-950/45 text-rose-400 border-rose-800/40 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-rose-400',
+          accentBg: 'bg-rose-500/10'
+        };
+      case 'Hopeful':
+        return {
+          badge: 'bg-emerald-950/45 text-emerald-400 border-emerald-800/40 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-emerald-400',
+          accentBg: 'bg-emerald-500/10'
+        };
+      case 'Whimsical':
+        return {
+          badge: 'bg-amber-950/45 text-amber-400 border-amber-800/40 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-amber-400',
+          accentBg: 'bg-amber-500/10'
+        };
+      case 'Mystical':
+        return {
+          badge: 'bg-fuchsia-950/45 text-fuchsia-400 border-fuchsia-800/40 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-fuchsia-400',
+          accentBg: 'bg-fuchsia-500/10'
+        };
+      case 'Free':
+        return {
+          badge: 'bg-lime-950/45 text-lime-400 border-lime-800/40 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-lime-400',
+          accentBg: 'bg-lime-500/10'
+        };
+      default:
+        return {
+          badge: 'bg-[#1C291E] text-[#E1FE35] border-[#E1FE35]/30 font-mono text-[10px] uppercase font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-[#E1FE35]',
+          accentBg: 'bg-[#E1FE35]/10'
+        };
+    }
   }
 
 
 
   if (appTheme === 'madrid') {
-    return {
-      badge: 'bg-[#0E0E15] text-[#E1FE35] border-[#E1FE35]/30 font-unbounded text-[9px] uppercase tracking-wide font-black shadow-xs',
-      glow: 'hover:border-[#E1FE35] hover:shadow-[0_0_24px_rgba(225,254,53,0.12)] hover:bg-[#0e0e15] focus-within:ring-[#E1FE35]/10',
-      accentText: 'text-[#E1FE35]',
-      accentBg: 'bg-[#E1FE35]/10'
-    };
+    const glowColor = 'hover:border-[#E1FE35] hover:shadow-[0_0_24px_rgba(225,254,53,0.12)] hover:bg-[#0e0e15] focus-within:ring-[#E1FE35]/10';
+    switch (mood) {
+      case 'Reflective':
+        return {
+          badge: 'bg-[#0E0E15] text-cyan-400 border-cyan-500/35 font-unbounded text-[9px] uppercase tracking-wide font-black shadow-xs',
+          glow: glowColor,
+          accentText: 'text-cyan-400',
+          accentBg: 'bg-cyan-500/10'
+        };
+      case 'Melancholy':
+        return {
+          badge: 'bg-[#0E0E15] text-indigo-400 border-indigo-500/35 font-unbounded text-[9px] uppercase tracking-wide font-black shadow-xs',
+          glow: glowColor,
+          accentText: 'text-indigo-400',
+          accentBg: 'bg-indigo-500/10'
+        };
+      case 'Romantic':
+        return {
+          badge: 'bg-[#0E0E15] text-rose-400 border-rose-500/35 font-unbounded text-[9px] uppercase tracking-wide font-black shadow-xs',
+          glow: glowColor,
+          accentText: 'text-rose-400',
+          accentBg: 'bg-rose-500/10'
+        };
+      case 'Hopeful':
+        return {
+          badge: 'bg-[#0E0E15] text-teal-400 border-teal-500/35 font-unbounded text-[9px] uppercase tracking-wide font-black shadow-xs',
+          glow: glowColor,
+          accentText: 'text-teal-400',
+          accentBg: 'bg-teal-500/10'
+        };
+      case 'Whimsical':
+        return {
+          badge: 'bg-[#0E0E15] text-amber-400 border-amber-500/35 font-unbounded text-[9px] uppercase tracking-wide font-black shadow-xs',
+          glow: glowColor,
+          accentText: 'text-amber-400',
+          accentBg: 'bg-amber-500/10'
+        };
+      case 'Mystical':
+        return {
+          badge: 'bg-[#0E0E15] text-fuchsia-400 border-fuchsia-500/35 font-unbounded text-[9px] uppercase tracking-wide font-black shadow-xs',
+          glow: glowColor,
+          accentText: 'text-fuchsia-400',
+          accentBg: 'bg-fuchsia-500/10'
+        };
+      case 'Free':
+        return {
+          badge: 'bg-[#0E0E15] text-lime-400 border-lime-500/35 font-unbounded text-[9px] uppercase tracking-wide font-black shadow-xs',
+          glow: glowColor,
+          accentText: 'text-lime-400',
+          accentBg: 'bg-lime-500/10'
+        };
+      default:
+        return {
+          badge: 'bg-[#0E0E15] text-[#E1FE35] border-[#E1FE35]/30 font-unbounded text-[9px] uppercase tracking-wide font-black shadow-xs',
+          glow: glowColor,
+          accentText: 'text-[#E1FE35]',
+          accentBg: 'bg-[#E1FE35]/10'
+        };
+    }
   }
 
   switch (mood) {
@@ -167,19 +326,19 @@ const getThemeStyles = (appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'ma
         textTitle: 'text-[#FAF6F0]',
         textAuthor: 'text-[#E1FE35]',
         textBody: 'border-[#E1FE35]/20 text-[#FAF6F0]/85',
-        stzBadge: 'bg-[#141C16] border-[#FAF6F0]/10 text-[#FAF6F0]/70',
+        stzBadge: 'bg-[#141C16] border-[#FAF6F0]/10 text-[#E1FE35]/70',
         enlargeBadge: 'text-[#E1FE35] bg-[#141C16] border-[#FAF6F0]/15 group-hover/thumb:bg-[#E1FE35] group-hover/thumb:text-black group-hover/thumb:border-[#E1FE35]',
-        catPill: 'bg-[#141C16] text-[#FAF6F0]/90 border-[#FAF6F0]/15',
+        catPill: 'bg-[#141C16] text-[#E1FE35] border-[#E1FE35]/15',
         pvtBadge: 'text-[#E1FE35] bg-[#141C16] border-[#FAF6F0]/15',
         attachBadge: 'text-[#E1FE35] bg-[#141C16] border-[#FAF6F0]/15',
         deleteBtn: 'text-red-500 hover:bg-red-950/20',
-        dateBtn: 'text-[#FAF6F0]/70 hover:bg-[#1C291E]',
+        dateBtn: 'text-[#E1FE35]/70 hover:bg-[#1C291E]',
         metaBorder: 'border-[#FAF6F0]/15',
         liveBadge: 'border-[#FAF6F0]/20 text-[#E1FE35]',
         liveIndicator: 'bg-[#E1FE35]',
         specimenText: 'text-[#E1FE35]/15 group-hover/thumb:text-[#E1FE35]/25',
         specimenTileBg: 'bg-[#141C16] border-[#FAF6F0]/15 text-neutral-400',
-        actionBtn: 'text-[#FAF6F0]/80 hover:text-[#E1FE35] hover:bg-[#1C291E]',
+        actionBtn: 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-[#1C291E]',
         deleteConfirmBg: 'bg-[#141C16] border-[#FAF6F0]/25 text-red-500'
       };
 
@@ -385,7 +544,7 @@ export default function PoemCard({
             <div className="absolute inset-0 z-3 p-3 flex flex-col justify-between pointer-events-none select-none">
               <div className="flex items-start justify-between font-mono text-[8.5px] leading-none tracking-widest">
                 <div className={`flex items-center gap-1.5 border px-2 py-1 rounded font-semibold uppercase ${themeStyles.stzBadge}`}>
-                  <span className={appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'momoamo' ? 'text-[#C97F65]' : appTheme === 'madrid' ? 'text-[#E1FE35]' : 'text-cyan-400'}>⊕</span>
+                  <span className={appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#E1FE35]' : 'text-cyan-400'}>⊕</span>
                   <span>SYS_{poem.id.toUpperCase().slice(-5)}</span>
                 </div>
                 <div className={`border px-2 py-1 rounded uppercase font-semibold ${themeStyles.stzBadge}`}>
@@ -403,7 +562,7 @@ export default function PoemCard({
                     : appTheme === 'sankofa'
                     ? 'border-[#bf3f27]/40'
                     : appTheme === 'momoamo'
-                    ? 'border-[#C97F65]/40'
+                    ? 'border-[#E1FE35]/40'
                     : appTheme === 'madrid'
                     ? 'border-[#E1FE35]/40'
                     : 'border-cyan-500/30'
@@ -414,7 +573,7 @@ export default function PoemCard({
                       : appTheme === 'sankofa'
                       ? 'text-[#bf3f27]'
                       : appTheme === 'momoamo'
-                      ? 'text-[#C97F65]'
+                      ? 'text-[#E1FE35]'
                       : appTheme === 'madrid'
                       ? 'text-[#E1FE35]'
                       : 'text-cyan-400'

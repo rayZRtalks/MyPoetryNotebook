@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Pen, Plus, Search, Download, Upload, Trash2, 
@@ -86,7 +86,34 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCatId, setSelectedCatId] = useState<string>('all');
   const [selectedMood, setSelectedMood] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'alphabetical'>('newest');
+
+  // Extract all unique uploaded months from poems for filtering
+  const uploadedMonths = useMemo(() => {
+    const months = poems.map((p) => {
+      try {
+        const d = new Date(p.createdAt);
+        if (isNaN(d.getTime())) return null;
+        const monthName = d.toLocaleString('default', { month: 'long' });
+        const year = d.getFullYear();
+        return {
+          key: `${year}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+          label: `${monthName} ${year}`
+        };
+      } catch {
+        return null;
+      }
+    });
+
+    const validMonths = months.filter((m): m is { key: string; label: string } => m !== null);
+    const uniqueMap = new Map<string, string>();
+    validMonths.forEach((m) => uniqueMap.set(m.key, m.label));
+    
+    return Array.from(uniqueMap.entries())
+      .map(([key, label]) => ({ key, label }))
+      .sort((a, b) => b.key.localeCompare(a.key)); // Newest first
+  }, [poems]);
 
   // --- Modal States ---
   const [activePoemForReading, setActivePoemForReading] = useState<Poem | null>(null);
@@ -1141,7 +1168,23 @@ export default function App() {
     const matchCategory = selectedCatId === 'all' || poem.categoryId === selectedCatId;
     const matchMood = selectedMood === 'all' || poem.mood === selectedMood || poem.isPhotoCapture;
 
-    return matchQuery && matchCategory && matchMood;
+    // Filter by Uploaded Month (year-month key)
+    let matchMonth = true;
+    if (selectedMonth !== 'all') {
+      try {
+        const d = new Date(poem.createdAt);
+        if (!isNaN(d.getTime())) {
+          const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          matchMonth = monthKey === selectedMonth;
+        } else {
+          matchMonth = false;
+        }
+      } catch {
+        matchMonth = false;
+      }
+    }
+
+    return matchQuery && matchCategory && matchMood && matchMonth;
   });
 
   const sortedPoems = [...filteredPoems].sort((a, b) => {
@@ -1312,7 +1355,7 @@ export default function App() {
                 {/* Dynamically tracking metrics ledger counters */}
                 <div id="header-counters" className="flex items-center gap-3 mt-1.5 flex-wrap">
                   <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
-                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#FAF6F0]/70' : 'text-neutral-400'
+                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#E1FE35]/70' : 'text-neutral-400'
                   }`}>
                     ✍️ <span className={`font-black ${
                       appTheme === 'light' 
@@ -1320,15 +1363,15 @@ export default function App() {
                         : appTheme === 'sankofa'
                         ? 'text-[#fffdf9] bg-[#bf3f27] px-1.5 py-0.5 rounded-md border border-[#bf3f27]/30'
                         : appTheme === 'momoamo'
-                        ? 'text-[#E1FE35] bg-[#141C16]/60 px-1.5 py-0.5 rounded-md border border-[#FAF6F0]/15'
+                        ? 'text-[#E1FE35] bg-[#141C16]/60 px-1.5 py-0.5 rounded-md border border-[#E1FE35]/20'
                         : 'text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded-md border border-cyan-900/30'
                     }`}>{poems.filter(p => !p.isPhotoCapture).length}</span> Verses
                   </span>
                   <span className={`w-1 h-1 rounded-full ${
-                    appTheme === 'light' ? 'bg-[#E2D9CF]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]/40' : appTheme === 'momoamo' ? 'bg-[#FAF6F0]/15' : 'bg-neutral-800'
+                    appTheme === 'light' ? 'bg-[#E2D9CF]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]/40' : appTheme === 'momoamo' ? 'bg-[#E1FE35]/35' : 'bg-neutral-800'
                   }`} />
                   <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
-                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#FAF6F0]/70' : 'text-neutral-400'
+                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#E1FE35]/70' : 'text-neutral-400'
                   }`}>
                     📷 <span className={`font-black ${
                       appTheme === 'light' 
@@ -1336,7 +1379,7 @@ export default function App() {
                         : appTheme === 'sankofa'
                         ? 'text-[#3a1a14] bg-[#dca626]/40 px-1.5 py-0.5 rounded-md border border-[#bf3f27]/25'
                         : appTheme === 'momoamo'
-                        ? 'text-[#E1FE35] bg-[#141C16]/60 px-1.5 py-0.5 rounded-md border border-[#FAF6F0]/15'
+                        ? 'text-[#E1FE35] bg-[#141C16]/60 px-1.5 py-0.5 rounded-md border border-[#E1FE35]/20'
                         : 'text-pink-400 bg-fuchsia-950/40 px-1.5 py-0.5 rounded-md border border-fuchsia-900/30'
                     }`}>{poems.filter(p => p.isPhotoCapture).length}</span> Daily Snaps
                   </span>
@@ -1367,7 +1410,7 @@ export default function App() {
                   : appTheme === 'light'
                     ? 'bg-[#E2D9CF]/50 border-[#E2D9CF] text-[#738A7C] hover:text-[#2E2A27] hover:border-[#738A7C]'
                     : appTheme === 'momoamo'
-                    ? 'bg-[#141C16] border-[#FAF6F0]/15 text-[#FAF6F0]/70 hover:text-white hover:border-[#FAF6F0]/30'
+                    ? 'bg-[#141C16] border-[#E1FE35]/20 text-[#E1FE35]/70 hover:text-[#E1FE35] hover:border-[#E1FE35]/40'
                     : 'bg-neutral-900/95 border-neutral-850 text-neutral-400 hover:text-white hover:border-neutral-700'
               }`}
               title={gridOverlayEnabled ? "Hide alignment guidelines" : "Display alignment guidelines"}
@@ -1535,12 +1578,12 @@ export default function App() {
                       : appTheme === 'sankofa'
                       ? 'bg-[#fffdf9] border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#3a1a14] hover:bg-[#ebd6bc]/30'
                       : appTheme === 'momoamo'
-                      ? 'bg-[#141C16] border-[#FAF6F0]/15 hover:border-[#E1FE35]/40 hover:bg-[#18231C] text-[#FAF6F0]'
+                      ? 'bg-[#141C16] border-[#E1FE35]/20 hover:border-[#E1FE35]/40 hover:bg-[#18231C] text-[#E1FE35]'
                       : 'bg-[#111218]/90 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-neutral-200'
                   }`}
                   title="Export writing ledger JSON"
                 >
-                  <Download className="w-3.5 h-3.5 text-neutral-400" />
+                  <Download className={`w-3.5 h-3.5 ${appTheme === 'momoamo' ? 'text-[#E1FE35]' : 'text-neutral-400'}`} />
                   <span>Export Ledg</span>
                 </button>
 
@@ -1554,12 +1597,12 @@ export default function App() {
                       : appTheme === 'sankofa'
                       ? 'bg-[#fffdf9] border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#3a1a14] hover:bg-[#ebd6bc]/30'
                       : appTheme === 'momoamo'
-                      ? 'bg-[#141C16] border-[#FAF6F0]/15 hover:border-[#E1FE35]/40 hover:bg-[#18231C] text-[#FAF6F0]'
+                      ? 'bg-[#141C16] border-[#E1FE35]/20 hover:border-[#E1FE35]/40 hover:bg-[#18231C] text-[#E1FE35]'
                       : 'bg-[#111218]/90 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-neutral-200'
                   }`}
                   title="Import poetry ledger from JSON or CSV"
                 >
-                  <Upload className="w-3.5 h-3.5 text-neutral-400" />
+                  <Upload className={`w-3.5 h-3.5 ${appTheme === 'momoamo' ? 'text-[#E1FE35]' : 'text-neutral-400'}`} />
                   <span>Import Ledg</span>
                 </button>
 
@@ -1567,9 +1610,17 @@ export default function App() {
                 <button
                   id="btn-manage-cats"
                   onClick={() => setIsCategoryManagerOpen(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#111218]/90 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 rounded-full text-neutral-200 font-semibold transition-all cursor-pointer font-mono tracking-wider"
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs border rounded-full font-semibold transition-all cursor-pointer font-mono tracking-wider ${
+                    appTheme === 'light'
+                      ? 'bg-[#FAF6F0] border-[#E2D9CF] hover:bg-[#FAF6F0]/80 hover:border-[#738A7C] text-[#2E2A27]'
+                      : appTheme === 'sankofa'
+                      ? 'bg-[#fffdf9] border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#3a1a14] hover:bg-[#ebd6bc]/30'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] border-[#E1FE35]/20 hover:border-[#E1FE35]/40 hover:bg-[#18231C] text-[#E1FE35]'
+                      : 'bg-[#111218]/90 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-neutral-200'
+                  }`}
                 >
-                  <Layers className="w-3.5 h-3.5 text-neutral-400" />
+                  <Layers className={`w-3.5 h-3.5 ${appTheme === 'momoamo' ? 'text-[#E1FE35]' : 'text-neutral-400'}`} />
                   <span>Categories</span>
                 </button>
 
@@ -1577,10 +1628,18 @@ export default function App() {
                 <button
                   id="btn-cloudinary"
                   onClick={() => setIsCloudinarySettingsOpen(true)}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#111218]/90 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 rounded-full text-cyan-400 font-semibold transition-all cursor-pointer font-mono tracking-wider"
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs border rounded-full font-semibold transition-all cursor-pointer font-mono tracking-wider ${
+                    appTheme === 'light'
+                      ? 'bg-[#FAF6F0] border-[#E2D9CF] hover:bg-[#FAF6F0]/80 hover:border-[#738A7C] text-[#C97F65]'
+                      : appTheme === 'sankofa'
+                      ? 'bg-[#fffdf9] border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#bf3f27] hover:bg-[#ebd6bc]/30'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] border-[#E1FE35]/20 hover:border-[#E1FE35]/40 hover:bg-[#18231C] text-[#E1FE35]'
+                      : 'bg-[#111218]/90 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-cyan-400'
+                  }`}
                   title="Configure Cloudinary Unsigned Image Uploads"
                 >
-                  <Cloud className="w-3.5 h-3.5 text-cyan-400" />
+                  <Cloud className={`w-3.5 h-3.5 ${appTheme === 'momoamo' ? 'text-[#E1FE35]' : 'text-cyan-400'}`} />
                   <span>Cloudinary</span>
                 </button>
 
@@ -1700,6 +1759,10 @@ export default function App() {
                       ? 'bg-[#FAF6F0] border-[#E2D9CF] text-[#2E2A27] focus:ring-[#C97F65]/10 focus:border-[#C97F65] hover:bg-[#FAF6F0]/85'
                       : appTheme === 'momoamo'
                       ? 'bg-[#141C16] border-[#FAF6F0]/15 text-[#FAF6F0] focus:ring-[#E1FE35]/20 focus:border-[#E1FE35] hover:bg-[#18231C]'
+                      : appTheme === 'sankofa'
+                      ? 'bg-[#1C1412] border-[#3a221d] text-[#ebd6bc] focus:ring-[#bf3f27]/25 focus:border-[#bf3f27] hover:bg-[#251815]'
+                      : appTheme === 'madrid'
+                      ? 'bg-[#0E0E15] border-[#252538] text-[#E1FE35] focus:ring-[#E1FE35]/20 focus:border-[#E1FE35] hover:bg-neutral-900'
                       : 'bg-[#141622] border border-neutral-800 text-neutral-200 focus:ring-cyan-500/40 focus:border-cyan-500 hover:bg-neutral-800'
                   }`}
                 >
@@ -1714,6 +1777,38 @@ export default function App() {
                 </select>
               </div>
 
+              {/* Uploaded Month Selector */}
+              <div className="flex items-center gap-1.5 font-sans">
+                <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono">Month:</span>
+                <select
+                  id="month-filter-select"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className={`text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 font-mono font-bold uppercase tracking-wider cursor-pointer transition-all ${
+                    appTheme === 'light'
+                      ? 'bg-[#FAF6F0] border-[#E2D9CF] text-[#2E2A27] focus:ring-[#C97F65]/10 focus:border-[#C97F65] hover:bg-[#FAF6F0]/85'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] border-[#FAF6F0]/15 text-[#FAF6F0] focus:ring-[#E1FE35]/20 focus:border-[#E1FE35] hover:bg-[#18231C]'
+                      : appTheme === 'sankofa'
+                      ? 'bg-[#1C1412] border-[#3a221d] text-[#ebd6bc] focus:ring-[#bf3f27]/25 focus:border-[#bf3f27] hover:bg-[#251815]'
+                      : appTheme === 'madrid'
+                      ? 'bg-[#0E0E15] border-[#252538] text-[#E1FE35] focus:ring-[#E1FE35]/20 focus:border-[#E1FE35] hover:bg-neutral-900'
+                      : 'bg-[#141622] border border-neutral-800 text-neutral-200 focus:ring-cyan-500/40 focus:border-cyan-500 hover:bg-neutral-800'
+                  }`}
+                >
+                  <option className={appTheme === 'light' ? 'bg-white text-neutral-800' : 'bg-[#141622]'} value="all">📅 All Months</option>
+                  {uploadedMonths.map((m) => (
+                    <option
+                      key={m.key}
+                      className={appTheme === 'light' ? 'bg-white text-neutral-800' : appTheme === 'sankofa' ? 'bg-[#1C1412] text-[#ebd6bc]' : appTheme === 'madrid' ? 'bg-[#0E0E15] text-[#E1FE35]' : 'bg-[#141622]'}
+                      value={m.key}
+                    >
+                      {m.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Sort selector label */}
               <div className="flex items-center gap-1.5 font-sans">
                 <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono">Sequence:</span>
@@ -1724,7 +1819,7 @@ export default function App() {
                     appTheme === 'light'
                       ? 'bg-[#FAF6F0] hover:bg-[#FAF6F0]/85 border-[#E2D9CF] text-[#2E2A27]'
                       : appTheme === 'momoamo'
-                      ? 'bg-[#141C16] hover:bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0]'
+                      ? 'bg-[#141C16] hover:bg-[#18231C] border-[#E1FE35]/20 text-[#E1FE35]'
                       : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-250'
                   }`}
                 >
@@ -1739,7 +1834,7 @@ export default function App() {
           </div>
 
           <div className={`border-t pt-4 flex flex-col md:flex-row md:items-start gap-4 ${
-            appTheme === 'light' ? 'border-[#E2D9CF]' : appTheme === 'momoamo' ? 'border-[#FAF6F0]/15' : 'border-neutral-850'
+            appTheme === 'light' ? 'border-[#E2D9CF]' : appTheme === 'momoamo' ? 'border-[#E1FE35]/15' : 'border-neutral-850'
           }`}>
             <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono mt-2">Category:</span>
             {/* Horizontal Categories Row */}
@@ -1757,7 +1852,7 @@ export default function App() {
                     : appTheme === 'light'
                       ? 'bg-[#E2D9CF]/40 hover:bg-[#E2D9CF]/60 border-[#E2D9CF] text-[#738A7C] font-semibold'
                       : appTheme === 'momoamo'
-                      ? 'bg-[#141C16] hover:bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0]/75 font-semibold'
+                      ? 'bg-[#141C16] hover:bg-[#18231C] border-[#E1FE35]/20 text-[#E1FE35]/75 font-semibold hover:text-[#E1FE35]'
                       : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300 font-semibold'
                 }`}
               >
@@ -1777,7 +1872,7 @@ export default function App() {
                     : appTheme === 'light'
                       ? 'bg-[#E2D9CF]/40 hover:bg-[#E2D9CF]/60 border-[#E2D9CF] text-[#738A7C] font-semibold'
                       : appTheme === 'momoamo'
-                      ? 'bg-[#141C16] hover:bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0]/75 font-semibold'
+                      ? 'bg-[#141C16] hover:bg-[#18231C] border-[#E1FE35]/20 text-[#E1FE35]/75 font-semibold hover:text-[#E1FE35]'
                       : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-cyan-400 border-cyan-950/40 font-semibold'
                 }`}
               >
@@ -1812,7 +1907,7 @@ export default function App() {
                         : appTheme === 'light'
                           ? 'bg-[#E2D9CF]/40 hover:bg-[#E2D9CF]/60 border-[#E2D9CF] text-[#738A7C] font-semibold'
                           : appTheme === 'momoamo'
-                          ? 'bg-[#141C16] hover:bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0]/75 font-semibold'
+                          ? 'bg-[#141C16] hover:bg-[#18231C] border-[#E1FE35]/20 text-[#E1FE35]/75 font-semibold hover:text-[#E1FE35]'
                           : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300'
                     }`}
                   >
