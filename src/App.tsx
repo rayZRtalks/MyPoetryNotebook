@@ -106,6 +106,7 @@ export default function App() {
     timestamp: string;
   } | null>(null);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [supabaseFetchError, setSupabaseFetchError] = useState<string | null>(null);
   const [isFetchingStatus, setIsFetchingStatus] = useState(false);
 
@@ -781,99 +782,270 @@ export default function App() {
     }
   };
 
-  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const parseCSV = (text: string): Record<string, string>[] => {
+    const lines: string[] = [];
+    let currentLine = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === '\n' && !inQuotes) {
+        lines.push(currentLine);
+        currentLine = '';
+        continue;
+      } else if (char === '\r' && !inQuotes) {
+        continue;
+      }
+      currentLine += char;
+    }
+    if (currentLine) {
+      lines.push(currentLine);
+    }
+
+    if (lines.length === 0) return [];
+
+    const parseRow = (rowText: string): string[] => {
+      const cols: string[] = [];
+      let currentVal = '';
+      let inQuotesRow = false;
+      for (let i = 0; i < rowText.length; i++) {
+        const char = rowText[i];
+        if (char === '"') {
+          if (inQuotesRow && rowText[i + 1] === '"') {
+            currentVal += '"';
+            i++;
+          } else {
+            inQuotesRow = !inQuotesRow;
+          }
+        } else if (char === ',' && !inQuotesRow) {
+          cols.push(currentVal.trim());
+          currentVal = '';
+        } else {
+          currentVal += char;
+        }
+      }
+      cols.push(currentVal.trim());
+      return cols;
+    };
+
+    const headers = parseRow(lines[0]).map(h => h.toLowerCase().trim());
+    const results: Record<string, string>[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      const values = parseRow(lines[i]);
+      const obj: Record<string, string> = {};
+      headers.forEach((header, index) => {
+        obj[header] = values[index] || '';
+      });
+      results.push(obj);
+    }
+
+    return results;
+  };
+
+  const handleImportFile = (file: File) => {
     if (!file) return;
 
     const fileReader = new FileReader();
-    fileReader.onload = (event) => {
+    fileReader.onload = async (event) => {
       try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (parsed && Array.isArray(parsed.poems) && Array.isArray(parsed.categories)) {
-          // Sync imported data with cloud database
-          const syncImport = async () => {
-             try {
-                // Pre-cleanse any legacy base64 attachments in imported backup
-                for (const poem of parsed.poems) {
-                  if (poem.attachments && poem.attachments.length > 0) {
-                    for (const att of poem.attachments) {
-                      if (att.url && att.url.startsWith('data:')) {
-                        try {
-                          const uploadRes = await fetch('/api/upload', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                              filename: att.name || 'migrated-image.jpg',
-                              data: att.url
-                            })
-                          });
-                          if (uploadRes.ok) {
-                            const result = await uploadRes.json();
-                            if (result.url) {
-                              att.url = result.url;
-                            }
-                          }
-                        } catch (e) {
-                          console.error('Failed to migrate imported base64 attachment:', e);
+        const fileContent = event.target?.result as string;
+        let importedPoems: Poem[] = [];
+        let importedCategories: Category[] = [...categories];
+
+        if (file.name.endsWith('.json')) {
+          const parsed = JSON.parse(fileContent);
+          if (parsed && Array.isArray(parsed.poems) && Array.isArray(parsed.categories)) {
+            importedPoems = parsed.poems;
+            importedCategories = parsed.categories;
+          } else {
+            showToast('Invalid JSON structure signature.', 'error');
+            return;
+          }
+        } else if (file.name.endsWith('.csv')) {
+          const parsedRows = parseCSV(fileContent);
+          if (parsedRows.length === 0) {
+            showToast('The uploaded CSV file is empty.', 'error');
+            return;
+          }
+
+          const keys = Object.keys(parsedRows[0]);
+          const hasTitle = keys.includes('title');
+          const hasBody = keys.includes('body') || keys.includes('content') || keys.includes('text');
+
+          if (!hasTitle || !hasBody) {
+            showToast('CSV must include "title" and "body" column headers.', 'error');
+            return;
+          }
+
+          for (const row of parsedRows) {
+            const rowTitle = row.title || 'Untitled Verse';
+            const rowBody = row.body || row.content || row.text || '';
+            const rowAuthor = row.author || 'Anonymous';
+            const categoryName = row.category || 'General';
+            const rowMood = row.mood as PoemMood || 'Reflective';
+            const rowTags = row.tags ? row.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+            const rowIsPrivate = row.isprivate === 'true' || row.is_private === 'true';
+            const rowCreatedAt = row.createdat || row.date || new Date().toISOString();
+
+            let catId = 'cat_general';
+            const existingCat = importedCategories.find(c => c.name.toLowerCase() === categoryName.toLowerCase());
+            if (existingCat) {
+              catId = existingCat.id;
+            } else {
+              const colors = ['amber', 'emerald', 'teal', 'indigo', 'rose', 'orange', 'cyan', 'fuchsia'];
+              const randomColor = colors[Math.floor(Math.random() * colors.length)];
+              const newCat: Category = {
+                id: 'cat_' + Math.random().toString(36).substr(2, 9),
+                name: categoryName,
+                color: randomColor
+              };
+              importedCategories.push(newCat);
+              catId = newCat.id;
+            }
+
+            const newPoem: Poem = {
+              id: 'poem_' + Math.random().toString(36).substr(2, 9),
+              title: rowTitle,
+              body: rowBody,
+              author: rowAuthor,
+              categoryId: catId,
+              mood: rowMood,
+              tags: rowTags,
+              isPrivate: rowIsPrivate,
+              isPhotoCapture: false,
+              createdAt: rowCreatedAt,
+              attachments: []
+            };
+
+            const attUrl = row.attachment_url || row.image_url || row.media_url || row.url;
+            if (attUrl) {
+              const attName = row.attachment_name || row.image_name || 'Attached Media';
+              newPoem.attachments = [{
+                id: 'att_' + Math.random().toString(36).substr(2, 9),
+                name: attName,
+                type: 'image',
+                url: attUrl
+              }];
+            }
+
+            importedPoems.push(newPoem);
+          }
+        } else {
+          showToast('Unsupported file type. Use JSON or CSV.', 'error');
+          return;
+        }
+
+        const syncImport = async () => {
+          try {
+            for (const poem of importedPoems) {
+              if (poem.attachments && poem.attachments.length > 0) {
+                for (const att of poem.attachments) {
+                  if (att.url && att.url.startsWith('data:')) {
+                    try {
+                      const uploadRes = await fetch('/api/upload', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          filename: att.name || 'migrated-image.jpg',
+                          data: att.url
+                        })
+                      });
+                      if (uploadRes.ok) {
+                        const result = await uploadRes.json();
+                        if (result.url) {
+                          att.url = result.url;
                         }
                       }
+                    } catch (e) {
+                      console.error('Failed to migrate imported base64 attachment:', e);
                     }
                   }
                 }
+              }
+            }
 
-                // Update state and cache with cleansed data
-                setPoems(parsed.poems);
-                setCategories(parsed.categories);
-                safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(parsed.poems));
-                safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(parsed.categories));
+            setPoems(importedPoems);
+            setCategories(importedCategories);
+            safeLocalStorage.setItem('poetry_notebook_poems_cache', JSON.stringify(importedPoems));
+            safeLocalStorage.setItem('poetry_notebook_categories_cache', JSON.stringify(importedCategories));
 
-               if (clientSupabase) {
-                 await Promise.all([
-                   ...parsed.categories.map((cat: Category) =>
-                     clientSupabase.from('categories').upsert(cat).then(({ error }: any) => { if (error) throw error; })
-                   ),
-                   ...parsed.poems.map((poem: Poem) =>
-                     clientSupabase.from('poems').upsert(poem).then(({ error }: any) => { if (error) throw error; })
-                   )
-                 ]);
-               } else {
-                 await Promise.all([
-                   ...parsed.categories.map((cat: Category) =>
-                     fetch('/api/categories', {
-                       method: 'POST',
-                       headers: { 'Content-Type': 'application/json' },
-                       body: JSON.stringify(cat),
-                     })
-                   ),
-                   ...parsed.poems.map((poem: Poem) =>
-                     fetch('/api/poems', {
-                       method: 'POST',
-                       headers: { 'Content-Type': 'application/json' },
-                       body: JSON.stringify(poem),
-                     })
-                   )
-                 ]);
-               }
-               showToast('Import completed. Your ledger is synchronized with the cloud ledger!', 'success');
-             } catch (err) {
-               console.error('Failed to sync imported backup to backend:', err);
-               showToast('Import completed locally. Cloud synchronization failed.', 'warning');
-             }
-          };
-          syncImport();
-        } else {
-          showToast('Failed structure signature test.', 'error');
-        }
-      } catch {
-        showToast('Invalid file structure format.', 'error');
+            if (clientSupabase) {
+              await Promise.all([
+                ...importedCategories.map((cat: Category) =>
+                  clientSupabase.from('categories').upsert(cat).then(({ error }: any) => { if (error) throw error; })
+                ),
+                ...importedPoems.map((poem: Poem) =>
+                  clientSupabase.from('poems').upsert(poem).then(({ error }: any) => { if (error) throw error; })
+                )
+              ]);
+            } else {
+              await Promise.all([
+                ...importedCategories.map((cat: Category) =>
+                  fetch('/api/categories', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cat),
+                  })
+                ),
+                ...importedPoems.map((poem: Poem) =>
+                  fetch('/api/poems', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(poem),
+                  })
+                )
+              ]);
+            }
+            showToast('Import completed. Your ledger is synchronized with the cloud ledger!', 'success');
+            setIsImportModalOpen(false);
+          } catch (err) {
+            console.error('Failed to sync imported data to backend:', err);
+            showToast('Import completed locally. Cloud synchronization failed.', 'warning');
+            setPoems(importedPoems);
+            setCategories(importedCategories);
+            setIsImportModalOpen(false);
+          }
+        };
+
+        await syncImport();
+      } catch (err: any) {
+        console.error('File parsing error:', err);
+        showToast(`Failed to parse file: ${err?.message || 'Invalid format'}`, 'error');
       }
     };
     fileReader.readAsText(file);
-    // Refresh element state
+  };
+
+  const handleImportBackup = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImportFile(file);
+    }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
+
+  const downloadCSVTemplate = () => {
+    const csvContent = "title,body,author,category,mood,tags,isPrivate,attachment_url,attachment_name\n" +
+      "\"The Road Not Taken\",\"Two roads diverged in a yellow wood,\\nAnd sorry I could not travel both...\",\"Robert Frost\",\"Nature\",\"Reflective\",\"woods,choice,autumn\",\"false\",\"https://images.unsplash.com/photo-1441974231531-c6227db76b6e\",\"Golden Woods\"\n" +
+      "\"Sankofa Wisdom\",\"Sankofa teaches us to reach back and gather the treasures of our heritage to build a better future.\",\"Traditional\",\"Heritage\",\"Hopeful\",\"wisdom,sankofa,ghana\",\"false\",\"\",\"\"\n";
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "poetry_ledger_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('CSV import template downloaded.', 'success');
+  };
+
 
   // --- Author Mode Handlers ---
   const handleVerifyPasscode = (e?: React.FormEvent) => {
@@ -1009,8 +1181,14 @@ export default function App() {
     <div id="app-root" className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden transition-colors duration-500 ${
       appTheme === 'light'
         ? 'bg-[#f5efe0] text-neutral-800 selection:bg-orange-100 selection:text-neutral-900'
+        : appTheme === 'sankofa'
+        ? 'bg-[#f3cc3c] text-[#1c1007] selection:bg-[#bf3f27]/20 selection:text-[#bf3f27]'
         : 'bg-[#07080d] text-[#e4e4e7] selection:bg-cyan-500/20 selection:text-cyan-300'
     }`}>
+      {/* Sankofa Repeating Geometric Pattern Top Banner */}
+      {appTheme === 'sankofa' && (
+        <div id="sankofa-top-banner" className="h-[75px] w-full bg-[#42380f] bg-sankofa-pattern border-b-4 border-[#bf3f27] z-30 relative shadow-md" />
+      )}
       {/* Blueprint Alignment Grid Coordinate Matrix Overlay */}
       {gridOverlayEnabled && (
         <div id="grid-coordinate-matrix" className={`absolute inset-0 bg-[linear-gradient(rgba(120,120,120,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(120,120,120,0.04)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none z-10 mt-20 ${
@@ -1063,6 +1241,8 @@ export default function App() {
       <header id="primary-header" className={`py-5 px-4 md:px-8 sticky top-0 z-40 backdrop-blur-md transition-all duration-300 relative ${
         appTheme === 'light'
           ? 'bg-[#f5efe0]/90 border-b border-[#e5dcbf] shadow-sm'
+          : appTheme === 'sankofa'
+          ? 'bg-[#f3cc3c]/95 border-b border-[#bf3f27]/30 shadow-md shadow-[#bf3f27]/5'
           : 'bg-[#0c0d14]/80 border-b border-neutral-850 shadow-lg shadow-black/25'
       }`}>
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -1075,24 +1255,30 @@ export default function App() {
                 className={`p-2.5 rounded-xl shadow-md transition-all border ${
                   appTheme === 'light'
                     ? 'bg-neutral-900 border-neutral-700 text-amber-500'
+                    : appTheme === 'sankofa'
+                    ? 'bg-[#bf3f27] border-[#bf3f27] text-[#fffdf9]'
                     : 'bg-neutral-900 border-neutral-800 text-cyan-400'
                 }`}
               >
                 <Pen className={`w-5 h-5 transform transition-all ${
-                  appTheme === 'light' ? 'text-amber-500' : 'text-cyan-400'
+                  appTheme === 'light' ? 'text-amber-500' : appTheme === 'sankofa' ? 'text-[#fffdf9]' : 'text-cyan-400'
                 }`} />
               </div>
               <div>
                 <h1 id="app-heading" className={`text-xl md:text-2xl font-black font-display tracking-tight transition-all ${
                   appTheme === 'light'
                     ? 'text-neutral-900 font-extrabold'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#3a1a14] font-black'
                     : 'text-[#f4f4f5]'
                 }`}>
                   rayZR Talks
                 </h1>
-                <p id="app-subheading" className={`text-xs md:text-sm font-medium tracking-wide mt-0.5 transition-all ${
+                <p id="app-subheading" className={`text-xs md:text-sm font-semibold tracking-wide mt-0.5 transition-all ${
                   appTheme === 'light'
                     ? 'text-neutral-500'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#bf3f27]'
                     : 'inline-block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400'
                 }`}>
                   Where thoughts find rhythm and stories become poetry
@@ -1100,15 +1286,29 @@ export default function App() {
                 {/* Dynamically tracking metrics ledger counters */}
                 <div id="header-counters" className="flex items-center gap-3 mt-1.5 flex-wrap">
                   <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
-                    appTheme === 'light' ? 'text-neutral-600' : 'text-neutral-400'
+                    appTheme === 'light' ? 'text-neutral-600' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : 'text-neutral-400'
                   }`}>
-                    ✍️ <span className={`font-black ${appTheme === 'light' ? 'text-neutral-900 bg-amber-100/60 px-1.5 py-0.5 rounded-md' : 'text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded-md border border-cyan-900/30'}`}>{poems.filter(p => !p.isPhotoCapture).length}</span> Verses
+                    ✍️ <span className={`font-black ${
+                      appTheme === 'light' 
+                        ? 'text-neutral-900 bg-amber-100/60 px-1.5 py-0.5 rounded-md' 
+                        : appTheme === 'sankofa'
+                        ? 'text-[#fffdf9] bg-[#bf3f27] px-1.5 py-0.5 rounded-md border border-[#bf3f27]/30'
+                        : 'text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded-md border border-cyan-900/30'
+                    }`}>{poems.filter(p => !p.isPhotoCapture).length}</span> Verses
                   </span>
-                  <span className={`w-1 h-1 rounded-full ${appTheme === 'light' ? 'bg-[#dfd5be]' : 'bg-neutral-800'}`} />
+                  <span className={`w-1 h-1 rounded-full ${
+                    appTheme === 'light' ? 'bg-[#dfd5be]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]/40' : 'bg-neutral-800'
+                  }`} />
                   <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
-                    appTheme === 'light' ? 'text-neutral-600' : 'text-neutral-400'
+                    appTheme === 'light' ? 'text-neutral-600' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : 'text-neutral-400'
                   }`}>
-                    📷 <span className={`font-black ${appTheme === 'light' ? 'text-neutral-900 bg-orange-100/60 px-1.5 py-0.5 rounded-md' : 'text-pink-400 bg-fuchsia-950/40 px-1.5 py-0.5 rounded-md border border-fuchsia-900/30'}`}>{poems.filter(p => p.isPhotoCapture).length}</span> Daily Snaps
+                    📷 <span className={`font-black ${
+                      appTheme === 'light' 
+                        ? 'text-neutral-900 bg-orange-100/60 px-1.5 py-0.5 rounded-md' 
+                        : appTheme === 'sankofa'
+                        ? 'text-[#3a1a14] bg-[#dca626]/40 px-1.5 py-0.5 rounded-md border border-[#bf3f27]/25'
+                        : 'text-pink-400 bg-fuchsia-950/40 px-1.5 py-0.5 rounded-md border border-fuchsia-900/30'
+                    }`}>{poems.filter(p => p.isPhotoCapture).length}</span> Daily Snaps
                   </span>
                 </div>
               </div>
@@ -1237,7 +1437,13 @@ export default function App() {
                 <button
                   id="btn-export"
                   onClick={handleExportBackup}
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#111218]/90 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 rounded-full text-neutral-200 font-semibold transition-all cursor-pointer font-mono tracking-wider"
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs border rounded-full font-semibold transition-all cursor-pointer font-mono tracking-wider ${
+                    appTheme === 'light'
+                      ? 'bg-white border-neutral-300 hover:bg-neutral-50 text-neutral-700 hover:border-neutral-400'
+                      : appTheme === 'sankofa'
+                      ? 'bg-[#fffdf9] border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#3a1a14] hover:bg-[#ebd6bc]/30'
+                      : 'bg-[#111218]/90 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-neutral-200'
+                  }`}
                   title="Export writing ledger JSON"
                 >
                   <Download className="w-3.5 h-3.5 text-neutral-400" />
@@ -1245,22 +1451,21 @@ export default function App() {
                 </button>
 
                 {/* Backup Import */}
-                <label
-                  id="lbl-import"
-                  className="flex items-center gap-1.5 px-3.5 py-2 text-xs bg-[#111218]/90 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 rounded-full text-neutral-200 font-semibold cursor-pointer transition-all font-mono tracking-wider"
-                  title="Import backup file JSON"
+                <button
+                  id="btn-import-trigger"
+                  onClick={() => setIsImportModalOpen(true)}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 text-xs border rounded-full font-semibold transition-all cursor-pointer font-mono tracking-wider ${
+                    appTheme === 'light'
+                      ? 'bg-white border-neutral-300 hover:bg-neutral-50 text-neutral-700 hover:border-neutral-400'
+                      : appTheme === 'sankofa'
+                      ? 'bg-[#fffdf9] border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#3a1a14] hover:bg-[#ebd6bc]/30'
+                      : 'bg-[#111218]/90 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-neutral-200'
+                  }`}
+                  title="Import poetry ledger from JSON or CSV"
                 >
                   <Upload className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Import Ledg</span>
-                  <input
-                    id="file-import"
-                    type="file"
-                    ref={fileInputRef}
-                    accept=".json"
-                    onChange={handleImportBackup}
-                    className="hidden"
-                  />
-                </label>
+                </button>
 
                 {/* Manage categories button */}
                 <button
@@ -2469,6 +2674,182 @@ CREATE TABLE IF NOT EXISTS poems (
                     Close
                   </button>
                 </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+
+      {/* 4.5 Ledger Import Hub Modal */}
+      <AnimatePresence>
+        {isImportModalOpen && (
+          <div id="modal-container-import" className="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans">
+            <motion.div
+              id="backdrop-import"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsImportModalOpen(false)}
+              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
+            />
+            <motion.div
+              id="sheet-import"
+              initial={{ scale: 0.95, y: 12, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 12, opacity: 0 }}
+              className={`border rounded-2xl p-6 shadow-2xl relative z-10 w-full max-w-2xl space-y-5 ${
+                appTheme === 'light'
+                  ? 'bg-white border-neutral-200 text-neutral-800'
+                  : appTheme === 'sankofa'
+                  ? 'bg-[#fffdf9] border-2 border-[#bf3f27] text-[#3a1a14]'
+                  : 'bg-[#0c0d14] border border-neutral-800 text-neutral-200'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className={`absolute right-4 top-4 p-1.5 rounded-full transition-colors ${
+                  appTheme === 'light'
+                    ? 'hover:bg-neutral-100 text-neutral-400 hover:text-neutral-600'
+                    : appTheme === 'sankofa'
+                    ? 'hover:bg-[#ebd6bc]/40 text-[#bf3f27] hover:text-[#3a1a14]'
+                    : 'hover:bg-neutral-900 text-neutral-500 hover:text-neutral-300'
+                }`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl border ${
+                  appTheme === 'light'
+                    ? 'bg-amber-50 border-amber-200 text-amber-600'
+                    : appTheme === 'sankofa'
+                    ? 'bg-[#bf3f27]/10 border-[#bf3f27]/30 text-[#bf3f27]'
+                    : 'bg-cyan-950/40 border-cyan-900/30 text-cyan-400'
+                }`}>
+                  <Upload className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className={`text-lg font-display font-bold tracking-tight leading-tight ${
+                    appTheme === 'light' ? 'text-neutral-950' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-100'
+                  }`}>
+                    Ledger Importer Hub
+                  </h3>
+                  <p className={`text-[10px] font-mono tracking-widest font-extrabold uppercase ${
+                    appTheme === 'light' ? 'text-amber-600' : appTheme === 'sankofa' ? 'text-[#bf3f27]' : 'text-cyan-400'
+                  }`}>
+                    Import JSON backups or custom CSV sheets
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3 leading-relaxed text-xs">
+                <p>
+                  Synchronize your custom poetry collections and uploads directly to your cloud-managed writing ledger. We support standard <strong>JSON exports</strong> or spreadsheet-authored <strong>CSV files</strong>.
+                </p>
+
+                {/* Column Headers reference */}
+                <div className={`p-4 rounded-xl space-y-3 ${
+                  appTheme === 'light'
+                    ? 'bg-neutral-50 border border-neutral-150'
+                    : appTheme === 'sankofa'
+                    ? 'bg-[#ebd6bc]/30 border border-[#bf3f27]/20'
+                    : 'bg-[#111218]/90 border border-neutral-850'
+                }`}>
+                  <span className={`font-mono text-[10px] font-bold uppercase tracking-wider block ${
+                    appTheme === 'light' ? 'text-neutral-600' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-400'
+                  }`}>
+                    Required CSV Column Headers:
+                  </span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 font-mono text-[11px]">
+                    <div>
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>title</strong> <span className="text-neutral-500">(Required)</span> - Poem title
+                    </div>
+                    <div>
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>body</strong> <span className="text-neutral-500">(Required)</span> - Poem body text
+                    </div>
+                    <div>
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>author</strong> <span className="text-neutral-500">(Optional)</span> - Writer's name
+                    </div>
+                    <div>
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>category</strong> <span className="text-neutral-500">(Optional)</span> - Category name
+                    </div>
+                    <div>
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>mood</strong> <span className="text-neutral-500">(Optional)</span> - Atmosphere/mood
+                    </div>
+                    <div>
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>tags</strong> <span className="text-neutral-500">(Optional)</span> - Comma-separated list
+                    </div>
+                    <div>
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>isPrivate</strong> <span className="text-neutral-500">(Optional)</span> - "true" or "false"
+                    </div>
+                    <div>
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>attachment_url</strong> <span className="text-neutral-500">(Optional)</span> - Media URL link
+                    </div>
+                    <div className="md:col-span-2">
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>attachment_name</strong> <span className="text-neutral-500">(Optional)</span> - Display name for media
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={downloadCSVTemplate}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 border rounded-xl font-bold font-mono text-xs uppercase tracking-wider cursor-pointer transition-all ${
+                      appTheme === 'light'
+                        ? 'bg-neutral-100 border-neutral-300 hover:bg-neutral-200 text-neutral-850'
+                        : appTheme === 'sankofa'
+                        ? 'bg-[#ebd6bc]/40 border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#3a1a14] hover:bg-[#ebd6bc]/70'
+                        : 'bg-neutral-900 border-neutral-800 hover:bg-neutral-800 hover:text-white text-neutral-300'
+                    }`}
+                  >
+                    <Download className="w-4 h-4" />
+                    Download CSV Template
+                  </button>
+
+                  <label
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-bold font-mono text-xs uppercase tracking-wider cursor-pointer transition-all border ${
+                      appTheme === 'light'
+                        ? 'bg-amber-600 hover:bg-amber-500 text-white border-amber-700 shadow-md'
+                        : appTheme === 'sankofa'
+                        ? 'bg-[#bf3f27] hover:bg-[#bf3f27]/90 text-[#fffdf9] border-[#3a1a14]/40 shadow-md'
+                        : 'bg-cyan-500 hover:bg-cyan-400 text-neutral-950 border-cyan-600 shadow-md'
+                    }`}
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>Upload CSV / JSON</span>
+                    <input
+                      type="file"
+                      accept=".json,.csv"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImportFile(file);
+                        }
+                        e.target.value = '';
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end border-t border-neutral-800/10 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className={`px-4 py-2 border rounded-full text-xs font-mono font-bold uppercase tracking-wider cursor-pointer transition-all ${
+                    appTheme === 'light'
+                      ? 'border-neutral-300 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800'
+                      : appTheme === 'sankofa'
+                      ? 'border-[#bf3f27]/30 text-[#bf3f27] hover:bg-[#ebd6bc]/40 hover:text-[#3a1a14]'
+                      : 'border-neutral-800 text-neutral-400 hover:bg-neutral-800 hover:text-white'
+                  }`}
+                >
+                  Close Importer
+                </button>
               </div>
             </motion.div>
           </div>
