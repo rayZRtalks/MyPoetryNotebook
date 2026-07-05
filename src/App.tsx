@@ -63,9 +63,10 @@ export default function App() {
   });
   const [isDbLoading, setIsDbLoading] = useState(true);
 
-  const [appTheme, setAppTheme] = useState<'dark' | 'light' | 'sankofa'>(() => {
+  const [appTheme, setAppTheme] = useState<'dark' | 'light' | 'sankofa' | 'oxyma'>(() => {
     try {
       const saved = safeLocalStorage.getItem('poetry_notebook_theme');
+      if (saved === 'oxyma') return 'oxyma';
       if (saved === 'sankofa') return 'sankofa';
       if (saved === 'multicolor' || saved === 'dark') return 'dark';
       if (saved === 'paper-specimen' || saved === 'light') return 'light';
@@ -1347,6 +1348,8 @@ export default function App() {
                 ? 'bg-[#ede6d4] border-[#e0d6be]'
                 : appTheme === 'sankofa'
                 ? 'bg-[#200e0b]/90 border-[#3a1a14]'
+                : appTheme === 'oxyma'
+                ? 'bg-[#0b0914] border-[#ff5a36]/25'
                 : 'bg-neutral-900/90 border-neutral-850'
             }`}>
               <button
@@ -1361,11 +1364,13 @@ export default function App() {
                     ? 'bg-neutral-800 text-cyan-400 font-black shadow-[0_0_10px_rgba(6,182,212,0.12)]'
                     : appTheme === 'sankofa'
                     ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
+                    : appTheme === 'oxyma'
+                    ? 'text-[#eae2fa]/70 hover:text-[#ff5a36]'
                     : 'text-neutral-600 hover:text-neutral-900'
                 }`}
                 title="Switch to Dark Mode"
               >
-                🌙 Dark Mode
+                🌙 Dark
               </button>
               <button
                 id="theme-btn-light"
@@ -1379,11 +1384,13 @@ export default function App() {
                     ? 'bg-neutral-900 text-amber-200 font-black shadow-md border border-neutral-800'
                     : appTheme === 'sankofa'
                     ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
+                    : appTheme === 'oxyma'
+                    ? 'text-[#eae2fa]/70 hover:text-[#ff5a36]'
                     : 'text-neutral-500 hover:text-neutral-350'
                 }`}
                 title="Switch to Light Mode"
               >
-                ☀️ Light Mode
+                ☀️ Light
               </button>
               <button
                 id="theme-btn-sankofa"
@@ -1397,11 +1404,33 @@ export default function App() {
                     ? 'bg-[#331510] text-[#dca626] font-black border border-[#bf3f27]/30 shadow-md'
                     : appTheme === 'light'
                     ? 'text-neutral-600 hover:text-neutral-900'
+                    : appTheme === 'oxyma'
+                    ? 'text-[#eae2fa]/70 hover:text-[#ff5a36]'
                     : 'text-neutral-500 hover:text-neutral-350'
                 }`}
                 title="Switch to Sankofa Mode"
               >
-                🎨 Sankofa Mode
+                🎨 Sankofa
+              </button>
+              <button
+                id="theme-btn-oxyma"
+                onClick={() => {
+                  setAppTheme('oxyma');
+                  safeLocalStorage.setItem('poetry_notebook_theme', 'oxyma');
+                  showToast('Theme set to Oxyma Mode.', 'info');
+                }}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
+                  appTheme === 'oxyma'
+                    ? 'bg-[#151221] text-[#ff5a36] font-black border border-[#ff5a36]/30 shadow-md'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
+                    : appTheme === 'light'
+                    ? 'text-neutral-600 hover:text-neutral-900'
+                    : 'text-neutral-500 hover:text-[#eae2fa]'
+                }`}
+                title="Switch to Oxyma Theme"
+              >
+                🔥 Oxyma
               </button>
             </div>
 
@@ -2750,18 +2779,43 @@ CREATE TABLE IF NOT EXISTS poems (
                 </p>
 
                 {/* Column Headers reference */}
-                <div className={`p-4 rounded-xl space-y-3 ${
+                <div className={`p-4 rounded-xl space-y-4 ${
                   appTheme === 'light'
                     ? 'bg-neutral-50 border border-neutral-150'
                     : appTheme === 'sankofa'
                     ? 'bg-[#ebd6bc]/30 border border-[#bf3f27]/20'
                     : 'bg-[#111218]/90 border border-neutral-850'
                 }`}>
-                  <span className={`font-mono text-[10px] font-bold uppercase tracking-wider block ${
-                    appTheme === 'light' ? 'text-neutral-600' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-400'
-                  }`}>
-                    Required CSV Column Headers:
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className={`font-mono text-[10px] font-bold uppercase tracking-wider block ${
+                      appTheme === 'light' ? 'text-neutral-600' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-400'
+                    }`}>
+                      Ledger Column Headers:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText("title,body,author,category,mood,tags,isPrivate,attachment_url,attachment_name");
+                        showToast("CSV headers copied to clipboard!", "success");
+                      }}
+                      className={`text-[9px] font-mono px-2 py-0.5 rounded transition-all cursor-pointer border ${
+                        appTheme === 'light'
+                          ? 'bg-amber-100 hover:bg-amber-200 text-amber-800 border-amber-300'
+                          : appTheme === 'sankofa'
+                          ? 'bg-[#bf3f27]/10 hover:bg-[#bf3f27]/20 text-[#bf3f27] border-[#bf3f27]/30'
+                          : 'bg-cyan-950/40 hover:bg-cyan-950/70 text-cyan-400 border-cyan-800/40'
+                      }`}
+                      title="Copy column headers row to clipboard"
+                    >
+                      📋 Copy Header Row
+                    </button>
+                  </div>
+
+                  {/* Copyable code snippet */}
+                  <div className="bg-neutral-950 text-neutral-300 p-2.5 rounded-lg font-mono text-[10px] overflow-x-auto whitespace-nowrap select-all border border-neutral-800/50">
+                    title,body,author,category,mood,tags,isPrivate,attachment_url,attachment_name
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 font-mono text-[11px]">
                     <div>
                       <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>title</strong> <span className="text-neutral-500">(Required)</span> - Poem title
@@ -2785,11 +2839,20 @@ CREATE TABLE IF NOT EXISTS poems (
                       <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>isPrivate</strong> <span className="text-neutral-500">(Optional)</span> - "true" or "false"
                     </div>
                     <div>
-                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>attachment_url</strong> <span className="text-neutral-500">(Optional)</span> - Media URL link
+                      <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>attachment_url</strong> <span className="text-neutral-500">(Optional)</span> - Cloudinary upload URL
                     </div>
                     <div className="md:col-span-2">
                       <strong className={appTheme === 'light' ? 'text-neutral-900' : appTheme === 'sankofa' ? 'text-[#3a1a14]' : 'text-neutral-200'}>attachment_name</strong> <span className="text-neutral-500">(Optional)</span> - Display name for media
                     </div>
+                  </div>
+
+                  {/* Cloudinary Link Guide for the Import Ledger */}
+                  <div className={`text-[10px] border-t pt-2.5 ${
+                    appTheme === 'light' ? 'border-neutral-200 text-neutral-500' : appTheme === 'sankofa' ? 'border-[#bf3f27]/20 text-[#3a1a14]/70' : 'border-neutral-850 text-neutral-400'
+                  }`}>
+                    <p className="leading-relaxed">
+                      💡 <strong>Referencing Uploads:</strong> To link a poem to a Cloudinary picture, copy the public secure URL from your Cloudinary library (e.g. <code className={`px-1 py-0.5 rounded font-mono ${appTheme === 'light' ? 'bg-neutral-200 text-neutral-800' : 'bg-neutral-900 text-neutral-300'}`}>https://res.cloudinary.com/...</code>) and paste it inside the <strong className="font-mono text-[10px]">attachment_url</strong> column in your CSV ledger.
+                    </p>
                   </div>
                 </div>
 
