@@ -63,12 +63,13 @@ export default function App() {
   });
   const [isDbLoading, setIsDbLoading] = useState(true);
 
-  const [appTheme, setAppTheme] = useState<'dark' | 'light' | 'sankofa' | 'oxyma'>(() => {
+  const [appTheme, setAppTheme] = useState<'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid'>(() => {
     try {
       const saved = safeLocalStorage.getItem('poetry_notebook_theme');
-      if (saved === 'oxyma') return 'oxyma';
+      if (saved === 'momoamo') return 'momoamo';
+      if (saved === 'madrid') return 'madrid';
       if (saved === 'sankofa') return 'sankofa';
-      if (saved === 'multicolor' || saved === 'dark') return 'dark';
+      if (saved === 'oxyma' || saved === 'multicolor' || saved === 'dark') return 'dark';
       if (saved === 'paper-specimen' || saved === 'light') return 'light';
       return 'dark';
     } catch {
@@ -1181,9 +1182,13 @@ export default function App() {
   return (
     <div id="app-root" className={`min-h-screen flex flex-col font-sans relative overflow-x-hidden transition-colors duration-500 ${
       appTheme === 'light'
-        ? 'bg-[#f5efe0] text-neutral-800 selection:bg-orange-100 selection:text-neutral-900'
+        ? 'bg-[#faf6f0] text-[#2e2a27] selection:bg-[#c97f65]/20 selection:text-[#c97f65]'
         : appTheme === 'sankofa'
         ? 'bg-[#f3cc3c] text-[#1c1007] selection:bg-[#bf3f27]/20 selection:text-[#bf3f27]'
+        : appTheme === 'momoamo'
+        ? 'bg-[#142217] text-[#FAF6F0] selection:bg-[#E1FE35]/20 selection:text-[#E1FE35]'
+        : appTheme === 'madrid'
+        ? 'bg-[#050508] text-[#f2f4f7] selection:bg-[#e1fe35]/20 selection:text-[#e1fe35]'
         : 'bg-[#07080d] text-[#e4e4e7] selection:bg-cyan-500/20 selection:text-cyan-300'
     }`}>
       {/* Sankofa Repeating Geometric Pattern Top Banner */}
@@ -1201,7 +1206,11 @@ export default function App() {
       {appTheme !== 'light' ? (
         <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden pointer-events-none z-0">
           <div className="absolute -top-[150px] -left-[100px] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[130px]" />
-          <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-cyan-500/10 blur-[140px]" />
+          {appTheme === 'momoamo' ? (
+            <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-emerald-500/15 blur-[140px]" />
+          ) : (
+            <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-cyan-500/10 blur-[140px]" />
+          )}
           <div className="absolute top-[300px] left-[30%] w-[600px] h-[600px] rounded-full bg-purple-500/5 blur-[160px]" />
         </div>
       ) : (
@@ -1241,9 +1250,13 @@ export default function App() {
       {/* Primary elegant header layout */}
       <header id="primary-header" className={`py-5 px-4 md:px-8 sticky top-0 z-40 backdrop-blur-md transition-all duration-300 relative ${
         appTheme === 'light'
-          ? 'bg-[#f5efe0]/90 border-b border-[#e5dcbf] shadow-sm'
+          ? 'bg-[#faf6f0]/90 border-b border-[#e2d9cf] shadow-sm'
           : appTheme === 'sankofa'
           ? 'bg-[#f3cc3c]/95 border-b border-[#bf3f27]/30 shadow-md shadow-[#bf3f27]/5'
+          : appTheme === 'momoamo'
+          ? 'bg-[#142217]/90 border-b border-[#FAF6F0]/15 shadow-lg shadow-black/20'
+          : appTheme === 'madrid'
+          ? 'bg-[#050508]/90 border-b border-[#252538] shadow-lg shadow-black/30'
           : 'bg-[#0c0d14]/80 border-b border-neutral-850 shadow-lg shadow-black/25'
       }`}>
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -1255,59 +1268,75 @@ export default function App() {
                 id="logo-icon-container" 
                 className={`p-2.5 rounded-xl shadow-md transition-all border ${
                   appTheme === 'light'
-                    ? 'bg-neutral-900 border-neutral-700 text-amber-500'
+                    ? 'bg-[#2E2A27] border-[#E2D9CF] text-[#C97F65]'
                     : appTheme === 'sankofa'
                     ? 'bg-[#bf3f27] border-[#bf3f27] text-[#fffdf9]'
+                    : appTheme === 'momoamo'
+                    ? 'bg-[#18231C] border-[#FAF6F0]/15 text-[#E1FE35]'
+                    : appTheme === 'madrid'
+                    ? 'bg-black border-[#252538] text-[#E1FE35]'
                     : 'bg-neutral-900 border-neutral-800 text-cyan-400'
                 }`}
               >
                 <Pen className={`w-5 h-5 transform transition-all ${
-                  appTheme === 'light' ? 'text-amber-500' : appTheme === 'sankofa' ? 'text-[#fffdf9]' : 'text-cyan-400'
+                  appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#fffdf9]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#E1FE35]' : 'text-cyan-400'
                 }`} />
               </div>
               <div>
-                <h1 id="app-heading" className={`text-xl md:text-2xl font-black font-display tracking-tight transition-all ${
+                <h1 id="app-heading" className={`transition-all ${
                   appTheme === 'light'
-                    ? 'text-neutral-900 font-extrabold'
+                    ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#2E2A27]'
                     : appTheme === 'sankofa'
-                    ? 'text-[#3a1a14] font-black'
-                    : 'text-[#f4f4f5]'
+                    ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#3a1a14]'
+                    : appTheme === 'momoamo'
+                    ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#FAF6F0]'
+                    : appTheme === 'madrid'
+                    ? 'font-unbounded font-black text-3xl md:text-4xl tracking-tighter text-[#E1FE35]'
+                    : 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-200 to-fuchsia-400 drop-shadow-[0_2px_12px_rgba(6,182,212,0.15)]'
                 }`}>
-                  rayZR Talks
+                  {appTheme === 'madrid' ? 'rayZRtalks' : 'rayZR Talks'}
                 </h1>
-                <p id="app-subheading" className={`text-xs md:text-sm font-semibold tracking-wide mt-0.5 transition-all ${
+                <p id="app-subheading" className={`transition-all ${
                   appTheme === 'light'
-                    ? 'text-neutral-500'
+                    ? 'font-serif italic text-xs md:text-sm font-medium tracking-wide text-[#738A7C] mt-1'
                     : appTheme === 'sankofa'
-                    ? 'text-[#bf3f27]'
-                    : 'inline-block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400'
+                    ? 'font-serif italic text-xs md:text-sm font-semibold text-[#bf3f27] mt-1'
+                    : appTheme === 'momoamo'
+                    ? 'font-serif italic text-xs md:text-sm font-medium tracking-wide text-[#E1FE35] mt-1'
+                    : appTheme === 'madrid'
+                    ? 'font-mono text-[10px] md:text-xs uppercase tracking-widest text-[#FF3E6C] font-black mt-1'
+                    : 'font-display text-xs md:text-sm font-semibold tracking-wider mt-1 inline-block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400'
                 }`}>
                   Where thoughts find rhythm and stories become poetry
                 </p>
                 {/* Dynamically tracking metrics ledger counters */}
                 <div id="header-counters" className="flex items-center gap-3 mt-1.5 flex-wrap">
                   <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
-                    appTheme === 'light' ? 'text-neutral-600' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : 'text-neutral-400'
+                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#FAF6F0]/70' : 'text-neutral-400'
                   }`}>
                     ✍️ <span className={`font-black ${
                       appTheme === 'light' 
-                        ? 'text-neutral-900 bg-amber-100/60 px-1.5 py-0.5 rounded-md' 
+                        ? 'text-[#2E2A27] bg-[#E2D9CF]/40 px-1.5 py-0.5 rounded-md border border-[#E2D9CF]/30' 
                         : appTheme === 'sankofa'
                         ? 'text-[#fffdf9] bg-[#bf3f27] px-1.5 py-0.5 rounded-md border border-[#bf3f27]/30'
+                        : appTheme === 'momoamo'
+                        ? 'text-[#E1FE35] bg-[#141C16]/60 px-1.5 py-0.5 rounded-md border border-[#FAF6F0]/15'
                         : 'text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded-md border border-cyan-900/30'
                     }`}>{poems.filter(p => !p.isPhotoCapture).length}</span> Verses
                   </span>
                   <span className={`w-1 h-1 rounded-full ${
-                    appTheme === 'light' ? 'bg-[#dfd5be]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]/40' : 'bg-neutral-800'
+                    appTheme === 'light' ? 'bg-[#E2D9CF]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]/40' : appTheme === 'momoamo' ? 'bg-[#FAF6F0]/15' : 'bg-neutral-800'
                   }`} />
                   <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
-                    appTheme === 'light' ? 'text-neutral-600' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : 'text-neutral-400'
+                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#FAF6F0]/70' : 'text-neutral-400'
                   }`}>
                     📷 <span className={`font-black ${
                       appTheme === 'light' 
-                        ? 'text-neutral-900 bg-orange-100/60 px-1.5 py-0.5 rounded-md' 
+                        ? 'text-[#2E2A27] bg-[#E2D9CF]/40 px-1.5 py-0.5 rounded-md border border-[#E2D9CF]/30' 
                         : appTheme === 'sankofa'
                         ? 'text-[#3a1a14] bg-[#dca626]/40 px-1.5 py-0.5 rounded-md border border-[#bf3f27]/25'
+                        : appTheme === 'momoamo'
+                        ? 'text-[#E1FE35] bg-[#141C16]/60 px-1.5 py-0.5 rounded-md border border-[#FAF6F0]/15'
                         : 'text-pink-400 bg-fuchsia-950/40 px-1.5 py-0.5 rounded-md border border-fuchsia-900/30'
                     }`}>{poems.filter(p => p.isPhotoCapture).length}</span> Daily Snaps
                   </span>
@@ -1331,10 +1360,14 @@ export default function App() {
               className={`p-2 rounded-full transition-all border cursor-pointer flex items-center justify-center shadow-sm ${
                 gridOverlayEnabled
                   ? appTheme === 'light'
-                    ? 'bg-neutral-900 text-amber-400 border-neutral-800 shadow-[0_0_12px_rgba(180,140,50,0.15)] bg-[#1a1c24]'
+                    ? 'bg-[#2E2A27] text-[#C97F65] border-[#E2D9CF] shadow-[0_0_12px_rgba(201,127,101,0.15)]'
+                    : appTheme === 'momoamo'
+                    ? 'bg-[#141C16] text-[#E1FE35] border-[#E1FE35]/40 shadow-[0_0_12px_rgba(225,254,53,0.15)]'
                     : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
                   : appTheme === 'light'
-                    ? 'bg-[#ede6d4] border-[#e0d6be] text-neutral-600 hover:text-neutral-900 hover:border-neutral-500'
+                    ? 'bg-[#E2D9CF]/50 border-[#E2D9CF] text-[#738A7C] hover:text-[#2E2A27] hover:border-[#738A7C]'
+                    : appTheme === 'momoamo'
+                    ? 'bg-[#141C16] border-[#FAF6F0]/15 text-[#FAF6F0]/70 hover:text-white hover:border-[#FAF6F0]/30'
                     : 'bg-neutral-900/95 border-neutral-850 text-neutral-400 hover:text-white hover:border-neutral-700'
               }`}
               title={gridOverlayEnabled ? "Hide alignment guidelines" : "Display alignment guidelines"}
@@ -1342,14 +1375,16 @@ export default function App() {
               <Grid3X3 className="w-4.5 h-4.5" />
             </button>
 
-            {/* Theme Selector Segmented Control (Always Visible) */}
-            <div id="theme-selector-group" className={`flex items-center gap-0.5 border p-1 rounded-full text-[9px] font-mono tracking-wider font-extrabold uppercase mr-1.5 shadow-sm select-none transition-all ${
+             {/* Theme Selector Segmented Control (Always Visible) */}
+            <div id="theme-selector-group" className={`flex flex-wrap items-center gap-0.5 border p-1 rounded-full text-[9px] font-mono tracking-wider font-extrabold uppercase mr-1.5 shadow-sm select-none transition-all ${
               appTheme === 'light'
-                ? 'bg-[#ede6d4] border-[#e0d6be]'
+                ? 'bg-[#FAF6F0] border-[#E2D9CF]'
                 : appTheme === 'sankofa'
                 ? 'bg-[#200e0b]/90 border-[#3a1a14]'
-                : appTheme === 'oxyma'
-                ? 'bg-[#0b0914] border-[#ff5a36]/25'
+                : appTheme === 'momoamo'
+                ? 'bg-[#141C16] border-[#FAF6F0]/15'
+                : appTheme === 'madrid'
+                ? 'bg-[#0e0e15] border-[#252538]'
                 : 'bg-neutral-900/90 border-neutral-850'
             }`}>
               <button
@@ -1364,9 +1399,13 @@ export default function App() {
                     ? 'bg-neutral-800 text-cyan-400 font-black shadow-[0_0_10px_rgba(6,182,212,0.12)]'
                     : appTheme === 'sankofa'
                     ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
-                    : appTheme === 'oxyma'
-                    ? 'text-[#eae2fa]/70 hover:text-[#ff5a36]'
-                    : 'text-neutral-600 hover:text-neutral-900'
+                    : appTheme === 'light'
+                    ? 'text-[#738A7C] hover:text-[#2E2A27]'
+                    : appTheme === 'momoamo'
+                    ? 'text-[#FAF6F0]/70 hover:text-[#E1FE35]'
+                    : appTheme === 'madrid'
+                    ? 'text-neutral-400 hover:text-[#E1FE35]'
+                    : 'text-neutral-650 hover:text-neutral-900'
                 }`}
                 title="Switch to Dark Mode"
               >
@@ -1381,11 +1420,13 @@ export default function App() {
                 }}
                 className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
                   appTheme === 'light'
-                    ? 'bg-neutral-900 text-amber-200 font-black shadow-md border border-neutral-800'
+                    ? 'bg-[#2E2A27] text-[#C97F65] font-black border border-[#E2D9CF] shadow-md'
                     : appTheme === 'sankofa'
                     ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
-                    : appTheme === 'oxyma'
-                    ? 'text-[#eae2fa]/70 hover:text-[#ff5a36]'
+                    : appTheme === 'momoamo'
+                    ? 'text-[#FAF6F0]/70 hover:text-[#E1FE35]'
+                    : appTheme === 'madrid'
+                    ? 'text-neutral-400 hover:text-[#E1FE35]'
                     : 'text-neutral-500 hover:text-neutral-350'
                 }`}
                 title="Switch to Light Mode"
@@ -1403,9 +1444,11 @@ export default function App() {
                   appTheme === 'sankofa'
                     ? 'bg-[#331510] text-[#dca626] font-black border border-[#bf3f27]/30 shadow-md'
                     : appTheme === 'light'
-                    ? 'text-neutral-600 hover:text-neutral-900'
-                    : appTheme === 'oxyma'
-                    ? 'text-[#eae2fa]/70 hover:text-[#ff5a36]'
+                    ? 'text-[#738A7C] hover:text-[#2E2A27]'
+                    : appTheme === 'momoamo'
+                    ? 'text-[#FAF6F0]/70 hover:text-[#E1FE35]'
+                    : appTheme === 'madrid'
+                    ? 'text-neutral-400 hover:text-[#E1FE35]'
                     : 'text-neutral-500 hover:text-neutral-350'
                 }`}
                 title="Switch to Sankofa Mode"
@@ -1413,24 +1456,44 @@ export default function App() {
                 🎨 Sankofa
               </button>
               <button
-                id="theme-btn-oxyma"
+                id="theme-btn-momoamo"
                 onClick={() => {
-                  setAppTheme('oxyma');
-                  safeLocalStorage.setItem('poetry_notebook_theme', 'oxyma');
-                  showToast('Theme set to Oxyma Mode.', 'info');
+                  setAppTheme('momoamo');
+                  safeLocalStorage.setItem('poetry_notebook_theme', 'momoamo');
+                  showToast('Theme set to Momoamo Mode.', 'info');
                 }}
                 className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
-                  appTheme === 'oxyma'
-                    ? 'bg-[#151221] text-[#ff5a36] font-black border border-[#ff5a36]/30 shadow-md'
+                  appTheme === 'momoamo'
+                    ? 'bg-[#1C291E] text-[#E1FE35] font-black border border-[#FAF6F0]/15 shadow-md'
                     : appTheme === 'sankofa'
                     ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
                     : appTheme === 'light'
-                    ? 'text-neutral-600 hover:text-neutral-900'
-                    : 'text-neutral-500 hover:text-[#eae2fa]'
+                    ? 'text-[#738A7C] hover:text-[#2E2A27]'
+                    : 'text-[#FAF6F0]/70 hover:text-[#E1FE35]'
                 }`}
-                title="Switch to Oxyma Theme"
+                title="Switch to Momoamo Theme"
               >
-                🔥 Oxyma
+                🪵 Momoamo
+              </button>
+              <button
+                id="theme-btn-madrid"
+                onClick={() => {
+                  setAppTheme('madrid');
+                  safeLocalStorage.setItem('poetry_notebook_theme', 'madrid');
+                  showToast('Theme set to Madrid Mode.', 'info');
+                }}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
+                  appTheme === 'madrid'
+                    ? 'bg-[#E1FE35] text-black font-black border border-[#E1FE35] shadow-md'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
+                    : appTheme === 'light'
+                    ? 'text-[#738A7C] hover:text-[#2E2A27]'
+                    : 'text-[#FAF6F0]/70 hover:text-[#E1FE35]'
+                }`}
+                title="Switch to Madrid Theme"
+              >
+                🇪🇸 Madrid
               </button>
             </div>
 
@@ -1468,9 +1531,11 @@ export default function App() {
                   onClick={handleExportBackup}
                   className={`flex items-center gap-1.5 px-3.5 py-2 text-xs border rounded-full font-semibold transition-all cursor-pointer font-mono tracking-wider ${
                     appTheme === 'light'
-                      ? 'bg-white border-neutral-300 hover:bg-neutral-50 text-neutral-700 hover:border-neutral-400'
+                      ? 'bg-[#FAF6F0] border-[#E2D9CF] hover:bg-[#FAF6F0]/80 hover:border-[#738A7C] text-[#2E2A27]'
                       : appTheme === 'sankofa'
                       ? 'bg-[#fffdf9] border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#3a1a14] hover:bg-[#ebd6bc]/30'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] border-[#FAF6F0]/15 hover:border-[#E1FE35]/40 hover:bg-[#18231C] text-[#FAF6F0]'
                       : 'bg-[#111218]/90 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-neutral-200'
                   }`}
                   title="Export writing ledger JSON"
@@ -1485,9 +1550,11 @@ export default function App() {
                   onClick={() => setIsImportModalOpen(true)}
                   className={`flex items-center gap-1.5 px-3.5 py-2 text-xs border rounded-full font-semibold transition-all cursor-pointer font-mono tracking-wider ${
                     appTheme === 'light'
-                      ? 'bg-white border-neutral-300 hover:bg-neutral-50 text-neutral-700 hover:border-neutral-400'
+                      ? 'bg-[#FAF6F0] border-[#E2D9CF] hover:bg-[#FAF6F0]/80 hover:border-[#738A7C] text-[#2E2A27]'
                       : appTheme === 'sankofa'
                       ? 'bg-[#fffdf9] border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#3a1a14] hover:bg-[#ebd6bc]/30'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] border-[#FAF6F0]/15 hover:border-[#E1FE35]/40 hover:bg-[#18231C] text-[#FAF6F0]'
                       : 'bg-[#111218]/90 border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800 text-neutral-200'
                   }`}
                   title="Import poetry ledger from JSON or CSV"
@@ -1582,7 +1649,9 @@ export default function App() {
         {/* Advanced elegant filter bar row */}
         <section id="filters-panel" className={`p-6 rounded-2xl space-y-5 relative transition-all duration-300 border ${
           appTheme === 'light'
-            ? 'bg-white border-[#e0d6be] text-[#1b1c20] shadow-[0_4px_24px_rgba(28,28,30,0.03)]'
+            ? 'bg-[#FAF6F0] border-[#E2D9CF] text-[#2E2A27] shadow-sm'
+            : appTheme === 'momoamo'
+            ? 'bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0] shadow-xl'
             : 'bg-[#0f111a]/80 border-neutral-800/80 shadow-xl backdrop-blur-md text-[#e4e4e7]'
         }`}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -1598,7 +1667,9 @@ export default function App() {
                 placeholder="Search poetry verses, titles, tags or poets..."
                 className={`w-full pl-10 pr-4 py-2.5 rounded-xl text-sm placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:bg-white transition-all font-sans ${
                   appTheme === 'light'
-                    ? 'bg-[#fcfaf4] border-[#e0d6be] text-neutral-900 focus:ring-neutral-800/10 focus:border-neutral-800'
+                    ? 'bg-[#FAF6F0] border-[#E2D9CF] text-[#2E2A27] focus:ring-[#C97F65]/10 focus:border-[#C97F65]'
+                    : appTheme === 'momoamo'
+                    ? 'bg-[#141C16] border-[#FAF6F0]/15 text-[#FAF6F0] focus:ring-[#E1FE35]/20 focus:border-[#E1FE35] focus:bg-[#18231C]'
                     : 'bg-[#141622] border border-neutral-800 text-neutral-100 focus:ring-cyan-500/40 focus:border-cyan-500 focus:bg-[#181a28]'
                 }`}
               />
@@ -1607,7 +1678,7 @@ export default function App() {
                   id="btn-clear-search"
                   onClick={() => setSearchQuery('')}
                   className={`absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer ${
-                    appTheme === 'light' ? 'text-neutral-450 hover:text-neutral-800' : 'text-neutral-400 hover:text-white'
+                    appTheme === 'light' ? 'text-neutral-500 hover:text-[#2E2A27]' : 'text-neutral-400 hover:text-white'
                   }`}
                 >
                   <X className="w-4 h-4" />
@@ -1626,7 +1697,9 @@ export default function App() {
                   onChange={(e) => setSelectedMood(e.target.value)}
                   className={`text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:ring-2 font-mono font-bold uppercase tracking-wider cursor-pointer transition-all ${
                     appTheme === 'light'
-                      ? 'bg-[#fcfaf4] border-[#e0d6be] text-neutral-800 focus:ring-neutral-800/10 focus:border-neutral-800 hover:bg-[#ede5d4]'
+                      ? 'bg-[#FAF6F0] border-[#E2D9CF] text-[#2E2A27] focus:ring-[#C97F65]/10 focus:border-[#C97F65] hover:bg-[#FAF6F0]/85'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] border-[#FAF6F0]/15 text-[#FAF6F0] focus:ring-[#E1FE35]/20 focus:border-[#E1FE35] hover:bg-[#18231C]'
                       : 'bg-[#141622] border border-neutral-800 text-neutral-200 focus:ring-cyan-500/40 focus:border-cyan-500 hover:bg-neutral-800'
                   }`}
                 >
@@ -1649,13 +1722,15 @@ export default function App() {
                   onClick={() => setSortBy(sortBy === 'newest' ? 'oldest' : sortBy === 'oldest' ? 'alphabetical' : 'newest')}
                   className={`flex items-center gap-1 px-3.5 py-1.5 rounded-lg font-mono font-bold uppercase tracking-wider transition-all cursor-pointer border ${
                     appTheme === 'light'
-                      ? 'bg-[#fcfaf4] hover:bg-[#ede5d4] border-[#e0d6be] text-neutral-805'
+                      ? 'bg-[#FAF6F0] hover:bg-[#FAF6F0]/85 border-[#E2D9CF] text-[#2E2A27]'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] hover:bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0]'
                       : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-250'
                   }`}
                 >
-                  {sortBy === 'newest' && <Clock className={`w-3.5 h-3.5 ${appTheme === 'light' ? 'text-amber-600' : 'text-cyan-400'}`} />}
-                  {sortBy === 'oldest' && <Clock className={`w-3.5 h-3.5 rotate-180 transform ${appTheme === 'light' ? 'text-amber-600' : 'text-cyan-400'}`} />}
-                  {sortBy === 'alphabetical' && <ArrowUpDown className={`w-3.5 h-3.5 ${appTheme === 'light' ? 'text-amber-600' : 'text-cyan-400'}`} />}
+                  {sortBy === 'newest' && <Clock className={`w-3.5 h-3.5 ${appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : 'text-cyan-400'}`} />}
+                  {sortBy === 'oldest' && <Clock className={`w-3.5 h-3.5 rotate-180 transform ${appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : 'text-cyan-400'}`} />}
+                  {sortBy === 'alphabetical' && <ArrowUpDown className={`w-3.5 h-3.5 ${appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : 'text-cyan-400'}`} />}
                   <span>{sortBy === 'newest' ? 'Newest' : sortBy === 'oldest' ? 'Oldest' : 'A to Z'}</span>
                 </button>
               </div>
@@ -1664,7 +1739,7 @@ export default function App() {
           </div>
 
           <div className={`border-t pt-4 flex flex-col md:flex-row md:items-start gap-4 ${
-            appTheme === 'light' ? 'border-[#e0d6be]' : 'border-neutral-850'
+            appTheme === 'light' ? 'border-[#E2D9CF]' : appTheme === 'momoamo' ? 'border-[#FAF6F0]/15' : 'border-neutral-850'
           }`}>
             <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest font-mono mt-2">Category:</span>
             {/* Horizontal Categories Row */}
@@ -1675,10 +1750,14 @@ export default function App() {
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold font-display cursor-pointer border transition-all duration-200 uppercase tracking-widest ${
                   selectedCatId === 'all'
                     ? appTheme === 'light'
-                      ? 'bg-neutral-900 border-neutral-800 text-amber-200 shadow-md font-extrabold'
+                      ? 'bg-[#2E2A27] border-[#E2D9CF] text-[#C97F65] shadow-md font-extrabold'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#E1FE35] border-[#E1FE35] text-[#141C16] shadow-[0_0_15px_rgba(225,254,53,0.25)] font-extrabold'
                       : 'bg-gradient-to-r from-cyan-500 to-indigo-500 text-white border-transparent shadow-[0_0_15px_rgba(6,182,212,0.25)] font-extrabold'
                     : appTheme === 'light'
-                      ? 'bg-[#ede6d4]/50 hover:bg-[#ede6d3] border-[#e0d6be] text-neutral-700 font-semibold'
+                      ? 'bg-[#E2D9CF]/40 hover:bg-[#E2D9CF]/60 border-[#E2D9CF] text-[#738A7C] font-semibold'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] hover:bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0]/75 font-semibold'
                       : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300 font-semibold'
                 }`}
               >
@@ -1691,10 +1770,14 @@ export default function App() {
                 className={`px-3.5 py-1.5 rounded-full text-xs font-bold font-display cursor-pointer border transition-all duration-200 uppercase tracking-widest ${
                   selectedCatId === 'cat-snaps'
                     ? appTheme === 'light'
-                      ? 'bg-neutral-900 border-neutral-850 text-orange-200 shadow-md font-extrabold'
+                      ? 'bg-[#2E2A27] border-[#E2D9CF] text-[#C97F65] shadow-md font-extrabold'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#E1FE35] border-[#E1FE35] text-[#141C16] shadow-[0_0_15px_rgba(225,254,53,0.25)] font-extrabold'
                       : 'bg-gradient-to-r from-cyan-500 to-pink-500 text-white border-transparent shadow-[0_0_15px_rgba(6,182,212,0.25)] font-extrabold'
                     : appTheme === 'light'
-                      ? 'bg-[#ede6d4]/50 hover:bg-[#ede6d3] border-[#e0d6be] text-neutral-700 font-semibold'
+                      ? 'bg-[#E2D9CF]/40 hover:bg-[#E2D9CF]/60 border-[#E2D9CF] text-[#738A7C] font-semibold'
+                      : appTheme === 'momoamo'
+                      ? 'bg-[#141C16] hover:bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0]/75 font-semibold'
                       : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-cyan-400 border-cyan-950/40 font-semibold'
                 }`}
               >
@@ -1722,10 +1805,14 @@ export default function App() {
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold font-display cursor-pointer border transition-all duration-200 uppercase tracking-widest ${
                       isSelected
                         ? appTheme === 'light'
-                          ? 'bg-neutral-900 border-neutral-850 text-orange-200 shadow-md font-black'
+                          ? 'bg-[#2E2A27] border-[#E2D9CF] text-[#C97F65] shadow-md font-black'
+                          : appTheme === 'momoamo'
+                          ? 'bg-[#E1FE35] border-[#E1FE35] text-[#141C16] shadow-[0_0_15px_rgba(225,254,53,0.25)] font-black'
                           : `bg-gradient-to-r ${activeGrad} border-transparent text-white`
                         : appTheme === 'light'
-                          ? 'bg-[#ede6d4]/50 hover:bg-[#ede6d3] border-[#e0d6be] text-neutral-700 font-semibold'
+                          ? 'bg-[#E2D9CF]/40 hover:bg-[#E2D9CF]/60 border-[#E2D9CF] text-[#738A7C] font-semibold'
+                          : appTheme === 'momoamo'
+                          ? 'bg-[#141C16] hover:bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0]/75 font-semibold'
                           : 'bg-[#141622] hover:bg-neutral-800 border-neutral-800 text-neutral-300'
                     }`}
                   >
@@ -1750,7 +1837,9 @@ export default function App() {
                 id="filtered-indicator" 
                 className={`text-[10px] uppercase font-mono tracking-wider px-2.5 py-1 rounded-full animate-pulse border transition-colors ${
                   appTheme === 'light'
-                    ? 'text-neutral-700 bg-neutral-100 border-neutral-300'
+                    ? 'text-[#2E2A27] bg-[#FAF6F0] border-[#E2D9CF]'
+                    : appTheme === 'momoamo'
+                    ? 'text-[#E1FE35] bg-[#141C16]/40 border-[#E1FE35]/20'
                     : 'text-cyan-400 bg-cyan-950/20 border-cyan-900/40'
                 }`}
               >
