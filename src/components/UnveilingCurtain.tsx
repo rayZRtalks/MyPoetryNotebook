@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, Heart, RefreshCw, X, Stars } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -11,14 +11,36 @@ interface UnveilingCurtainProps {
 export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtainProps) {
   const [isDrawn, setIsDrawn] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+
+  // Lazy initialize/resume single AudioContext associated with user gesture
+  const getAudioContext = (): AudioContext | null => {
+    try {
+      if (!audioCtxRef.current) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (!AudioContextClass) return null;
+        audioCtxRef.current = new AudioContextClass();
+      }
+      if (audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume();
+      }
+      return audioCtxRef.current;
+    } catch (e) {
+      console.warn('[WebAudio] AudioContext creation failed:', e);
+      return null;
+    }
+  };
 
   // Trigger continuous festive confetti bursts and synchronized firework sounds when drawn open
   const triggerConfettiCelebration = () => {
+    const ctx = getAudioContext();
     const duration = 5 * 1000; // 5-second continuous celebration
     const end = Date.now() + duration;
 
     // Trigger initial burst
-    playFireworkSound(0);
+    if (ctx) {
+      playFireworkSound(0, ctx);
+    }
 
     // Outer edge confetti cannons
     const frame = () => {
@@ -65,19 +87,22 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
     }, 1200);
 
     // Continuous firework sounds playing through the duration of confetti!
+    // Using the same active AudioContext, which guarantees playback even inside setTimeout/setInterval!
     const soundInterval = setInterval(() => {
       if (Date.now() >= end) {
         clearInterval(soundInterval);
         return;
       }
-      playFireworkSound(0);
+      if (ctx) {
+        playFireworkSound(0, ctx);
+      }
     }, 600);
   };
 
-  // Helper to trigger standard cymbal crash
+  // Helper to trigger standard cymbal crash (extended duration to sustain longer)
   const triggerCymbalCrash = (ctx: AudioContext, time: number, volume: number, filterFreq = 8000) => {
     try {
-      const crashBufferSize = ctx.sampleRate * 3.5;
+      const crashBufferSize = ctx.sampleRate * 6.5; // extended from 3.5s to 6.5s
       const crashBuffer = ctx.createBuffer(1, crashBufferSize, ctx.sampleRate);
       const crashData = crashBuffer.getChannelData(0);
       for (let i = 0; i < crashBufferSize; i++) {
@@ -95,7 +120,7 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
       crashGain.gain.setValueAtTime(0.001, ctx.currentTime);
       crashGain.gain.setValueAtTime(0.001, time);
       crashGain.gain.linearRampToValueAtTime(volume, time + 0.02);
-      crashGain.gain.exponentialRampToValueAtTime(0.001, time + 3.0);
+      crashGain.gain.exponentialRampToValueAtTime(0.001, time + 5.5); // sustained from 3.0s to 5.5s
 
       crashNoise.connect(crashHighpass);
       crashHighpass.connect(crashGain);
@@ -108,7 +133,7 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
       chimeGain.gain.setValueAtTime(0.001, ctx.currentTime);
       chimeGain.gain.setValueAtTime(0.001, time);
       chimeGain.gain.linearRampToValueAtTime(volume * 0.4, time + 0.02);
-      chimeGain.gain.exponentialRampToValueAtTime(0.001, time + 1.8);
+      chimeGain.gain.exponentialRampToValueAtTime(0.001, time + 4.0); // sustained from 1.8s to 4.0s
 
       chime.connect(chimeGain);
       chimeGain.connect(ctx.destination);
@@ -116,12 +141,12 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
       crashNoise.start(time);
       chime.start(time);
 
-      crashNoise.stop(time + 3.6);
-      chime.stop(time + 3.6);
+      crashNoise.stop(time + 6.5);
+      chime.stop(time + 6.5);
     } catch {}
   };
 
-  // Helper for orchestral gong & booming bass crash
+  // Helper for orchestral gong & booming bass crash (sustains and rings out beautifully)
   const triggerOrchestralCrash = (ctx: AudioContext, time: number) => {
     try {
       // Gong metallic crash
@@ -137,7 +162,7 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
       oscGain.gain.setValueAtTime(0.001, ctx.currentTime);
       oscGain.gain.setValueAtTime(0.001, time);
       oscGain.gain.linearRampToValueAtTime(0.3, time + 0.03);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, time + 2.5);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, time + 5.0); // sustained from 2.5s to 5.0s
 
       const bandpass = ctx.createBiquadFilter();
       bandpass.type = 'bandpass';
@@ -155,27 +180,26 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
       const boomGain = ctx.createGain();
       boom.type = 'sine';
       boom.frequency.setValueAtTime(45, time);
-      boom.frequency.linearRampToValueAtTime(25, time + 1.5);
+      boom.frequency.linearRampToValueAtTime(25, time + 2.0); // slower slide
 
       boomGain.gain.setValueAtTime(0.001, ctx.currentTime);
       boomGain.gain.setValueAtTime(0.001, time);
       boomGain.gain.linearRampToValueAtTime(0.5, time + 0.02);
-      boomGain.gain.exponentialRampToValueAtTime(0.001, time + 2.8);
+      boomGain.gain.exponentialRampToValueAtTime(0.001, time + 5.5); // sustained from 2.8s to 5.5s
 
       boom.connect(boomGain);
       boomGain.connect(ctx.destination);
 
       osc1.start(time); osc2.start(time); osc3.start(time); boom.start(time);
-      osc1.stop(time + 2.6); osc2.stop(time + 2.6); osc3.stop(time + 2.6); boom.stop(time + 3.0);
+      osc1.stop(time + 5.2); osc2.stop(time + 5.2); osc3.stop(time + 5.2); boom.stop(time + 5.8);
     } catch {}
   };
 
-  // Play short firework sound burst (crackle + boom)
-  const playFireworkSound = (delay: number) => {
+  // Play short firework sound burst (crackle + boom) using a designated active context
+  const playFireworkSound = (delay: number, customCtx?: AudioContext) => {
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
+      const ctx = customCtx || getAudioContext();
+      if (!ctx) return;
       const now = ctx.currentTime + delay;
 
       // 1. Thud / Deep Boom
@@ -233,9 +257,8 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
   // Synthesize a grand cinematic trumpet fanfare (MGM/Hollywood intro style)
   const playTrumpetFanfare = () => {
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
+      const ctx = getAudioContext();
+      if (!ctx) return;
       const now = ctx.currentTime;
       const fanfareDuration = 4.3; // matches the curtain-raiser delay before the cymbal crash
 
@@ -347,11 +370,14 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
     }, 4500);
   };
 
-  // Prevent background scrolling while curtain is active
+  // Prevent background scrolling while curtain is active, and clean up active AudioContext on unmount
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'unset';
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+      }
     };
   }, []);
 
