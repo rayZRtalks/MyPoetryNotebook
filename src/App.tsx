@@ -204,10 +204,24 @@ export default function App() {
           });
         }
       } else {
-        const errText = await res.text().catch(() => 'No response body');
-        const errMsg = `Server returned status ${res.status}: ${errText}`;
-        console.error('[Supabase Diagnostic] Response not OK:', errMsg);
-        setSupabaseFetchError(errMsg);
+        if (!clientSupabase) {
+          setSupabaseStatus({
+            configured: false,
+            enabled: false,
+            verified: false,
+            url: null,
+            keyPrefix: null,
+            keyLength: 0,
+            error: null,
+            timestamp: new Date().toISOString()
+          });
+          setSupabaseFetchError(null);
+        } else {
+          const errText = await res.text().catch(() => 'No response body');
+          const errMsg = `Server returned status ${res.status}: ${errText}`;
+          console.error('[Supabase Diagnostic] Response not OK:', errMsg);
+          setSupabaseFetchError(errMsg);
+        }
       }
     } catch (err: any) {
       console.error('[Supabase Diagnostic] Network or parsing exception:', err);
@@ -242,7 +256,17 @@ export default function App() {
           });
         }
       } else {
-        setSupabaseFetchError(err?.message || String(err));
+        setSupabaseStatus({
+          configured: false,
+          enabled: false,
+          verified: false,
+          url: null,
+          keyPrefix: null,
+          keyLength: 0,
+          error: null,
+          timestamp: new Date().toISOString()
+        });
+        setSupabaseFetchError(null);
       }
     } finally {
       setIsFetchingStatus(false);

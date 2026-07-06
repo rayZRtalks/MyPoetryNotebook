@@ -64,11 +64,11 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
 
   const handleUnveil = () => {
     setIsDrawn(true);
-    // Wait for the slower, realistic curtain drawing transition (2.8s total)
+    // Wait for the slower, realistic curtain drawing transition (4.8s total)
     setTimeout(() => {
       setShowThankYou(true);
       triggerConfettiCelebration();
-    }, 2400);
+    }, 4500);
   };
 
   // Prevent background scrolling while curtain is active
@@ -91,30 +91,37 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
           id="left-curtain-panel"
           initial={{ scaleX: 1, x: 0, skewY: 0 }}
           animate={isDrawn ? { 
-            scaleX: 0.06, 
-            x: '-6%', 
-            skewY: [0, -4, 2, -1, 0] 
+            scaleX: 0.08, 
+            x: '-4%', 
+            skewY: [0, -5, 3, -2, 1, -0.5, 0.2, 0] 
           } : { 
             scaleX: 1, 
             x: 0, 
             skewY: 0 
           }}
-          transition={{ duration: 2.8, ease: [0.25, 1, 0.5, 1] }}
-          className="w-1/2 h-full relative pointer-events-auto shadow-[15px_0_35px_rgba(0,0,0,0.6)] flex items-center justify-end"
+          transition={{ duration: 4.8, ease: [0.77, 0, 0.175, 1] }}
+          className="w-1/2 h-full relative pointer-events-auto shadow-[20px_0_40px_rgba(0,0,0,0.8)] flex items-center justify-end"
           style={{
             originX: 0,
-            background: 'radial-gradient(circle at 100% 50%, #4a0d15 0%, #200407 80%, #0d0102 100%)',
+            background: 'linear-gradient(to bottom, #4a0d15 0%, #200407 80%, #0d0102 100%)',
           }}
         >
+          {/* Deep Velvet Fold Highlights Overlay */}
+          <div className="absolute inset-0 opacity-40 pointer-events-none mix-blend-overlay" style={{
+            background: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 3%, rgba(255,255,255,0.08) 6%, rgba(0,0,0,0.35) 9%, rgba(0,0,0,0.7) 12%)'
+          }} />
+
           {/* Vertical gold fold texture simulation */}
-          <div className="absolute inset-y-0 right-0 w-1 bg-gradient-to-r from-amber-400/30 to-yellow-600/60 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-          <div className="absolute inset-y-0 left-[20%] w-px bg-black/20" />
-          <div className="absolute inset-y-0 left-[40%] w-px bg-black/25" />
-          <div className="absolute inset-y-0 left-[60%] w-px bg-black/20" />
-          <div className="absolute inset-y-0 left-[80%] w-px bg-black/30" />
+          <div className="absolute inset-y-0 right-0 w-1 bg-gradient-to-r from-amber-400/30 to-yellow-600/60 shadow-[0_0_10px_rgba(245,158,11,0.5)] z-10" />
+          <div className="absolute inset-y-0 left-[15%] w-px bg-black/40" />
+          <div className="absolute inset-y-0 left-[30%] w-px bg-black/45" />
+          <div className="absolute inset-y-0 left-[45%] w-px bg-black/40" />
+          <div className="absolute inset-y-0 left-[60%] w-px bg-black/45" />
+          <div className="absolute inset-y-0 left-[75%] w-px bg-black/40" />
+          <div className="absolute inset-y-0 left-[90%] w-px bg-black/50" />
           
           {/* Gold fringe at the bottom */}
-          <div className="absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-amber-500/20 to-transparent border-t border-amber-400/30 flex justify-around items-end pb-1">
+          <div className="absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-amber-500/20 to-transparent border-t border-amber-400/30 flex justify-around items-end pb-1 z-10">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400/50" />
             ))}
@@ -126,30 +133,37 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
           id="right-curtain-panel"
           initial={{ scaleX: 1, x: 0, skewY: 0 }}
           animate={isDrawn ? { 
-            scaleX: 0.06, 
-            x: '6%', 
-            skewY: [0, 4, -2, 1, 0] 
+            scaleX: 0.08, 
+            x: '4%', 
+            skewY: [0, 5, -3, 2, -1, 0.5, -0.2, 0] 
           } : { 
             scaleX: 1, 
             x: 0, 
             skewY: 0 
           }}
-          transition={{ duration: 2.8, ease: [0.25, 1, 0.5, 1] }}
-          className="w-1/2 h-full relative pointer-events-auto shadow-[-15px_0_35px_rgba(0,0,0,0.6)] flex items-center justify-start"
+          transition={{ duration: 4.8, ease: [0.77, 0, 0.175, 1] }}
+          className="w-1/2 h-full relative pointer-events-auto shadow-[-20px_0_40px_rgba(0,0,0,0.8)] flex items-center justify-start"
           style={{
             originX: 1,
-            background: 'radial-gradient(circle at 0% 50%, #4a0d15 0%, #200407 80%, #0d0102 100%)',
+            background: 'linear-gradient(to bottom, #4a0d15 0%, #200407 80%, #0d0102 100%)',
           }}
         >
+          {/* Deep Velvet Fold Highlights Overlay */}
+          <div className="absolute inset-0 opacity-40 pointer-events-none mix-blend-overlay" style={{
+            background: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.2) 3%, rgba(255,255,255,0.08) 6%, rgba(0,0,0,0.35) 9%, rgba(0,0,0,0.7) 12%)'
+          }} />
+
           {/* Vertical gold fold texture simulation */}
-          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-l from-amber-400/30 to-yellow-600/60 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-          <div className="absolute inset-y-0 right-[20%] w-px bg-black/20" />
-          <div className="absolute inset-y-0 right-[40%] w-px bg-black/25" />
-          <div className="absolute inset-y-0 right-[60%] w-px bg-black/20" />
-          <div className="absolute inset-y-0 right-[80%] w-px bg-black/30" />
+          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-l from-amber-400/30 to-yellow-600/60 shadow-[0_0_10px_rgba(245,158,11,0.5)] z-10" />
+          <div className="absolute inset-y-0 right-[15%] w-px bg-black/40" />
+          <div className="absolute inset-y-0 right-[30%] w-px bg-black/45" />
+          <div className="absolute inset-y-0 right-[45%] w-px bg-black/40" />
+          <div className="absolute inset-y-0 right-[60%] w-px bg-black/45" />
+          <div className="absolute inset-y-0 right-[75%] w-px bg-black/40" />
+          <div className="absolute inset-y-0 right-[90%] w-px bg-black/50" />
           
           {/* Gold fringe at the bottom */}
-          <div className="absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-amber-500/20 to-transparent border-t border-amber-400/30 flex justify-around items-end pb-1">
+          <div className="absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-amber-500/20 to-transparent border-t border-amber-400/30 flex justify-around items-end pb-1 z-10">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400/50" />
             ))}
