@@ -20,6 +20,7 @@ import PoemReader from './components/PoemReader';
 import DailySnapCapture from './components/DailySnapCapture';
 import DailySnapCard from './components/DailySnapCard';
 import CloudinarySettingsModal from './components/CloudinarySettingsModal';
+import UnveilingCurtain from './components/UnveilingCurtain';
 
 // Cloud Ledger & Local Media Setup
 import { uploadToStorage } from './cloudinary';
@@ -45,6 +46,28 @@ if (clientSupabaseUrl && clientSupabaseAnonKey) {
 export default function App() {
   // --- Persistent States ---
   const [isAuthorMode, setIsAuthorMode] = useState<boolean>(true);
+  const [showUnveiling, setShowUnveiling] = useState<boolean>(false);
+
+  // Check first time visitor unveiling status
+  useEffect(() => {
+    try {
+      const isUnveiled = safeLocalStorage.getItem('poetry_notebook_unveiled_ceremony');
+      if (!isUnveiled) {
+        setShowUnveiling(true);
+      }
+    } catch (e) {
+      console.error('[Unveiling] Local storage check failed:', e);
+    }
+  }, []);
+
+  const handleCloseUnveiling = () => {
+    setShowUnveiling(false);
+    try {
+      safeLocalStorage.setItem('poetry_notebook_unveiled_ceremony', 'true');
+    } catch (e) {
+      console.error('[Unveiling] Local storage write failed:', e);
+    }
+  };
   const [poems, setPoems] = useState<Poem[]>(() => {
     try {
       const cached = safeLocalStorage.getItem('poetry_notebook_poems_cache');
@@ -1390,6 +1413,30 @@ export default function App() {
 
           {/* Right Action buttons group */}
           <div className="flex flex-wrap items-center gap-2.5 z-10 animate-fade-in">
+            {/* Curtain/Unveiling Replay trigger button */}
+            <button
+              id="replay-unveiling-btn"
+              onClick={() => {
+                setShowUnveiling(true);
+                showToast('Initiating the website unveiling ceremony!', 'success');
+              }}
+              className={`flex items-center gap-1.5 px-3.5 py-2 text-xs border rounded-full font-bold transition-all cursor-pointer font-mono tracking-wider ${
+                appTheme === 'light'
+                  ? 'bg-gradient-to-r from-amber-500/10 to-[#C97F65]/10 border-[#C97F65]/30 hover:border-[#C97F65] text-[#C97F65] hover:bg-[#C97F65]/15'
+                  : appTheme === 'sankofa'
+                  ? 'bg-black/10 border-[#bf3f27]/30 hover:border-[#bf3f27] text-[#3a1a14] hover:bg-[#bf3f27]/10'
+                  : appTheme === 'momoamo'
+                  ? 'bg-[#141C16] border-[#E1FE35]/20 hover:border-[#E1FE35] text-[#E1FE35] hover:bg-[#18231C]'
+                  : appTheme === 'madrid'
+                  ? 'bg-black/10 border-black/15 hover:bg-black/20 text-[#0E0E15]'
+                  : 'bg-cyan-500/10 border-cyan-500/30 hover:border-cyan-400 text-cyan-400 hover:bg-cyan-500/20'
+              }`}
+              title="Test/Replay the Website Unveiling Ceremony"
+            >
+              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <span>Unveil Ceremony</span>
+            </button>
+
             {/* Grid Overlay Toggle Tool (highly typical of ARS Type Foundry specimen previewers) */}
             <button
               id="grid-overlay-toggle"
@@ -3237,6 +3284,14 @@ CREATE TABLE IF NOT EXISTS poems (
           </div>
         )}
       </AnimatePresence>
+
+      {/* 6. Unveiling Ceremony Curtain Raiser & Confetti Overlay */}
+      {showUnveiling && (
+        <UnveilingCurtain 
+          onClose={handleCloseUnveiling} 
+          appTheme={appTheme} 
+        />
+      )}
     </div>
   );
 }

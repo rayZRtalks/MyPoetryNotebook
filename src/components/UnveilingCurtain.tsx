@@ -1,0 +1,286 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Sparkles, Heart, RefreshCw, X, Stars } from 'lucide-react';
+import confetti from 'canvas-confetti';
+
+interface UnveilingCurtainProps {
+  onClose: () => void;
+  appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid';
+}
+
+export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtainProps) {
+  const [isDrawn, setIsDrawn] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
+
+  // Trigger continuous festive confetti bursts when drawn open
+  const triggerConfettiCelebration = () => {
+    const duration = 3 * 1000;
+    const end = Date.now() + duration;
+
+    // Outer edge bursts
+    const frame = () => {
+      confetti({
+        particleCount: 5,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0, y: 0.8 },
+        colors: ['#FDA172', '#E1FE35', '#bf3f27', '#06b6d4', '#ec4899', '#f59e0b']
+      });
+      confetti({
+        particleCount: 5,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1, y: 0.8 },
+        colors: ['#FDA172', '#E1FE35', '#bf3f27', '#06b6d4', '#ec4899', '#f59e0b']
+      });
+
+      if (Date.now() < end) {
+        requestAnimationFrame(frame);
+      }
+    };
+    frame();
+
+    // Center splash burst
+    setTimeout(() => {
+      confetti({
+        particleCount: 80,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#FDA172', '#E1FE35', '#bf3f27', '#22c55e', '#3b82f6', '#d946ef']
+      });
+    }, 400);
+
+    // Final blast
+    setTimeout(() => {
+      confetti({
+        particleCount: 120,
+        spread: 100,
+        decay: 0.91,
+        scalar: 1.2,
+        origin: { y: 0.5 }
+      });
+    }, 1200);
+  };
+
+  const handleUnveil = () => {
+    setIsDrawn(true);
+    // Wait for the curtain pull transition (1.5s) then show the thank you overlay and trigger confetti
+    setTimeout(() => {
+      setShowThankYou(true);
+      triggerConfettiCelebration();
+    }, 1200);
+  };
+
+  // Prevent background scrolling while curtain is active
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
+  return (
+    <div id="unveiling-root-overlay" className="fixed inset-0 z-50 overflow-hidden select-none">
+      {/* Background container underneath the curtains */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+
+      {/* CURTAIN PANELS */}
+      <div className="absolute inset-0 flex pointer-events-none">
+        {/* Left Curtain */}
+        <motion.div
+          id="left-curtain-panel"
+          initial={{ x: 0 }}
+          animate={isDrawn ? { x: '-100%' } : { x: 0 }}
+          transition={{ duration: 1.6, ease: [0.77, 0, 0.175, 1] }}
+          className="w-1/2 h-full relative pointer-events-auto shadow-[15px_0_35px_rgba(0,0,0,0.6)] flex items-center justify-end"
+          style={{
+            background: 'radial-gradient(circle at 100% 50%, #4a0d15 0%, #200407 80%, #0d0102 100%)',
+          }}
+        >
+          {/* Vertical gold fold texture simulation */}
+          <div className="absolute inset-y-0 right-0 w-1 bg-gradient-to-r from-amber-400/30 to-yellow-600/60 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+          <div className="absolute inset-y-0 left-[20%] w-px bg-black/20" />
+          <div className="absolute inset-y-0 left-[40%] w-px bg-black/25" />
+          <div className="absolute inset-y-0 left-[60%] w-px bg-black/20" />
+          <div className="absolute inset-y-0 left-[80%] w-px bg-black/30" />
+          
+          {/* Gold fringe at the bottom */}
+          <div className="absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-amber-500/20 to-transparent border-t border-amber-400/30 flex justify-around items-end pb-1">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400/50" />
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Right Curtain */}
+        <motion.div
+          id="right-curtain-panel"
+          initial={{ x: 0 }}
+          animate={isDrawn ? { x: '100%' } : { x: 0 }}
+          transition={{ duration: 1.6, ease: [0.77, 0, 0.175, 1] }}
+          className="w-1/2 h-full relative pointer-events-auto shadow-[-15px_0_35px_rgba(0,0,0,0.6)] flex items-center justify-start"
+          style={{
+            background: 'radial-gradient(circle at 0% 50%, #4a0d15 0%, #200407 80%, #0d0102 100%)',
+          }}
+        >
+          {/* Vertical gold fold texture simulation */}
+          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-l from-amber-400/30 to-yellow-600/60 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+          <div className="absolute inset-y-0 right-[20%] w-px bg-black/20" />
+          <div className="absolute inset-y-0 right-[40%] w-px bg-black/25" />
+          <div className="absolute inset-y-0 right-[60%] w-px bg-black/20" />
+          <div className="absolute inset-y-0 right-[80%] w-px bg-black/30" />
+          
+          {/* Gold fringe at the bottom */}
+          <div className="absolute bottom-0 inset-x-0 h-4 bg-gradient-to-t from-amber-500/20 to-transparent border-t border-amber-400/30 flex justify-around items-end pb-1">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="w-1.5 h-1.5 rounded-full bg-amber-400/50" />
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* INTRODUCTORY PLAY CARD - Centered over curtains */}
+      <AnimatePresence>
+        {!isDrawn && (
+          <motion.div
+            id="curtain-cta-card-container"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8, y: 50 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 120 }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-[#160305]/95 border-2 border-amber-400/30 text-[#fffdf9] p-8 rounded-3xl text-center shadow-[0_25px_60px_rgba(0,0,0,0.8)] z-10 backdrop-blur-sm"
+          >
+            {/* Ambient decorative glowing spot */}
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-48 h-48 bg-amber-400/10 blur-[40px] rounded-full pointer-events-none" />
+
+            <div className="relative flex flex-col items-center">
+              {/* Decorative theater element */}
+              <div className="flex items-center gap-2 text-amber-400 mb-5">
+                <Stars className="w-5 h-5 animate-pulse" />
+                <span className="font-mono text-xs uppercase tracking-widest font-black text-amber-400/80">RayZR Talks Specimen</span>
+                <Stars className="w-5 h-5 animate-pulse" />
+              </div>
+
+              <h2 className="font-unbounded font-black text-3xl tracking-tight leading-tight mb-2 text-transparent bg-clip-text bg-gradient-to-b from-yellow-100 via-amber-300 to-yellow-500">
+                THE UNVEILING
+              </h2>
+              <div className="w-12 h-0.5 bg-amber-400/40 rounded-full mb-6" />
+
+              <p className="text-sm font-sans text-amber-100/70 leading-relaxed mb-8 max-w-xs">
+                Welcome to the official launch of my writing ledger. Step inside to discover thought rhythms, captured daily snapshots, and verses of life.
+              </p>
+
+              {/* Draw Curtain CTA Button */}
+              <button
+                id="unveil-ceremony-cta-btn"
+                onClick={handleUnveil}
+                className="group relative px-8 py-4 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-black font-extrabold font-mono text-xs uppercase tracking-widest rounded-full shadow-[0_4px_20px_rgba(245,158,11,0.35)] hover:shadow-[0_8px_32px_rgba(245,158,11,0.6)] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden"
+              >
+                {/* Shining reflection animation */}
+                <div className="absolute inset-0 bg-white/20 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
+                <span className="flex items-center gap-2 justify-center">
+                  <Sparkles className="w-4 h-4 fill-black text-black" />
+                  Draw Curtains
+                </span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* THANK YOU CONGRATS CARD - Appears after curtains open */}
+      <AnimatePresence>
+        {showThankYou && (
+          <div className="absolute inset-0 bg-black/45 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              id="thank-you-popup-card"
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 150 }}
+              className={`w-full max-w-lg p-8 md:p-10 rounded-3xl text-center shadow-[0_20px_50px_rgba(0,0,0,0.3)] border relative overflow-hidden ${
+                appTheme === 'light'
+                  ? 'bg-white border-black/10 text-[#0E0E15]'
+                  : appTheme === 'sankofa'
+                  ? 'bg-[#1C1412] border-[#bf3f27]/30 text-[#ebd6bc]'
+                  : appTheme === 'momoamo'
+                  ? 'bg-[#141C16] border-[#E1FE35]/20 text-[#FAF6F0]'
+                  : appTheme === 'madrid'
+                  ? 'bg-white border-black/10 text-neutral-900 shadow-[0_20px_50px_rgba(253,161,114,0.15)]'
+                  : 'bg-[#0c0d14]/95 border-cyan-500/30 text-white'
+              }`}
+            >
+              {/* Highlight background elements */}
+              <div className="absolute -top-16 -left-16 w-36 h-36 bg-amber-400/5 blur-[50px] rounded-full pointer-events-none" />
+              <div className="absolute -bottom-16 -right-16 w-36 h-36 bg-purple-500/5 blur-[50px] rounded-full pointer-events-none" />
+
+              <div className="relative">
+                {/* Badge */}
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono uppercase tracking-widest font-black mb-6 bg-amber-400/10 text-amber-500 border border-amber-400/20">
+                  <Sparkles className="w-3.5 h-3.5 fill-current" />
+                  <span>Website Unveiled</span>
+                </div>
+
+                <h3 className="font-syne font-extrabold text-2xl md:text-3xl tracking-tight leading-tight mb-4">
+                  Welcome to my Notebook!
+                </h3>
+                
+                <div className={`w-12 h-1 mx-auto rounded-full mb-6 ${
+                  appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#FF5E00]' : 'bg-cyan-400'
+                }`} />
+
+                <div className="space-y-4 text-sm md:text-base leading-relaxed text-left max-w-md mx-auto mb-8 text-neutral-400">
+                  <p className={`${
+                    appTheme === 'light' ? 'text-neutral-700' : appTheme === 'sankofa' ? 'text-[#ebd6bc]/90' : appTheme === 'momoamo' ? 'text-[#FAF6F0]/90' : appTheme === 'madrid' ? 'text-neutral-700' : 'text-neutral-300'
+                  }`}>
+                    Thank you so much for visiting my website and being part of this milestone journey. Your presence on this special unveiling day means the absolute world to me.
+                  </p>
+                  <p className={`${
+                    appTheme === 'light' ? 'text-neutral-700' : appTheme === 'sankofa' ? 'text-[#ebd6bc]/90' : appTheme === 'momoamo' ? 'text-[#FAF6F0]/90' : appTheme === 'madrid' ? 'text-neutral-700' : 'text-neutral-300'
+                  }`}>
+                    This space represents my thoughts, feelings, rhythms, and captures of our passing days. I hope you find connection, inspiration, or a moment of reflection in these pages.
+                  </p>
+                  <p className={`font-serif italic font-bold text-right mt-3 text-lg ${
+                    appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#FF5E00]' : 'text-cyan-400'
+                  }`}>
+                    — Ray
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <button
+                    id="unveil-dismiss-btn"
+                    onClick={onClose}
+                    className={`w-full sm:w-auto px-8 py-3 rounded-full font-bold text-xs uppercase tracking-wider font-mono cursor-pointer transition-all duration-300 ${
+                      appTheme === 'light'
+                        ? 'bg-[#2E2A27] text-[#fffdf9] hover:bg-neutral-800 hover:scale-105'
+                        : appTheme === 'sankofa'
+                        ? 'bg-[#bf3f27] text-white hover:bg-[#a6301a] hover:scale-105'
+                        : appTheme === 'momoamo'
+                        ? 'bg-[#E1FE35] text-black hover:bg-[#d6f222] hover:scale-105'
+                        : appTheme === 'madrid'
+                        ? 'bg-[#FF5E00] text-white hover:bg-[#e05300] hover:scale-105'
+                        : 'bg-cyan-500 text-black hover:bg-cyan-400 hover:scale-105'
+                    }`}
+                  >
+                    Begin Exploring
+                  </button>
+
+                  <button
+                    id="unveil-re-confetti-btn"
+                    onClick={triggerConfettiCelebration}
+                    className="flex items-center justify-center gap-1.5 px-5 py-3 rounded-full text-xs font-semibold hover:bg-neutral-100/10 hover:text-amber-400 cursor-pointer transition-all border border-transparent hover:border-neutral-500/20"
+                    title="Fire more confetti!"
+                  >
+                    <Heart className="w-4 h-4 text-rose-500 fill-rose-500 shrink-0" />
+                    <span>Celebrate More</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
