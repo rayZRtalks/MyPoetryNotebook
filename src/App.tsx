@@ -1384,7 +1384,7 @@ export default function App() {
                     ? 'font-unbounded font-black text-3xl md:text-4xl tracking-tighter text-[#0E0E15]'
                     : 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-200 to-fuchsia-400 drop-shadow-[0_2px_12px_rgba(6,182,212,0.15)]'
                 }`}>
-                  {appTheme === 'madrid' ? 'rayZRtalks' : 'rayZR Talks'}
+                  rayZRtalks
                 </h1>
                 <p id="app-subheading" className={`transition-all ${
                   appTheme === 'light'

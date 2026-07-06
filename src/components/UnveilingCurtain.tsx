@@ -12,54 +12,73 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
   const [isDrawn, setIsDrawn] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
 
-  // Trigger continuous festive confetti bursts when drawn open
+  // Trigger spectacular fireworks bursts when drawn open
   const triggerConfettiCelebration = () => {
-    const duration = 3 * 1000;
-    const end = Date.now() + duration;
+    const duration = 5 * 1000;
+    const animationEnd = Date.now() + duration;
 
-    // Outer edge bursts
-    const frame = () => {
-      confetti({
-        particleCount: 5,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0, y: 0.8 },
-        colors: ['#FDA172', '#E1FE35', '#bf3f27', '#06b6d4', '#ec4899', '#f59e0b']
-      });
-      confetti({
-        particleCount: 5,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1, y: 0.8 },
-        colors: ['#FDA172', '#E1FE35', '#bf3f27', '#06b6d4', '#ec4899', '#f59e0b']
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
+    // Helper to generate a random range
+    const randomInRange = (min: number, max: number) => {
+      return Math.random() * (max - min) + min;
     };
-    frame();
 
-    // Center splash burst
-    setTimeout(() => {
-      confetti({
-        particleCount: 80,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#FDA172', '#E1FE35', '#bf3f27', '#22c55e', '#3b82f6', '#d946ef']
-      });
-    }, 400);
+    // Fire continuous random short fireworks bursts
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
 
-    // Final blast
-    setTimeout(() => {
+      if (timeLeft <= 0) {
+        return clearInterval(interval);
+      }
+
+      // Calculate particle count relative to time remaining
+      const particleCount = Math.floor(65 * (timeLeft / duration)) + 15;
+
+      // Select a random horizontal origin (between 0.15 and 0.85)
+      // and a nice random height for fireworks (between 0.2 and 0.5)
+      const xOrigin = randomInRange(0.15, 0.85);
+      const yOrigin = randomInRange(0.2, 0.55);
+
+      // Choose a unique palette for this firework
+      const palettes = [
+        ['#FF5E00', '#FFBB00', '#FF0055', '#FFFFFF'], // Fire gold & red
+        ['#E1FE35', '#00FF66', '#00FFFF', '#FFFFFF'], // Momoamo neon green & cyan
+        ['#bf3f27', '#ebd6bc', '#ffcda3', '#FCE7F3'], // Sankofa heritage earth tones
+        ['#06b6d4', '#6366f1', '#ec4899', '#f43f5e'], // Electric cyan/indigo/pink
+        ['#f59e0b', '#ef4444', '#10b981', '#3b82f6'], // Multi-color sparkle
+      ];
+      const selectedPalette = palettes[Math.floor(Math.random() * palettes.length)];
+
+      // Launch standard fireworks explosion (fully spherical, high velocity)
       confetti({
-        particleCount: 120,
-        spread: 100,
-        decay: 0.91,
-        scalar: 1.2,
-        origin: { y: 0.5 }
+        particleCount,
+        spread: 360,
+        startVelocity: randomInRange(35, 55),
+        ticks: 85,
+        origin: { x: xOrigin, y: yOrigin },
+        colors: selectedPalette,
+        scalar: randomInRange(1.0, 1.3),
+        gravity: 1.0,
+        decay: 0.92,
       });
-    }, 1200);
+
+      // Spawn a small secondary echo burst (ring/crackle effect) slightly delayed
+      setTimeout(() => {
+        if (Math.random() > 0.4) {
+          confetti({
+            particleCount: Math.floor(particleCount * 0.35),
+            spread: 360,
+            startVelocity: randomInRange(15, 25),
+            ticks: 50,
+            origin: { x: xOrigin + randomInRange(-0.03, 0.03), y: yOrigin + randomInRange(-0.03, 0.03) },
+            colors: ['#FFFFFF', '#FFDD00'],
+            scalar: 0.7,
+            gravity: 1.2,
+            decay: 0.9,
+          });
+        }
+      }, 150);
+
+    }, 550); // Fire a beautiful burst every 550 milliseconds
   };
 
   const playDrumRollAndCymbal = () => {
@@ -68,82 +87,110 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
       if (!AudioContextClass) return;
       const ctx = new AudioContextClass();
 
-      // 1. Snare roll sound using white noise
-      const bufferSize = ctx.sampleRate * 4.5; // Matches duration of curtain pull
-      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        data[i] = Math.random() * 2 - 1;
+      // We want to schedule a series of rapid snare hits that swell in intensity
+      const rollDuration = 4.3; // matches the cymbal crash delay
+      const hitInterval = 0.055; // 55ms between hits (approx 18 hits per second)
+      const totalHits = Math.floor(rollDuration / hitInterval);
+
+      // Create a shared gain node for the roll to swell it globally as well
+      const mainRollGain = ctx.createGain();
+      mainRollGain.gain.setValueAtTime(0.01, ctx.currentTime);
+      mainRollGain.gain.exponentialRampToValueAtTime(0.4, ctx.currentTime + rollDuration - 0.2);
+      mainRollGain.gain.setValueAtTime(0.4, ctx.currentTime + rollDuration);
+      mainRollGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + rollDuration + 0.1);
+      mainRollGain.connect(ctx.destination);
+
+      // Function to synthesize a single snare hit at a specific time
+      const playSnareHit = (time: number, velocity: number) => {
+        // 1. Snare drum head tone (pitch decay sweep)
+        const osc = ctx.createOscillator();
+        const oscGain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(180, time);
+        osc.frequency.exponentialRampToValueAtTime(100, time + 0.08);
+
+        oscGain.gain.setValueAtTime(velocity * 0.15, time);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
+
+        osc.connect(oscGain);
+        oscGain.connect(mainRollGain);
+        osc.start(time);
+        osc.stop(time + 0.09);
+
+        // 2. Snare wires (noise burst with bandpass/highpass filter)
+        const bufferSize = ctx.sampleRate * 0.1; // 100ms noise burst
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+
+        const noiseNode = ctx.createBufferSource();
+        noiseNode.buffer = buffer;
+
+        const noiseFilter = ctx.createBiquadFilter();
+        noiseFilter.type = 'bandpass';
+        noiseFilter.frequency.setValueAtTime(1000, time);
+        noiseFilter.Q.setValueAtTime(1.5, time);
+
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(velocity * 0.22, time);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+
+        noiseNode.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(mainRollGain);
+
+        noiseNode.start(time);
+        noiseNode.stop(time + 0.11);
+      };
+
+      // Schedule all individual hits with slight randomized velocity/timing jitter for realism
+      for (let i = 0; i < totalHits; i++) {
+        const targetTime = ctx.currentTime + i * hitInterval;
+        // Increase speed slightly or introduce slight timing deviation
+        const jitter = (Math.random() - 0.5) * 0.008;
+        const scheduledTime = targetTime + jitter;
+
+        // Exponential volume swell for each stroke
+        const progress = i / totalHits;
+        const baseVelocity = Math.pow(progress, 1.8) * 0.9 + 0.1;
+        // Add accent patterns (every 2nd beat is slightly softer for natural hand alternates)
+        const accent = (i % 2 === 0) ? 1.0 : 0.75;
+        const velocity = baseVelocity * accent * (0.9 + Math.random() * 0.2);
+
+        playSnareHit(scheduledTime, Math.min(1.0, velocity));
       }
 
-      const noiseNode = ctx.createBufferSource();
-      noiseNode.buffer = buffer;
-
-      // Filter to sound like snare shell/rattle (bandpass filtered noise)
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.frequency.setValueAtTime(190, ctx.currentTime);
-      filter.Q.setValueAtTime(2.2, ctx.currentTime);
-
-      // Filter automation to brighten up towards the end
-      filter.frequency.exponentialRampToValueAtTime(340, ctx.currentTime + 4.2);
-
-      // Gain node for the drum roll
-      const rollGain = ctx.createGain();
-      rollGain.gain.setValueAtTime(0.005, ctx.currentTime);
-      // Swell the volume over 4.2 seconds
-      rollGain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 4.1);
-      // Cut off right before the crash
-      rollGain.gain.setValueAtTime(0.3, ctx.currentTime + 4.2);
-      rollGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.4);
-
-      // Amplitude modulation to simulate rapid double strokes (roll rattle)
-      const lfo = ctx.createOscillator();
-      lfo.type = 'sawtooth';
-      lfo.frequency.setValueAtTime(17, ctx.currentTime); // 17Hz flutter
-      lfo.frequency.linearRampToValueAtTime(24, ctx.currentTime + 4.1);
-
-      const lfoGain = ctx.createGain();
-      lfoGain.gain.setValueAtTime(0.18, ctx.currentTime);
-
-      // Connect LFO to roll gain to modulate amplitude
-      lfo.connect(lfoGain);
-      lfoGain.connect(rollGain.gain);
-
-      noiseNode.connect(filter);
-      filter.connect(rollGain);
-      rollGain.connect(ctx.destination);
-
-      // Start roll and LFO
-      lfo.start();
-      noiseNode.start();
-
-      // 2. Add low pitch timpani/tom drum swell for deep room rumble
+      // 3. Add a deep rolling timpani/tom bass rumble underneath to give that heavy theater curtain feel
       const timpani = ctx.createOscillator();
-      timpani.type = 'triangle';
-      timpani.frequency.setValueAtTime(60, ctx.currentTime); 
-      timpani.frequency.linearRampToValueAtTime(82, ctx.currentTime + 4.2);
-
       const timpaniGain = ctx.createGain();
+      timpani.type = 'sine';
+      timpani.frequency.setValueAtTime(55, ctx.currentTime);
+      timpani.frequency.linearRampToValueAtTime(75, ctx.currentTime + rollDuration);
+
       timpaniGain.gain.setValueAtTime(0.01, ctx.currentTime);
-      timpaniGain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + 4.1);
-      timpaniGain.gain.setValueAtTime(0.35, ctx.currentTime + 4.2);
-      timpaniGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.4);
+      timpaniGain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + rollDuration - 0.2);
+      timpaniGain.gain.setValueAtTime(0.35, ctx.currentTime + rollDuration);
+      timpaniGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + rollDuration + 0.2);
 
-      timpani.connect(timpaniGain);
+      // Lowpass filter to keep it deep and rumbling
+      const lowpass = ctx.createBiquadFilter();
+      lowpass.type = 'lowpass';
+      lowpass.frequency.setValueAtTime(120, ctx.currentTime);
+
+      timpani.connect(lowpass);
+      lowpass.connect(timpaniGain);
       timpaniGain.connect(ctx.destination);
+
       timpani.start();
+      timpani.stop(ctx.currentTime + rollDuration + 0.3);
 
-      // Stop sources
-      noiseNode.stop(ctx.currentTime + 4.5);
-      lfo.stop(ctx.currentTime + 4.5);
-      timpani.stop(ctx.currentTime + 4.5);
-
-      // 3. CYMBAL CRASH at exactly 4.3 seconds (climax)
-      const crashDelay = 4.3;
+      // 4. CYMBAL CRASH at climax
+      const crashDelay = rollDuration;
       
       // Noise buffer for cymbal crash
-      const crashBufferSize = ctx.sampleRate * 3.0; // 3 seconds decay
+      const crashBufferSize = ctx.sampleRate * 3.5; // 3.5 seconds decay
       const crashBuffer = ctx.createBuffer(1, crashBufferSize, ctx.sampleRate);
       const crashData = crashBuffer.getChannelData(0);
       for (let i = 0; i < crashBufferSize; i++) {
@@ -155,42 +202,42 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
 
       const crashHighpass = ctx.createBiquadFilter();
       crashHighpass.type = 'highpass';
-      crashHighpass.frequency.setValueAtTime(7500, ctx.currentTime + crashDelay);
+      crashHighpass.frequency.setValueAtTime(8000, ctx.currentTime + crashDelay);
 
       const crashGain = ctx.createGain();
       crashGain.gain.setValueAtTime(0.001, ctx.currentTime);
       crashGain.gain.setValueAtTime(0.001, ctx.currentTime + crashDelay);
       // Instant loud attack at 4.3s
-      crashGain.gain.linearRampToValueAtTime(0.45, ctx.currentTime + crashDelay + 0.02);
+      crashGain.gain.linearRampToValueAtTime(0.55, ctx.currentTime + crashDelay + 0.02);
       // Long elegant exponential decay
-      crashGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + crashDelay + 2.8);
+      crashGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + crashDelay + 3.2);
 
       crashNoise.connect(crashHighpass);
       crashHighpass.connect(crashGain);
       crashGain.connect(ctx.destination);
 
-      // Also add a bright high-pitch metal ding to complement the cymbal
-      const metalDing = ctx.createOscillator();
-      metalDing.type = 'sine';
-      metalDing.frequency.setValueAtTime(920, ctx.currentTime + crashDelay); 
+      // Add a bright chime/bell tone to complement the cymbal crash
+      const chime = ctx.createOscillator();
+      const chimeGain = ctx.createGain();
+      chime.type = 'sine';
+      chime.frequency.setValueAtTime(987.77, ctx.currentTime + crashDelay); // B5 note for brilliant resonance
       
-      const metalDingGain = ctx.createGain();
-      metalDingGain.gain.setValueAtTime(0.001, ctx.currentTime);
-      metalDingGain.gain.setValueAtTime(0.001, ctx.currentTime + crashDelay);
-      metalDingGain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + crashDelay + 0.02);
-      metalDingGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + crashDelay + 1.6);
+      chimeGain.gain.setValueAtTime(0.001, ctx.currentTime);
+      chimeGain.gain.setValueAtTime(0.001, ctx.currentTime + crashDelay);
+      chimeGain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + crashDelay + 0.02);
+      chimeGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + crashDelay + 2.0);
 
-      metalDing.connect(metalDingGain);
-      metalDingGain.connect(ctx.destination);
+      chime.connect(chimeGain);
+      chimeGain.connect(ctx.destination);
 
       crashNoise.start(ctx.currentTime + crashDelay);
-      metalDing.start(ctx.currentTime + crashDelay);
+      chime.start(ctx.currentTime + crashDelay);
 
-      crashNoise.stop(ctx.currentTime + crashDelay + 3.0);
-      metalDing.stop(ctx.currentTime + crashDelay + 3.0);
+      crashNoise.stop(ctx.currentTime + crashDelay + 3.6);
+      chime.stop(ctx.currentTime + crashDelay + 3.6);
 
     } catch (error) {
-      console.warn('[WebAudio] Drumroll synthesis failed:', error);
+      console.warn('[WebAudio] Proper drumroll synthesis failed:', error);
     }
   };
 
