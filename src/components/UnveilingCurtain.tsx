@@ -11,14 +11,16 @@ interface UnveilingCurtainProps {
 export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtainProps) {
   const [isDrawn, setIsDrawn] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState<'classic' | 'timpani' | 'jazz' | 'retro'>('classic');
 
-  // Trigger continuous festive confetti bursts when drawn open (reverted to original behavior)
+  // Trigger continuous festive confetti bursts and synchronized firework sounds when drawn open
   const triggerConfettiCelebration = () => {
-    const duration = 3 * 1000;
+    const duration = 5 * 1000; // 5-second continuous celebration
     const end = Date.now() + duration;
 
-    // Outer edge bursts
+    // Trigger initial burst
+    playFireworkSound(0);
+
+    // Outer edge confetti cannons
     const frame = () => {
       confetti({
         particleCount: 5,
@@ -61,6 +63,15 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
         origin: { y: 0.5 }
       });
     }, 1200);
+
+    // Continuous firework sounds playing through the duration of confetti!
+    const soundInterval = setInterval(() => {
+      if (Date.now() >= end) {
+        clearInterval(soundInterval);
+        return;
+      }
+      playFireworkSound(0);
+    }, 600);
   };
 
   // Helper to trigger standard cymbal crash
@@ -219,390 +230,115 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
     }
   };
 
-  // Preview a 1-second snippet of the selected drumroll preset
-  const previewDrumRollPreset = (preset: 'classic' | 'timpani' | 'jazz' | 'retro') => {
+  // Synthesize a grand cinematic trumpet fanfare (MGM/Hollywood intro style)
+  const playTrumpetFanfare = () => {
     try {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) return;
       const ctx = new AudioContextClass();
       const now = ctx.currentTime;
-      const previewDuration = 1.0;
+      const fanfareDuration = 4.3; // matches the curtain-raiser delay before the cymbal crash
 
-      if (preset === 'classic') {
-        const hitInterval = 0.06;
-        const totalHits = Math.floor(previewDuration / hitInterval);
-        const mainGain = ctx.createGain();
-        mainGain.gain.setValueAtTime(0.01, now);
-        mainGain.gain.exponentialRampToValueAtTime(0.35, now + previewDuration - 0.1);
-        mainGain.gain.setValueAtTime(0.35, now + previewDuration);
-        mainGain.gain.exponentialRampToValueAtTime(0.001, now + previewDuration + 0.1);
-        mainGain.connect(ctx.destination);
-
-        for (let i = 0; i < totalHits; i++) {
-          const t = now + i * hitInterval;
-          const progress = i / totalHits;
-          const velocity = Math.pow(progress, 1.5) * 0.8 + 0.2;
-          
-          const osc = ctx.createOscillator();
-          const oscGain = ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(175, t);
-          oscGain.gain.setValueAtTime(velocity * 0.12, t);
-          oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
-          osc.connect(oscGain);
-          oscGain.connect(mainGain);
-          osc.start(t);
-          osc.stop(t + 0.07);
-        }
-        triggerCymbalCrash(ctx, now + previewDuration, 0.35, 9000);
-
-      } else if (preset === 'timpani') {
-        const hitInterval = 0.08;
-        const totalHits = Math.floor(previewDuration / hitInterval);
-        const mainGain = ctx.createGain();
-        mainGain.gain.setValueAtTime(0.01, now);
-        mainGain.gain.exponentialRampToValueAtTime(0.5, now + previewDuration - 0.1);
-        mainGain.gain.setValueAtTime(0.5, now + previewDuration);
-        mainGain.gain.exponentialRampToValueAtTime(0.001, now + previewDuration + 0.1);
-        mainGain.connect(ctx.destination);
-
-        for (let i = 0; i < totalHits; i++) {
-          const t = now + i * hitInterval;
-          const progress = i / totalHits;
-          const osc = ctx.createOscillator();
-          const oscGain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(50 + progress * 25, t);
-          oscGain.gain.setValueAtTime(progress * 0.4, t);
-          oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-          osc.connect(oscGain);
-          oscGain.connect(mainGain);
-          osc.start(t);
-          osc.stop(t + 0.16);
-        }
-        triggerOrchestralCrash(ctx, now + previewDuration);
-
-      } else if (preset === 'jazz') {
-        const hitInterval = 0.05;
-        const totalHits = Math.floor(previewDuration / hitInterval);
-        const mainGain = ctx.createGain();
-        mainGain.gain.setValueAtTime(0.01, now);
-        mainGain.gain.exponentialRampToValueAtTime(0.3, now + previewDuration - 0.1);
-        mainGain.gain.setValueAtTime(0.3, now + previewDuration);
-        mainGain.gain.exponentialRampToValueAtTime(0.001, now + previewDuration + 0.1);
-        mainGain.connect(ctx.destination);
-
-        for (let i = 0; i < totalHits; i++) {
-          const t = now + i * hitInterval;
-          const progress = i / totalHits;
-          const osc = ctx.createOscillator();
-          const oscGain = ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(220, t);
-          oscGain.gain.setValueAtTime(progress * 0.15, t);
-          oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-          osc.connect(oscGain);
-          oscGain.connect(mainGain);
-          osc.start(t);
-          osc.stop(t + 0.06);
-        }
-        triggerCymbalCrash(ctx, now + previewDuration, 0.25, 11000);
-
-      } else if (preset === 'retro') {
-        const synth = ctx.createOscillator();
-        const synthGain = ctx.createGain();
-        synth.type = 'sawtooth';
-        synth.frequency.setValueAtTime(100, now);
-        synth.frequency.exponentialRampToValueAtTime(800, now + previewDuration);
-        synthGain.gain.setValueAtTime(0.01, now);
-        synthGain.gain.exponentialRampToValueAtTime(0.18, now + previewDuration);
-        synthGain.gain.exponentialRampToValueAtTime(0.001, now + previewDuration + 0.05);
-        synth.connect(synthGain);
-        synthGain.connect(ctx.destination);
-        synth.start(now);
-        synth.stop(now + previewDuration + 0.06);
-
-        setTimeout(() => {
-          try {
-            const laser = ctx.createOscillator();
-            const laserGain = ctx.createGain();
-            laser.type = 'square';
-            laser.frequency.setValueAtTime(900, ctx.currentTime);
-            laser.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.4);
-            laserGain.gain.setValueAtTime(0.15, ctx.currentTime);
-            laserGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-            laser.connect(laserGain);
-            laserGain.connect(ctx.destination);
-            laser.start();
-            laser.stop(ctx.currentTime + 0.4);
-          } catch {}
-        }, previewDuration * 1000);
-      }
-    } catch (e) {
-      console.warn('[WebAudio] Preview sound synthesis failed:', e);
-    }
-  };
-
-  const playDrumRollPreset = (preset: 'classic' | 'timpani' | 'jazz' | 'retro') => {
-    try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
-      const now = ctx.currentTime;
-      const rollDuration = 4.3;
-
-      if (preset === 'classic') {
-        const hitInterval = 0.055;
-        const totalHits = Math.floor(rollDuration / hitInterval);
-
-        const mainRollGain = ctx.createGain();
-        mainRollGain.gain.setValueAtTime(0.01, now);
-        mainRollGain.gain.exponentialRampToValueAtTime(0.4, now + rollDuration - 0.2);
-        mainRollGain.gain.setValueAtTime(0.4, now + rollDuration);
-        mainRollGain.gain.exponentialRampToValueAtTime(0.001, now + rollDuration + 0.1);
-        mainRollGain.connect(ctx.destination);
-
-        const playSnareHit = (time: number, velocity: number) => {
-          const osc = ctx.createOscillator();
-          const oscGain = ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(180, time);
-          osc.frequency.exponentialRampToValueAtTime(100, time + 0.08);
-          oscGain.gain.setValueAtTime(velocity * 0.15, time);
-          oscGain.gain.exponentialRampToValueAtTime(0.001, time + 0.08);
-          osc.connect(oscGain);
-          oscGain.connect(mainRollGain);
-          osc.start(time);
-          osc.stop(time + 0.09);
-
-          const bufferSize = ctx.sampleRate * 0.1;
-          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-          const data = buffer.getChannelData(0);
-          for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-          }
-          const noiseNode = ctx.createBufferSource();
-          noiseNode.buffer = buffer;
-          const noiseFilter = ctx.createBiquadFilter();
-          noiseFilter.type = 'bandpass';
-          noiseFilter.frequency.setValueAtTime(1000, time);
-          noiseFilter.Q.setValueAtTime(1.5, time);
-
-          const noiseGain = ctx.createGain();
-          noiseGain.gain.setValueAtTime(velocity * 0.22, time);
-          noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
-
-          noiseNode.connect(noiseFilter);
-          noiseFilter.connect(noiseGain);
-          noiseGain.connect(mainRollGain);
-          noiseNode.start(time);
-          noiseNode.stop(time + 0.11);
-        };
-
-        for (let i = 0; i < totalHits; i++) {
-          const targetTime = now + i * hitInterval;
-          const jitter = (Math.random() - 0.5) * 0.008;
-          const scheduledTime = targetTime + jitter;
-
-          const progress = i / totalHits;
-          const baseVelocity = Math.pow(progress, 1.8) * 0.9 + 0.1;
-          const accent = (i % 2 === 0) ? 1.0 : 0.75;
-          const velocity = baseVelocity * accent * (0.9 + Math.random() * 0.2);
-
-          playSnareHit(scheduledTime, Math.min(1.0, velocity));
-        }
-
-        const timpani = ctx.createOscillator();
-        const timpaniGain = ctx.createGain();
-        timpani.type = 'sine';
-        timpani.frequency.setValueAtTime(55, now);
-        timpani.frequency.linearRampToValueAtTime(75, now + rollDuration);
-        timpaniGain.gain.setValueAtTime(0.01, now);
-        timpaniGain.gain.exponentialRampToValueAtTime(0.35, now + rollDuration - 0.2);
-        timpaniGain.gain.setValueAtTime(0.35, now + rollDuration);
-        timpaniGain.gain.exponentialRampToValueAtTime(0.001, now + rollDuration + 0.2);
-
-        const lowpass = ctx.createBiquadFilter();
-        lowpass.type = 'lowpass';
-        lowpass.frequency.setValueAtTime(120, now);
-
-        timpani.connect(lowpass);
-        lowpass.connect(timpaniGain);
-        timpaniGain.connect(ctx.destination);
-        timpani.start();
-        timpani.stop(now + rollDuration + 0.3);
-
-        triggerCymbalCrash(ctx, now + rollDuration, 0.55);
-
-      } else if (preset === 'timpani') {
-        const hitInterval = 0.07;
-        const totalHits = Math.floor(rollDuration / hitInterval);
-
-        const mainGain = ctx.createGain();
-        mainGain.gain.setValueAtTime(0.01, now);
-        mainGain.gain.exponentialRampToValueAtTime(0.65, now + rollDuration - 0.2);
-        mainGain.gain.setValueAtTime(0.65, now + rollDuration);
-        mainGain.gain.exponentialRampToValueAtTime(0.001, now + rollDuration + 0.15);
-        mainGain.connect(ctx.destination);
-
-        for (let i = 0; i < totalHits; i++) {
-          const t = now + i * hitInterval + (Math.random() - 0.5) * 0.01;
-          const progress = i / totalHits;
-          const velocity = Math.pow(progress, 1.5) * 0.9 + 0.1;
-          const pitch = 45 + progress * 35 + (i % 2 === 0 ? 0 : 3);
-
-          const osc = ctx.createOscillator();
-          const oscGain = ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(pitch, t);
-          osc.frequency.exponentialRampToValueAtTime(pitch * 0.8, t + 0.15);
-
-          const overtone = ctx.createOscillator();
-          const overtoneGain = ctx.createGain();
-          overtone.type = 'triangle';
-          overtone.frequency.setValueAtTime(pitch * 2, t);
-          overtoneGain.gain.setValueAtTime(velocity * 0.1, t);
-          overtoneGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-          overtone.connect(overtoneGain);
-          overtoneGain.connect(mainGain);
-          overtone.start(t);
-          overtone.stop(t + 0.06);
-
-          oscGain.gain.setValueAtTime(velocity * 0.45, t);
-          oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
-
-          const filter = ctx.createBiquadFilter();
-          filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(250, t);
-
-          osc.connect(filter);
-          filter.connect(oscGain);
-          oscGain.connect(mainGain);
-
-          osc.start(t);
-          osc.stop(t + 0.22);
-        }
-
-        triggerOrchestralCrash(ctx, now + rollDuration);
-
-      } else if (preset === 'jazz') {
-        const hitInterval = 0.045;
-        const totalHits = Math.floor(rollDuration / hitInterval);
-
-        const mainGain = ctx.createGain();
-        mainGain.gain.setValueAtTime(0.01, now);
-        mainGain.gain.exponentialRampToValueAtTime(0.35, now + rollDuration - 0.2);
-        mainGain.gain.setValueAtTime(0.35, now + rollDuration);
-        mainGain.gain.exponentialRampToValueAtTime(0.001, now + rollDuration + 0.1);
-        mainGain.connect(ctx.destination);
-
-        for (let i = 0; i < totalHits; i++) {
-          const t = now + i * hitInterval;
-          const progress = i / totalHits;
-          const isRimshot = i > totalHits - 8 && i % 3 === 0;
-          const velocity = isRimshot ? 0.95 : (Math.pow(progress, 2.0) * 0.7 + 0.15);
-
-          const osc = ctx.createOscillator();
-          const oscGain = ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(isRimshot ? 340 : 220, t);
-          oscGain.gain.setValueAtTime(velocity * (isRimshot ? 0.25 : 0.1), t);
-          oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
-          osc.connect(oscGain);
-          oscGain.connect(mainGain);
-          osc.start(t);
-          osc.stop(t + 0.06);
-
-          if (i % 4 === 0) {
-            const hhOsc = ctx.createOscillator();
-            const hhGain = ctx.createGain();
-            hhOsc.type = 'square';
-            hhOsc.frequency.setValueAtTime(10000, t);
-            hhGain.gain.setValueAtTime(0.05 * progress, t);
-            hhGain.gain.exponentialRampToValueAtTime(0.001, t + 0.03);
-            hhOsc.connect(hhGain);
-            hhGain.connect(ctx.destination);
-            hhOsc.start(t);
-            hhOsc.stop(t + 0.04);
-          }
-        }
-
-        triggerCymbalCrash(ctx, now + rollDuration, 0.45, 12000);
-
-      } else if (preset === 'retro') {
-        const synth = ctx.createOscillator();
-        const synthGain = ctx.createGain();
+      // Helper function to play a single synth brass voice
+      const playBrassNote = (freq: number, start: number, duration: number, vol: number, detuneAmount = 10) => {
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gainNode = ctx.createGain();
         const filter = ctx.createBiquadFilter();
 
-        synth.type = 'sawtooth';
-        synth.frequency.setValueAtTime(80, now);
-        synth.frequency.exponentialRampToValueAtTime(1200, now + rollDuration);
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(freq, start);
+        osc1.detune.setValueAtTime(-detuneAmount, start);
 
+        osc2.type = 'sawtooth';
+        osc2.frequency.setValueAtTime(freq, start);
+        osc2.detune.setValueAtTime(detuneAmount, start);
+
+        // Warm analog filter sweep
         filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(200, now);
-        filter.frequency.exponentialRampToValueAtTime(4000, now + rollDuration);
+        filter.frequency.setValueAtTime(100, start);
+        filter.frequency.exponentialRampToValueAtTime(3500, start + 0.08); // dynamic swell
+        filter.frequency.exponentialRampToValueAtTime(1800, start + duration - 0.05); // warm sustain
+        filter.frequency.exponentialRampToValueAtTime(100, start + duration + 0.15); // soft release
 
-        synthGain.gain.setValueAtTime(0.005, now);
-        synthGain.gain.exponentialRampToValueAtTime(0.25, now + rollDuration - 0.2);
-        synthGain.gain.setValueAtTime(0.25, now + rollDuration);
-        synthGain.gain.exponentialRampToValueAtTime(0.001, now + rollDuration + 0.05);
+        // Brass volume envelope
+        gainNode.gain.setValueAtTime(0.001, start);
+        gainNode.gain.linearRampToValueAtTime(vol, start + 0.05); // punchy attack
+        gainNode.gain.setValueAtTime(vol, start + duration - 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, start + duration + 0.1);
 
-        const vibrato = ctx.createOscillator();
-        const vibratoGain = ctx.createGain();
-        vibrato.frequency.value = 16;
-        vibratoGain.gain.value = 40;
+        // Natural LFO for organic vibrato
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.setValueAtTime(6.5, start); // 6.5 Hz vibrato
+        lfoGain.gain.setValueAtTime(6, start); // Depth in cents
 
-        vibrato.connect(vibratoGain);
-        vibratoGain.connect(synth.frequency);
-        vibrato.start(now);
-        vibrato.stop(now + rollDuration);
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc1.detune);
+        lfoGain.connect(osc2.detune);
 
-        synth.connect(filter);
-        filter.connect(synthGain);
-        synthGain.connect(ctx.destination);
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(ctx.destination);
 
-        synth.start(now);
-        synth.stop(now + rollDuration + 0.1);
+        lfo.start(start);
+        osc1.start(start);
+        osc2.start(start);
 
-        setTimeout(() => {
-          try {
-            const laser = ctx.createOscillator();
-            const laserGain = ctx.createGain();
-            laser.type = 'square';
-            laser.frequency.setValueAtTime(1500, ctx.currentTime);
-            laser.frequency.exponentialRampToValueAtTime(50, ctx.currentTime + 1.2);
-            laserGain.gain.setValueAtTime(0.25, ctx.currentTime);
-            laserGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
-            laser.connect(laserGain);
-            laserGain.connect(ctx.destination);
-            laser.start();
-            laser.stop(ctx.currentTime + 1.3);
-          } catch {}
-        }, rollDuration * 1000);
-      }
+        lfo.stop(start + duration + 0.2);
+        osc1.stop(start + duration + 0.2);
+        osc2.stop(start + duration + 0.2);
+      };
+
+      // Programmed heroic fanfare melody & harmony:
+      // Note 1: G4 starting at 0s, lasting 0.5s
+      playBrassNote(392.00, now, 0.5, 0.20);
+      
+      // Note 2: C5 starting at 0.5s, lasting 0.5s
+      playBrassNote(523.25, now + 0.5, 0.5, 0.20);
+
+      // Note 3: D5 starting at 1.0s, lasting 0.5s
+      playBrassNote(587.33, now + 1.0, 0.5, 0.20);
+
+      // Note 4: E5 starting at 1.5s, lasting 0.8s
+      playBrassNote(659.25, now + 1.5, 0.8, 0.24);
+
+      // Harmonic backing on Note 4's sustain (at 1.8s)
+      playBrassNote(392.00, now + 1.8, 0.5, 0.14);
+      playBrassNote(261.63, now + 1.8, 0.5, 0.14);
+
+      // Step up to G5 at 2.3s
+      playBrassNote(783.99, now + 2.3, 0.8, 0.24);
+      playBrassNote(523.25, now + 2.3, 0.8, 0.16);
+
+      // Grand Climax MGM-style Swell Chord (from 3.1s to 4.3s)
+      const chordStart = now + 3.1;
+      const chordDur = 1.2;
+      playBrassNote(130.81, chordStart, chordDur, 0.22, 5);  // C3 (low root)
+      playBrassNote(196.00, chordStart, chordDur, 0.20, 5);  // G3 (low fifth)
+      playBrassNote(261.63, chordStart, chordDur, 0.18, 8);  // C4
+      playBrassNote(329.63, chordStart, chordDur, 0.18, 8);  // E4
+      playBrassNote(392.00, chordStart, chordDur, 0.18, 12); // G4
+      playBrassNote(523.25, chordStart, chordDur, 0.20, 12); // C5
+      playBrassNote(659.25, chordStart, chordDur, 0.20, 15); // E5
+      playBrassNote(783.99, chordStart, chordDur, 0.24, 15); // G5 (triumphant climax)
+
+      // Cymbal crash right at 4.3s climax
+      triggerCymbalCrash(ctx, now + fanfareDuration, 0.60);
+
+      // Orchestral deep boom & gong to accentuate majesty
+      triggerOrchestralCrash(ctx, now + fanfareDuration);
+
     } catch (error) {
-      console.warn('[WebAudio] Preset drumroll synthesis failed:', error);
+      console.warn('[WebAudio] Trumpet fanfare synthesis failed:', error);
     }
   };
 
   const handleUnveil = () => {
     setIsDrawn(true);
-    // Play dramatic synthesized drum roll preset leading into a crash
-    playDrumRollPreset(selectedPreset);
-
-    // Play spectacular firework sound bursts synced with the fireworks visual explosions/confetti
-    setTimeout(() => {
-      playFireworkSound(0);
-    }, 4300);
-    setTimeout(() => {
-      playFireworkSound(0.2);
-    }, 4900);
-    setTimeout(() => {
-      playFireworkSound(0.1);
-    }, 5600);
-    setTimeout(() => {
-      playFireworkSound(0.3);
-    }, 6400);
+    // Play dramatic synthesized cinematic trumpet fanfare leading into a crash
+    playTrumpetFanfare();
 
     // Wait for the slower, realistic curtain drawing transition (4.8s total)
     setTimeout(() => {
@@ -738,46 +474,9 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
               </h2>
               <div className="w-12 h-0.5 bg-amber-400/40 rounded-full mb-6" />
 
-              <p className="text-sm font-sans text-amber-100/70 leading-relaxed mb-6 max-w-xs">
+              <p className="text-sm font-sans text-amber-100/70 leading-relaxed mb-8 max-w-xs">
                 Welcome to the official launch of my writing ledger. Step inside to discover thought rhythms, captured daily snapshots, and verses of life.
               </p>
-
-              {/* Selector for Drumroll Presets */}
-              <div className="w-full mb-6 text-left bg-black/40 p-4 rounded-2xl border border-amber-400/20">
-                <label className="block text-[10px] font-mono uppercase tracking-widest font-black text-amber-400/80 mb-3 text-center">
-                  Select Drumroll Style:
-                </label>
-                <div className="grid grid-cols-2 gap-2 mb-2">
-                  {[
-                    { id: 'classic', label: 'Classic Snare', desc: 'Theater drum & crash' },
-                    { id: 'timpani', label: 'Timpani kettle', desc: 'Deep orchestral roll' },
-                    { id: 'jazz', label: 'Jazz Snappy', desc: 'Snappy snare rimshots' },
-                    { id: 'retro', label: 'Retro Sweep', desc: '8-bit sci-fi sweep' }
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        setSelectedPreset(item.id as any);
-                        previewDrumRollPreset(item.id as any);
-                      }}
-                      className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden group/btn flex flex-col justify-between cursor-pointer ${
-                        selectedPreset === item.id
-                          ? 'bg-amber-400/10 border-amber-400 text-amber-200'
-                          : 'bg-black/20 border-white/5 hover:border-white/15 text-neutral-400 hover:text-neutral-200'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full mb-1">
-                        <span className="font-mono text-[11px] font-bold leading-none">{item.label}</span>
-                        <span className={`w-1.5 h-1.5 rounded-full ${selectedPreset === item.id ? 'bg-amber-400 animate-ping' : 'bg-transparent'}`} />
-                      </div>
-                      <span className="text-[9px] opacity-70 leading-tight block truncate w-full">{item.desc}</span>
-                      <div className="absolute right-1 bottom-1 opacity-0 group-hover/btn:opacity-100 transition-opacity bg-amber-400 text-black font-mono font-black rounded px-1 py-0.5 text-[8px] uppercase tracking-tighter">
-                        🔊 Preview
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
 
               {/* Draw Curtain CTA Button */}
               <button
