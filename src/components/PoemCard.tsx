@@ -344,25 +344,25 @@ const getThemeStyles = (appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'ma
 
     case 'madrid':
       return {
-        cardBg: 'bg-black/35 backdrop-blur-md border-black/15 text-white shadow-[0_8px_30px_rgba(0,0,0,0.15)] focus-within:ring-[#FDA172]/20',
-        cardBorder: 'border-black/15',
-        textTitle: 'text-white',
-        textAuthor: 'text-[#FDA172]',
-        textBody: 'border-[#FDA172]/30 text-[#f2f4f7]/80',
-        stzBadge: 'bg-black/25 border-black/15 text-[#FDA172]/70',
-        enlargeBadge: 'text-[#FDA172] bg-black/45 border-black/15 group-hover/thumb:bg-[#FDA172] group-hover/thumb:text-black group-hover/thumb:border-[#FDA172]',
-        catPill: 'bg-black/45 text-[#FDA172] border-black/15',
-        pvtBadge: 'text-white bg-black/45 border-black/15',
-        attachBadge: 'text-[#FDA172] bg-black/45 border-black/15',
-        deleteBtn: 'text-[#FF3E6C] hover:bg-[#FF3E6C]/15',
-        dateBtn: 'text-[#FDA172] hover:bg-neutral-900',
-        metaBorder: 'border-black/15',
-        liveBadge: 'border-black/15 text-[#FDA172]',
-        liveIndicator: 'bg-[#FDA172]',
-        specimenText: 'text-[#FDA172]/10 group-hover/thumb:text-[#FF3E6C]/20',
-        specimenTileBg: 'bg-black/25 border-black/15 text-[#FDA172]/40',
-        actionBtn: 'text-[#FDA172]/70 hover:text-[#FDA172] hover:bg-neutral-900',
-        deleteConfirmBg: 'bg-black/40 border-black/15 text-[#FF3E6C]'
+        cardBg: 'bg-white/90 backdrop-blur-md border-black/10 text-[#0E0E15] shadow-[0_8px_30px_rgba(0,0,0,0.06)] focus-within:ring-[#FF5E00]/20',
+        cardBorder: 'border-black/10',
+        textTitle: 'text-[#0E0E15]',
+        textAuthor: 'text-[#FF5E00]',
+        textBody: 'border-[#FF5E00]/30 text-[#0E0E15]/80',
+        stzBadge: 'bg-neutral-100/80 border-black/10 text-neutral-600',
+        enlargeBadge: 'text-[#FF5E00] bg-white/80 border-black/10 group-hover/thumb:bg-[#FF5E00] group-hover/thumb:text-white group-hover/thumb:border-[#FF5E00]',
+        catPill: 'bg-neutral-100/80 text-[#FF5E00] border-black/10',
+        pvtBadge: 'text-[#0E0E15] bg-white/80 border-black/10',
+        attachBadge: 'text-[#FF5E00] bg-white/80 border-black/10',
+        deleteBtn: 'text-red-600 hover:bg-red-50',
+        dateBtn: 'text-[#FF5E00] hover:bg-neutral-100',
+        metaBorder: 'border-black/10',
+        liveBadge: 'border-black/10 text-[#FF5E00]',
+        liveIndicator: 'bg-[#FF5E00]',
+        specimenText: 'text-[#FF5E00]/10 group-hover/thumb:text-red-500/20',
+        specimenTileBg: 'bg-white/90 border-black/10 text-[#FF5E00]/50',
+        actionBtn: 'text-[#FF5E00]/70 hover:text-[#FF5E00] hover:bg-neutral-100',
+        deleteConfirmBg: 'bg-white border-black/10 text-red-600'
       };
     default: // dark mode
       return {
