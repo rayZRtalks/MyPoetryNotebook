@@ -64,11 +64,11 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
 
   const handleUnveil = () => {
     setIsDrawn(true);
-    // Wait for the curtain pull transition (1.5s) then show the thank you overlay and trigger confetti
+    // Wait for the slower, realistic curtain drawing transition (2.8s total)
     setTimeout(() => {
       setShowThankYou(true);
       triggerConfettiCelebration();
-    }, 1200);
+    }, 2400);
   };
 
   // Prevent background scrolling while curtain is active
@@ -89,11 +89,20 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
         {/* Left Curtain */}
         <motion.div
           id="left-curtain-panel"
-          initial={{ x: 0 }}
-          animate={isDrawn ? { x: '-100%' } : { x: 0 }}
-          transition={{ duration: 1.6, ease: [0.77, 0, 0.175, 1] }}
+          initial={{ scaleX: 1, x: 0, skewY: 0 }}
+          animate={isDrawn ? { 
+            scaleX: 0.06, 
+            x: '-6%', 
+            skewY: [0, -4, 2, -1, 0] 
+          } : { 
+            scaleX: 1, 
+            x: 0, 
+            skewY: 0 
+          }}
+          transition={{ duration: 2.8, ease: [0.25, 1, 0.5, 1] }}
           className="w-1/2 h-full relative pointer-events-auto shadow-[15px_0_35px_rgba(0,0,0,0.6)] flex items-center justify-end"
           style={{
+            originX: 0,
             background: 'radial-gradient(circle at 100% 50%, #4a0d15 0%, #200407 80%, #0d0102 100%)',
           }}
         >
@@ -115,11 +124,20 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
         {/* Right Curtain */}
         <motion.div
           id="right-curtain-panel"
-          initial={{ x: 0 }}
-          animate={isDrawn ? { x: '100%' } : { x: 0 }}
-          transition={{ duration: 1.6, ease: [0.77, 0, 0.175, 1] }}
+          initial={{ scaleX: 1, x: 0, skewY: 0 }}
+          animate={isDrawn ? { 
+            scaleX: 0.06, 
+            x: '6%', 
+            skewY: [0, 4, -2, 1, 0] 
+          } : { 
+            scaleX: 1, 
+            x: 0, 
+            skewY: 0 
+          }}
+          transition={{ duration: 2.8, ease: [0.25, 1, 0.5, 1] }}
           className="w-1/2 h-full relative pointer-events-auto shadow-[-15px_0_35px_rgba(0,0,0,0.6)] flex items-center justify-start"
           style={{
+            originX: 1,
             background: 'radial-gradient(circle at 0% 50%, #4a0d15 0%, #200407 80%, #0d0102 100%)',
           }}
         >
@@ -157,7 +175,7 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
               {/* Decorative theater element */}
               <div className="flex items-center gap-2 text-amber-400 mb-5">
                 <Stars className="w-5 h-5 animate-pulse" />
-                <span className="font-mono text-xs uppercase tracking-widest font-black text-amber-400/80">RayZR Talks Specimen</span>
+                <span className="font-mono text-xs uppercase tracking-widest font-black text-amber-400/80">rayZRtalks</span>
                 <Stars className="w-5 h-5 animate-pulse" />
               </div>
 
