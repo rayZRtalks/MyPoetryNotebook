@@ -62,8 +62,143 @@ export default function UnveilingCurtain({ onClose, appTheme }: UnveilingCurtain
     }, 1200);
   };
 
+  const playDrumRollAndCymbal = () => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+
+      // 1. Snare roll sound using white noise
+      const bufferSize = ctx.sampleRate * 4.5; // Matches duration of curtain pull
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+
+      const noiseNode = ctx.createBufferSource();
+      noiseNode.buffer = buffer;
+
+      // Filter to sound like snare shell/rattle (bandpass filtered noise)
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(190, ctx.currentTime);
+      filter.Q.setValueAtTime(2.2, ctx.currentTime);
+
+      // Filter automation to brighten up towards the end
+      filter.frequency.exponentialRampToValueAtTime(340, ctx.currentTime + 4.2);
+
+      // Gain node for the drum roll
+      const rollGain = ctx.createGain();
+      rollGain.gain.setValueAtTime(0.005, ctx.currentTime);
+      // Swell the volume over 4.2 seconds
+      rollGain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 4.1);
+      // Cut off right before the crash
+      rollGain.gain.setValueAtTime(0.3, ctx.currentTime + 4.2);
+      rollGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.4);
+
+      // Amplitude modulation to simulate rapid double strokes (roll rattle)
+      const lfo = ctx.createOscillator();
+      lfo.type = 'sawtooth';
+      lfo.frequency.setValueAtTime(17, ctx.currentTime); // 17Hz flutter
+      lfo.frequency.linearRampToValueAtTime(24, ctx.currentTime + 4.1);
+
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.setValueAtTime(0.18, ctx.currentTime);
+
+      // Connect LFO to roll gain to modulate amplitude
+      lfo.connect(lfoGain);
+      lfoGain.connect(rollGain.gain);
+
+      noiseNode.connect(filter);
+      filter.connect(rollGain);
+      rollGain.connect(ctx.destination);
+
+      // Start roll and LFO
+      lfo.start();
+      noiseNode.start();
+
+      // 2. Add low pitch timpani/tom drum swell for deep room rumble
+      const timpani = ctx.createOscillator();
+      timpani.type = 'triangle';
+      timpani.frequency.setValueAtTime(60, ctx.currentTime); 
+      timpani.frequency.linearRampToValueAtTime(82, ctx.currentTime + 4.2);
+
+      const timpaniGain = ctx.createGain();
+      timpaniGain.gain.setValueAtTime(0.01, ctx.currentTime);
+      timpaniGain.gain.exponentialRampToValueAtTime(0.35, ctx.currentTime + 4.1);
+      timpaniGain.gain.setValueAtTime(0.35, ctx.currentTime + 4.2);
+      timpaniGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.4);
+
+      timpani.connect(timpaniGain);
+      timpaniGain.connect(ctx.destination);
+      timpani.start();
+
+      // Stop sources
+      noiseNode.stop(ctx.currentTime + 4.5);
+      lfo.stop(ctx.currentTime + 4.5);
+      timpani.stop(ctx.currentTime + 4.5);
+
+      // 3. CYMBAL CRASH at exactly 4.3 seconds (climax)
+      const crashDelay = 4.3;
+      
+      // Noise buffer for cymbal crash
+      const crashBufferSize = ctx.sampleRate * 3.0; // 3 seconds decay
+      const crashBuffer = ctx.createBuffer(1, crashBufferSize, ctx.sampleRate);
+      const crashData = crashBuffer.getChannelData(0);
+      for (let i = 0; i < crashBufferSize; i++) {
+        crashData[i] = Math.random() * 2 - 1;
+      }
+
+      const crashNoise = ctx.createBufferSource();
+      crashNoise.buffer = crashBuffer;
+
+      const crashHighpass = ctx.createBiquadFilter();
+      crashHighpass.type = 'highpass';
+      crashHighpass.frequency.setValueAtTime(7500, ctx.currentTime + crashDelay);
+
+      const crashGain = ctx.createGain();
+      crashGain.gain.setValueAtTime(0.001, ctx.currentTime);
+      crashGain.gain.setValueAtTime(0.001, ctx.currentTime + crashDelay);
+      // Instant loud attack at 4.3s
+      crashGain.gain.linearRampToValueAtTime(0.45, ctx.currentTime + crashDelay + 0.02);
+      // Long elegant exponential decay
+      crashGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + crashDelay + 2.8);
+
+      crashNoise.connect(crashHighpass);
+      crashHighpass.connect(crashGain);
+      crashGain.connect(ctx.destination);
+
+      // Also add a bright high-pitch metal ding to complement the cymbal
+      const metalDing = ctx.createOscillator();
+      metalDing.type = 'sine';
+      metalDing.frequency.setValueAtTime(920, ctx.currentTime + crashDelay); 
+      
+      const metalDingGain = ctx.createGain();
+      metalDingGain.gain.setValueAtTime(0.001, ctx.currentTime);
+      metalDingGain.gain.setValueAtTime(0.001, ctx.currentTime + crashDelay);
+      metalDingGain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + crashDelay + 0.02);
+      metalDingGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + crashDelay + 1.6);
+
+      metalDing.connect(metalDingGain);
+      metalDingGain.connect(ctx.destination);
+
+      crashNoise.start(ctx.currentTime + crashDelay);
+      metalDing.start(ctx.currentTime + crashDelay);
+
+      crashNoise.stop(ctx.currentTime + crashDelay + 3.0);
+      metalDing.stop(ctx.currentTime + crashDelay + 3.0);
+
+    } catch (error) {
+      console.warn('[WebAudio] Drumroll synthesis failed:', error);
+    }
+  };
+
   const handleUnveil = () => {
     setIsDrawn(true);
+    // Play dramatic synthesized drum roll leading into a crash
+    playDrumRollAndCymbal();
+
     // Wait for the slower, realistic curtain drawing transition (4.8s total)
     setTimeout(() => {
       setShowThankYou(true);
