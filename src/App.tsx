@@ -1231,7 +1231,7 @@ export default function App() {
         : appTheme === 'momoamo'
         ? 'bg-[#142217] text-[#FAF6F0] selection:bg-[#E1FE35]/20 selection:text-[#E1FE35]'
         : appTheme === 'madrid'
-        ? 'bg-[#050508] text-[#f2f4f7] selection:bg-[#e1fe35]/20 selection:text-[#e1fe35]'
+        ? 'bg-[#FDA172] text-[#0E0E15] selection:bg-black/10 selection:text-black'
         : 'bg-[#07080d] text-[#e4e4e7] selection:bg-cyan-500/20 selection:text-cyan-300'
     }`}>
       {/* Sankofa Repeating Geometric Pattern Top Banner */}
@@ -1299,7 +1299,7 @@ export default function App() {
           : appTheme === 'momoamo'
           ? 'bg-[#142217]/90 border-b border-[#FAF6F0]/15 shadow-lg shadow-black/20'
           : appTheme === 'madrid'
-          ? 'bg-[#050508]/90 border-b border-[#252538] shadow-lg shadow-black/30'
+          ? 'bg-[#FDA172]/90 border-b border-black/15 shadow-md shadow-black/5'
           : 'bg-[#0c0d14]/80 border-b border-neutral-850 shadow-lg shadow-black/25'
       }`}>
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -1317,12 +1317,12 @@ export default function App() {
                     : appTheme === 'momoamo'
                     ? 'bg-[#18231C] border-[#FAF6F0]/15 text-[#E1FE35]'
                     : appTheme === 'madrid'
-                    ? 'bg-black border-[#252538] text-[#E1FE35]'
+                    ? 'bg-black border-black/20 text-[#FDA172]'
                     : 'bg-neutral-900 border-neutral-800 text-cyan-400'
                 }`}
               >
                 <Pen className={`w-5 h-5 transform transition-all ${
-                  appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#fffdf9]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#E1FE35]' : 'text-cyan-400'
+                  appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#fffdf9]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-white' : 'text-cyan-400'
                 }`} />
               </div>
               <div>
@@ -1334,7 +1334,7 @@ export default function App() {
                     : appTheme === 'momoamo'
                     ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#FAF6F0]'
                     : appTheme === 'madrid'
-                    ? 'font-unbounded font-black text-3xl md:text-4xl tracking-tighter text-[#E1FE35]'
+                    ? 'font-unbounded font-black text-3xl md:text-4xl tracking-tighter text-[#0E0E15]'
                     : 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-200 to-fuchsia-400 drop-shadow-[0_2px_12px_rgba(6,182,212,0.15)]'
                 }`}>
                   {appTheme === 'madrid' ? 'rayZRtalks' : 'rayZR Talks'}
@@ -1347,7 +1347,7 @@ export default function App() {
                     : appTheme === 'momoamo'
                     ? 'font-serif italic text-xs md:text-sm font-medium tracking-wide text-[#E1FE35] mt-1'
                     : appTheme === 'madrid'
-                    ? 'font-mono text-[10px] md:text-xs uppercase tracking-widest text-[#FF3E6C] font-black mt-1'
+                    ? 'font-mono text-[10px] md:text-xs uppercase tracking-widest text-[#0E0E15]/75 font-black mt-1'
                     : 'font-display text-xs md:text-sm font-semibold tracking-wider mt-1 inline-block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400'
                 }`}>
                   Where thoughts find rhythm and stories become poetry
@@ -1427,7 +1427,7 @@ export default function App() {
                 : appTheme === 'momoamo'
                 ? 'bg-[#141C16] border-[#FAF6F0]/15'
                 : appTheme === 'madrid'
-                ? 'bg-[#0e0e15] border-[#252538]'
+                ? 'bg-black/45 backdrop-blur-md border-black/15'
                 : 'bg-neutral-900/90 border-neutral-850'
             }`}>
               <button
@@ -1527,12 +1527,12 @@ export default function App() {
                 }}
                 className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
                   appTheme === 'madrid'
-                    ? 'bg-[#E1FE35] text-black font-black border border-[#E1FE35] shadow-md'
+                    ? 'bg-[#FDA172] text-black font-black border border-[#FDA172] shadow-md'
                     : appTheme === 'sankofa'
                     ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
                     : appTheme === 'light'
                     ? 'text-[#738A7C] hover:text-[#2E2A27]'
-                    : 'text-[#FAF6F0]/70 hover:text-[#E1FE35]'
+                    : 'text-[#FAF6F0]/70 hover:text-[#FDA172]'
                 }`}
                 title="Switch to Madrid Theme"
               >
@@ -1762,7 +1762,7 @@ export default function App() {
                       : appTheme === 'sankofa'
                       ? 'bg-[#1C1412] border-[#3a221d] text-[#ebd6bc] focus:ring-[#bf3f27]/25 focus:border-[#bf3f27] hover:bg-[#251815]'
                       : appTheme === 'madrid'
-                      ? 'bg-[#0E0E15] border-[#252538] text-[#E1FE35] focus:ring-[#E1FE35]/20 focus:border-[#E1FE35] hover:bg-neutral-900'
+                      ? 'bg-black/45 backdrop-blur-md border-black/15 text-[#FDA172] focus:ring-[#FDA172]/20 focus:border-[#FDA172] hover:bg-black/60'
                       : 'bg-[#141622] border border-neutral-800 text-neutral-200 focus:ring-cyan-500/40 focus:border-cyan-500 hover:bg-neutral-800'
                   }`}
                 >
@@ -1792,7 +1792,7 @@ export default function App() {
                       : appTheme === 'sankofa'
                       ? 'bg-[#1C1412] border-[#3a221d] text-[#ebd6bc] focus:ring-[#bf3f27]/25 focus:border-[#bf3f27] hover:bg-[#251815]'
                       : appTheme === 'madrid'
-                      ? 'bg-[#0E0E15] border-[#252538] text-[#E1FE35] focus:ring-[#E1FE35]/20 focus:border-[#E1FE35] hover:bg-neutral-900'
+                      ? 'bg-black/45 backdrop-blur-md border-black/15 text-[#FDA172] focus:ring-[#FDA172]/20 focus:border-[#FDA172] hover:bg-black/60'
                       : 'bg-[#141622] border border-neutral-800 text-neutral-200 focus:ring-cyan-500/40 focus:border-cyan-500 hover:bg-neutral-800'
                   }`}
                 >
@@ -1800,7 +1800,7 @@ export default function App() {
                   {uploadedMonths.map((m) => (
                     <option
                       key={m.key}
-                      className={appTheme === 'light' ? 'bg-white text-neutral-800' : appTheme === 'sankofa' ? 'bg-[#1C1412] text-[#ebd6bc]' : appTheme === 'madrid' ? 'bg-[#0E0E15] text-[#E1FE35]' : 'bg-[#141622]'}
+                      className={appTheme === 'light' ? 'bg-white text-neutral-800' : appTheme === 'sankofa' ? 'bg-[#1C1412] text-[#ebd6bc]' : appTheme === 'madrid' ? 'bg-neutral-900 text-[#FDA172]' : 'bg-[#141622]'}
                       value={m.key}
                     >
                       {m.label}

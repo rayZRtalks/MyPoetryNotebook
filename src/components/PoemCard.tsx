@@ -344,25 +344,25 @@ const getThemeStyles = (appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'ma
 
     case 'madrid':
       return {
-        cardBg: 'bg-[#0E0E15] border-[#252538] text-white shadow-[0_8px_30px_rgba(0,0,0,0.5)] focus-within:ring-[#E1FE35]/20',
-        cardBorder: 'border-[#252538]',
+        cardBg: 'bg-black/35 backdrop-blur-md border-black/15 text-white shadow-[0_8px_30px_rgba(0,0,0,0.15)] focus-within:ring-[#FDA172]/20',
+        cardBorder: 'border-black/15',
         textTitle: 'text-white',
-        textAuthor: 'text-[#E1FE35]',
-        textBody: 'border-[#E1FE35]/30 text-[#f2f4f7]/80',
-        stzBadge: 'bg-[#0E0E15] border-[#252538] text-[#E1FE35]/70',
-        enlargeBadge: 'text-[#E1FE35] bg-black border-[#252538] group-hover/thumb:bg-[#E1FE35] group-hover/thumb:text-black group-hover/thumb:border-[#E1FE35]',
-        catPill: 'bg-black text-[#E1FE35] border-[#252538]',
-        pvtBadge: 'text-[#FF3E6C] bg-black border-[#252538]',
-        attachBadge: 'text-[#E1FE35] bg-black border-[#252538]',
+        textAuthor: 'text-[#FDA172]',
+        textBody: 'border-[#FDA172]/30 text-[#f2f4f7]/80',
+        stzBadge: 'bg-black/25 border-black/15 text-[#FDA172]/70',
+        enlargeBadge: 'text-[#FDA172] bg-black/45 border-black/15 group-hover/thumb:bg-[#FDA172] group-hover/thumb:text-black group-hover/thumb:border-[#FDA172]',
+        catPill: 'bg-black/45 text-[#FDA172] border-black/15',
+        pvtBadge: 'text-white bg-black/45 border-black/15',
+        attachBadge: 'text-[#FDA172] bg-black/45 border-black/15',
         deleteBtn: 'text-[#FF3E6C] hover:bg-[#FF3E6C]/15',
-        dateBtn: 'text-[#E1FE35] hover:bg-neutral-900',
-        metaBorder: 'border-[#252538]',
-        liveBadge: 'border-[#E1FE35]/30 text-[#E1FE35]',
-        liveIndicator: 'bg-[#E1FE35]',
-        specimenText: 'text-[#E1FE35]/10 group-hover/thumb:text-[#FF3E6C]/20',
-        specimenTileBg: 'bg-[#0E0E15] border-[#252538] text-[#E1FE35]/40',
-        actionBtn: 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-neutral-900',
-        deleteConfirmBg: 'bg-[#0E0E15] border-[#252538] text-[#FF3E6C]'
+        dateBtn: 'text-[#FDA172] hover:bg-neutral-900',
+        metaBorder: 'border-black/15',
+        liveBadge: 'border-black/15 text-[#FDA172]',
+        liveIndicator: 'bg-[#FDA172]',
+        specimenText: 'text-[#FDA172]/10 group-hover/thumb:text-[#FF3E6C]/20',
+        specimenTileBg: 'bg-black/25 border-black/15 text-[#FDA172]/40',
+        actionBtn: 'text-[#FDA172]/70 hover:text-[#FDA172] hover:bg-neutral-900',
+        deleteConfirmBg: 'bg-black/40 border-black/15 text-[#FF3E6C]'
       };
     default: // dark mode
       return {
@@ -544,7 +544,7 @@ export default function PoemCard({
             <div className="absolute inset-0 z-3 p-3 flex flex-col justify-between pointer-events-none select-none">
               <div className="flex items-start justify-between font-mono text-[8.5px] leading-none tracking-widest">
                 <div className={`flex items-center gap-1.5 border px-2 py-1 rounded font-semibold uppercase ${themeStyles.stzBadge}`}>
-                  <span className={appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#E1FE35]' : 'text-cyan-400'}>⊕</span>
+                  <span className={appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#FDA172]' : 'text-cyan-400'}>⊕</span>
                   <span>SYS_{poem.id.toUpperCase().slice(-5)}</span>
                 </div>
                 <div className={`border px-2 py-1 rounded uppercase font-semibold ${themeStyles.stzBadge}`}>
@@ -564,7 +564,7 @@ export default function PoemCard({
                     : appTheme === 'momoamo'
                     ? 'border-[#E1FE35]/40'
                     : appTheme === 'madrid'
-                    ? 'border-[#E1FE35]/40'
+                    ? 'border-[#FDA172]/40'
                     : 'border-cyan-500/30'
                 }`}>
                   <Maximize2 className={`w-3.5 h-3.5 animate-pulse ${
@@ -575,7 +575,7 @@ export default function PoemCard({
                       : appTheme === 'momoamo'
                       ? 'text-[#E1FE35]'
                       : appTheme === 'madrid'
-                      ? 'text-[#E1FE35]'
+                      ? 'text-[#FDA172]'
                       : 'text-cyan-400'
                   }`} />
                 </div>
@@ -784,7 +784,7 @@ export default function PoemCard({
                 title={`${poem.attachments.length} media items`}
               >
                 <Paperclip className={`w-3 h-3 ${
-                  appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#ebd6bc]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#E1FE35]' : 'text-cyan-400'
+                  appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#ebd6bc]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#FDA172]' : 'text-cyan-400'
                 }`} />
                 <span>{poem.attachments.length}</span>
               </span>
@@ -826,7 +826,7 @@ export default function PoemCard({
               : appTheme === 'momoamo'
               ? 'bg-[radial-gradient(circle_at_center,rgba(225,254,53,0.05)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(225,254,53,0.15)_0%,transparent_60%)]'
               : appTheme === 'madrid'
-              ? 'bg-[radial-gradient(circle_at_center,rgba(225,254,53,0.05)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(225,254,53,0.15)_0%,transparent_60%)]'
+              ? 'bg-[radial-gradient(circle_at_center,rgba(253,161,114,0.05)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(253,161,114,0.15)_0%,transparent_60%)]'
               : 'bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.02)_0%,transparent_70%)] group-hover/thumb:bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.08)_0%,transparent_60%)]'
           }`} />
 
@@ -898,8 +898,8 @@ export default function PoemCard({
               <div className="absolute top-0 bottom-0 left-[75%] border-l border-dashed border-red-500/15" />
               <div className="absolute left-0 right-0 top-[38%] border-t border-dashed border-cyan-500/15" />
               <div className="absolute left-0 right-0 top-[68%] border-t border-dashed border-cyan-500/15" />
-              <div className={`absolute left-2.5 top-[32%] text-[6.5px] font-mono scale-90 uppercase ${appTheme === 'light' ? 'text-[#C97F65]/40' : appTheme === 'sankofa' ? 'text-[#bf3f27]/40' : appTheme === 'momoamo' ? 'text-[#E1FE35]/40' : appTheme === 'madrid' ? 'text-[#E1FE35]/40' : 'text-cyan-400/40'}`}>H-Height</div>
-              <div className={`absolute left-2.5 top-[62%] text-[6.5px] font-mono scale-90 uppercase ${appTheme === 'light' ? 'text-[#C97F65]/40' : appTheme === 'sankofa' ? 'text-[#bf3f27]/40' : appTheme === 'momoamo' ? 'text-[#E1FE35]/40' : appTheme === 'madrid' ? 'text-[#E1FE35]/40' : 'text-cyan-400/40'}`}>Baseline</div>
+              <div className={`absolute left-2.5 top-[32%] text-[6.5px] font-mono scale-90 uppercase ${appTheme === 'light' ? 'text-[#C97F65]/40' : appTheme === 'sankofa' ? 'text-[#bf3f27]/40' : appTheme === 'momoamo' ? 'text-[#E1FE35]/40' : appTheme === 'madrid' ? 'text-[#FDA172]/40' : 'text-cyan-400/40'}`}>H-Height</div>
+              <div className={`absolute left-2.5 top-[62%] text-[6.5px] font-mono scale-90 uppercase ${appTheme === 'light' ? 'text-[#C97F65]/40' : appTheme === 'sankofa' ? 'text-[#bf3f27]/40' : appTheme === 'momoamo' ? 'text-[#E1FE35]/40' : appTheme === 'madrid' ? 'text-[#FDA172]/40' : 'text-cyan-400/40'}`}>Baseline</div>
               <div className="absolute right-2.5 top-[5%] text-[6.5px] text-rose-400/40 font-mono scale-90 uppercase">Grid_16px</div>
             </div>
           )}
@@ -909,7 +909,7 @@ export default function PoemCard({
             {/* Top Row: System identifiers & Media types */}
             <div className="flex items-start justify-between font-mono text-[8.5px] leading-none tracking-widest">
               <div className={`flex items-center gap-1.5 border px-2 py-1 rounded font-semibold uppercase ${themeStyles.stzBadge}`}>
-                <span className={appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#E1FE35]' : 'text-cyan-400'}>⊕</span>
+                <span className={appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#FDA172]' : 'text-cyan-400'}>⊕</span>
                 <span>SYS_{poem.id.toUpperCase().slice(-5)}</span>
               </div>
               <div className={`border px-2 py-1 rounded uppercase font-semibold ${themeStyles.stzBadge}`}>
@@ -929,19 +929,19 @@ export default function PoemCard({
                   : appTheme === 'momoamo'
                   ? 'border-[#E1FE35]/40'
                   : appTheme === 'madrid'
-                  ? 'border-[#E1FE35]/40'
+                  ? 'border-[#FDA172]/40'
                   : 'border-cyan-500/30'
               }`}>
-                <div className={`absolute top-0 left-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#E1FE35]' : 'bg-cyan-400'}`} />
-                <div className={`absolute top-0 left-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#E1FE35]' : 'bg-cyan-400'}`} />
-                <div className={`absolute top-0 right-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#E1FE35]' : 'bg-cyan-400'}`} />
-                <div className={`absolute top-0 right-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#E1FE35]' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 left-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#E1FE35]' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 left-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#E1FE35]' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 right-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#E1FE35]' : 'bg-cyan-400'}`} />
-                <div className={`absolute bottom-0 right-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#E1FE35]' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 left-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#FDA172]' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 left-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#FDA172]' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 right-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#FDA172]' : 'bg-cyan-400'}`} />
+                <div className={`absolute top-0 right-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#FDA172]' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 left-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#FDA172]' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 left-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#FDA172]' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 right-0 w-2 h-[1px] ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#FDA172]' : 'bg-cyan-400'}`} />
+                <div className={`absolute bottom-0 right-0 w-[1px] h-2 ${appTheme === 'light' ? 'bg-[#C97F65]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]' : appTheme === 'momoamo' ? 'bg-[#E1FE35]' : appTheme === 'madrid' ? 'bg-[#FDA172]' : 'bg-cyan-400'}`} />
                 <Maximize2 className={`w-3.5 h-3.5 animate-pulse ${
-                  appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#E1FE35]' : 'text-cyan-400'
+                  appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#bf3f27]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-[#FDA172]' : 'text-cyan-400'
                 }`} />
               </div>
             </div>

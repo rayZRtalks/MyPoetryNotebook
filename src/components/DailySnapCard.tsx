@@ -41,12 +41,12 @@ export default function DailySnapCard({
           appTheme === 'light'
             ? 'bg-white border-[#e0d6be] text-neutral-800 hover:shadow-[0_12px_32px_rgba(28,28,30,0.06)]'
             : appTheme === 'sankofa'
-            ? 'bg-[#2a1d1a] border-[#4a2e28] text-[#f6eedf] hover:border-[#bf3f27]/40 hover:shadow-[0_0_30px_rgba(191,63,39,0.15)]'
+            ? 'bg-[#3d2925] border-[#5d3b33] text-[#f6eedf] hover:border-[#bf3f27]/40 hover:shadow-[0_0_30px_rgba(191,63,39,0.15)]'
             : appTheme === 'momoamo'
-            ? 'bg-[#1e2e23] border-[#FAF6F0]/20 text-[#FAF6F0] hover:border-[#E1FE35]/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]'
+            ? 'bg-[#263a2c] border-[#FAF6F0]/25 text-[#FAF6F0] hover:border-[#E1FE35]/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]'
             : appTheme === 'madrid'
-            ? 'bg-[#181825] border-[#2c2c44] text-white hover:border-[#E1FE35]/40 hover:shadow-[0_0_30px_rgba(225,254,53,0.12)]'
-            : 'bg-[#1c1e27] border-neutral-800/90 text-zinc-300 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
+            ? 'bg-black/35 backdrop-blur-md border-black/15 text-white hover:border-[#FDA172]/40 hover:shadow-[0_0_30px_rgba(253,161,114,0.15)]'
+            : 'bg-[#242736] border-neutral-700/65 text-zinc-300 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
         }`}
         onContextMenu={(e) => {
           if (!isEditable) e.preventDefault();
@@ -71,7 +71,7 @@ export default function DailySnapCard({
                 : appTheme === 'momoamo'
                 ? 'border-[#FAF6F0]/15'
                 : appTheme === 'madrid'
-                ? 'border-[#252538]'
+                ? 'border-black/30'
                 : 'border-neutral-900'
             }`}
           >
@@ -110,8 +110,10 @@ export default function DailySnapCard({
                     ? 'text-[#dca626]'
                     : appTheme === 'light'
                     ? 'text-amber-600'
-                    : appTheme === 'momoamo' || appTheme === 'madrid'
+                    : appTheme === 'momoamo'
                     ? 'text-[#E1FE35]'
+                    : appTheme === 'madrid'
+                    ? 'text-[#FDA172]'
                     : 'text-cyan-400'
                 }`} />
               </div>
@@ -133,7 +135,7 @@ export default function DailySnapCard({
                     : appTheme === 'momoamo'
                     ? 'bg-[#141C16] border-[#E1FE35]/20 text-[#E1FE35]'
                     : appTheme === 'madrid'
-                    ? 'bg-[#0E0E15] border-[#E1FE35]/30 text-[#E1FE35]'
+                    ? 'bg-black border-black/10 text-[#FDA172]'
                     : 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400'
                 }`}
               >
@@ -142,8 +144,10 @@ export default function DailySnapCard({
                     ? 'text-[#bf3f27]'
                     : appTheme === 'light'
                     ? 'text-amber-500'
-                    : appTheme === 'momoamo' || appTheme === 'madrid'
+                    : appTheme === 'momoamo'
                     ? 'text-[#E1FE35]'
+                    : appTheme === 'madrid'
+                    ? 'text-[#FDA172]'
                     : 'text-cyan-400'
                 }`} />
                 <span>Daily Snapshot</span>
@@ -158,7 +162,7 @@ export default function DailySnapCard({
                       : appTheme === 'momoamo'
                       ? 'text-[#E1FE35] bg-[#141C16] border-[#E1FE35]/20'
                       : appTheme === 'madrid'
-                      ? 'text-[#E1FE35] bg-black border-[#252538]'
+                      ? 'text-[#FDA172] bg-black border-black/10'
                       : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
                   }`}>
                     <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
@@ -202,7 +206,7 @@ export default function DailySnapCard({
                     : appTheme === 'momoamo'
                     ? 'text-[#FAF6F0]/85 border-[#E1FE35]/30'
                     : appTheme === 'madrid'
-                    ? 'text-[#f2f4f7]/80 border-[#E1FE35]/30'
+                    ? 'text-neutral-200 border-[#FDA172]/30'
                     : 'text-neutral-200 border-cyan-500/30'
                 }`}
               >
@@ -220,7 +224,7 @@ export default function DailySnapCard({
               : appTheme === 'momoamo'
               ? 'border-[#FAF6F0]/15'
               : appTheme === 'madrid'
-              ? 'border-[#252538]'
+              ? 'border-black/20'
               : 'border-neutral-800/80'
           }`}>
             {/* Creation Date indicator */}
@@ -241,7 +245,7 @@ export default function DailySnapCard({
                     : appTheme === 'momoamo'
                     ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-[#1C291E]'
                     : appTheme === 'madrid'
-                    ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-neutral-900'
+                    ? 'text-[#FDA172]/70 hover:text-[#FDA172] hover:bg-neutral-900'
                     : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
                 }`}
                 title="View Enlarged"
@@ -260,7 +264,7 @@ export default function DailySnapCard({
                       : appTheme === 'momoamo'
                       ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-[#1C291E]'
                       : appTheme === 'madrid'
-                      ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-neutral-900'
+                      ? 'text-[#FDA172]/70 hover:text-[#FDA172] hover:bg-neutral-900'
                       : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
                   }`}
                   title="Edit Caption Note"
@@ -279,7 +283,7 @@ export default function DailySnapCard({
                       : appTheme === 'momoamo'
                       ? 'bg-[#141C16] border-[#FAF6F0]/25'
                       : appTheme === 'madrid'
-                      ? 'bg-[#0E0E15] border-[#252538]'
+                      ? 'bg-black border-black/10'
                       : 'bg-red-950/40 border-red-900/50'
                   }`}>
                     <button
@@ -311,7 +315,7 @@ export default function DailySnapCard({
                           : appTheme === 'momoamo'
                           ? 'text-[#FAF6F0]/70 hover:bg-[#1C291E]'
                           : appTheme === 'madrid'
-                          ? 'text-[#E1FE35]/70 hover:bg-neutral-900'
+                          ? 'text-[#FDA172]/70 hover:bg-neutral-900'
                           : 'text-neutral-400 hover:text-neutral-800'
                       }`}
                     >
@@ -356,7 +360,7 @@ export default function DailySnapCard({
           : appTheme === 'momoamo'
           ? 'bg-[#1e2e23] border-[#FAF6F0]/20 text-[#FAF6F0] hover:border-[#E1FE35]/40 hover:shadow-[0_8px_30px_rgba(0,0,0,0.5)]'
           : appTheme === 'madrid'
-          ? 'bg-[#181825] border-[#2c2c44] text-white hover:border-[#E1FE35]/40 hover:shadow-[0_0_30px_rgba(225,254,53,0.12)]'
+          ? 'bg-black/35 backdrop-blur-md border-black/15 text-white hover:border-[#FDA172]/40 hover:shadow-[0_0_30px_rgba(253,161,114,0.15)]'
           : 'bg-[#1c1e27] border-neutral-800/90 text-zinc-300 hover:border-cyan-500/40 hover:shadow-[0_0_30px_rgba(6,182,212,0.12)]'
       }`}
       onContextMenu={(e) => {
@@ -381,7 +385,7 @@ export default function DailySnapCard({
                 : appTheme === 'momoamo'
                 ? 'bg-[#141C16] border-[#E1FE35]/20 text-[#E1FE35]'
                 : appTheme === 'madrid'
-                ? 'bg-[#0E0E15] border-[#E1FE35]/30 text-[#E1FE35]'
+                ? 'bg-black border-black/10 text-[#FDA172]'
                 : 'bg-cyan-950/20 border-cyan-500/20 text-cyan-400'
             }`}
           >
@@ -390,8 +394,10 @@ export default function DailySnapCard({
                 ? 'text-[#bf3f27]'
                 : appTheme === 'light'
                 ? 'text-amber-500'
-                : appTheme === 'momoamo' || appTheme === 'madrid'
+                : appTheme === 'momoamo'
                 ? 'text-[#E1FE35]'
+                : appTheme === 'madrid'
+                ? 'text-[#FDA172]'
                 : 'text-cyan-400'
             }`} />
             <span>Daily Snapshot</span>
@@ -406,7 +412,7 @@ export default function DailySnapCard({
                   : appTheme === 'momoamo'
                   ? 'text-[#E1FE35] bg-[#141C16] border-[#E1FE35]/20'
                   : appTheme === 'madrid'
-                  ? 'text-[#E1FE35] bg-black border-[#252538]'
+                  ? 'text-[#FDA172] bg-black border-black/10'
                   : 'text-amber-400 bg-amber-950/30 border-amber-900/40'
               }`}>
                 <Lock className="w-2.5 h-2.5 text-amber-500 shrink-0" />
@@ -429,7 +435,7 @@ export default function DailySnapCard({
               : appTheme === 'momoamo'
               ? 'border-[#FAF6F0]/15'
               : appTheme === 'madrid'
-              ? 'border-[#252538]'
+              ? 'border-black/30'
               : 'border-neutral-900'
           }`}
         >
@@ -468,8 +474,10 @@ export default function DailySnapCard({
                   ? 'text-[#dca626]'
                   : appTheme === 'light'
                   ? 'text-amber-600'
-                  : appTheme === 'momoamo' || appTheme === 'madrid'
+                  : appTheme === 'momoamo'
                   ? 'text-[#E1FE35]'
+                  : appTheme === 'madrid'
+                  ? 'text-[#FDA172]'
                   : 'text-cyan-400'
               }`} />
             </div>
@@ -487,7 +495,7 @@ export default function DailySnapCard({
                 : appTheme === 'momoamo'
                 ? 'text-[#FAF6F0]/85 border-[#E1FE35]/30'
                 : appTheme === 'madrid'
-                ? 'text-[#f2f4f7]/80 border-[#E1FE35]/30'
+                ? 'text-neutral-200 border-[#FDA172]/30'
                 : 'text-neutral-200 border-cyan-500/30'
             }`}
           >
@@ -505,7 +513,7 @@ export default function DailySnapCard({
           : appTheme === 'momoamo'
           ? 'border-[#FAF6F0]/15'
           : appTheme === 'madrid'
-          ? 'border-[#252538]'
+          ? 'border-black/20'
           : 'border-neutral-800/80'
       }`}>
         {/* Creation Date indicator */}
@@ -526,7 +534,7 @@ export default function DailySnapCard({
                 : appTheme === 'momoamo'
                 ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-[#1C291E]'
                 : appTheme === 'madrid'
-                ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-neutral-900'
+                ? 'text-[#FDA172]/70 hover:text-[#FDA172] hover:bg-neutral-900'
                 : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
             }`}
             title="View Enlarged"
@@ -545,7 +553,7 @@ export default function DailySnapCard({
                   : appTheme === 'momoamo'
                   ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-[#1C291E]'
                   : appTheme === 'madrid'
-                  ? 'text-[#E1FE35]/70 hover:text-[#E1FE35] hover:bg-neutral-900'
+                  ? 'text-[#FDA172]/70 hover:text-[#FDA172] hover:bg-neutral-900'
                   : 'text-neutral-400 hover:text-cyan-400 hover:bg-neutral-800'
               }`}
               title="Edit Caption Note"
@@ -564,7 +572,7 @@ export default function DailySnapCard({
                   : appTheme === 'momoamo'
                   ? 'bg-[#141C16] border-[#FAF6F0]/25'
                   : appTheme === 'madrid'
-                  ? 'bg-[#0E0E15] border-[#252538]'
+                  ? 'bg-black border-black/10'
                   : 'bg-red-950/40 border-red-900/50'
               }`}>
                 <button
@@ -596,7 +604,7 @@ export default function DailySnapCard({
                       : appTheme === 'momoamo'
                       ? 'text-[#FAF6F0]/70 hover:bg-[#1C291E]'
                       : appTheme === 'madrid'
-                      ? 'text-[#E1FE35]/70 hover:bg-neutral-900'
+                      ? 'text-[#FDA172]/70 hover:bg-neutral-900'
                       : 'text-neutral-400 hover:text-neutral-800'
                   }`}
                 >
