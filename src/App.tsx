@@ -21,6 +21,7 @@ import DailySnapCapture from './components/DailySnapCapture';
 import DailySnapCard from './components/DailySnapCard';
 import CloudinarySettingsModal from './components/CloudinarySettingsModal';
 import UnveilingCurtain from './components/UnveilingCurtain';
+import ProfilePicUploader from './components/ProfilePicUploader';
 
 // Cloud Ledger & Local Media Setup
 import { uploadToStorage } from './cloudinary';
@@ -45,6 +46,23 @@ if (clientSupabaseUrl && clientSupabaseAnonKey) {
 
 export default function App() {
   // --- Persistent States ---
+  const [profilePic, setProfilePic] = useState<string>(() => {
+    try {
+      return safeLocalStorage.getItem('poetry_notebook_profile_pic') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const handleProfilePicChange = (url: string) => {
+    setProfilePic(url);
+    try {
+      safeLocalStorage.setItem('poetry_notebook_profile_pic', url);
+    } catch (e) {
+      console.error('[ProfilePic] Local storage save failed:', e);
+    }
+  };
+
   const [isAuthorMode, setIsAuthorMode] = useState<boolean>(true);
   const [showUnveiling, setShowUnveiling] = useState<boolean>(false);
 
@@ -1353,39 +1371,30 @@ export default function App() {
           
           {/* Logo & Counter metrics */}
           <div className="space-y-1 z-10">
-            <div className="flex items-center gap-3">
-              <div 
-                id="logo-icon-container" 
-                className={`p-2.5 rounded-xl shadow-md transition-all border ${
-                  appTheme === 'light'
-                    ? 'bg-[#2E2A27] border-[#E2D9CF] text-[#C97F65]'
-                    : appTheme === 'sankofa'
-                    ? 'bg-[#bf3f27] border-[#bf3f27] text-[#fffdf9]'
-                    : appTheme === 'momoamo'
-                    ? 'bg-[#18231C] border-[#FAF6F0]/15 text-[#E1FE35]'
-                    : appTheme === 'madrid'
-                    ? 'bg-black border-black/20 text-[#FDA172]'
-                    : 'bg-neutral-900 border-neutral-800 text-cyan-400'
-                }`}
-              >
-                <Pen className={`w-5 h-5 transform transition-all ${
-                  appTheme === 'light' ? 'text-[#C97F65]' : appTheme === 'sankofa' ? 'text-[#fffdf9]' : appTheme === 'momoamo' ? 'text-[#E1FE35]' : appTheme === 'madrid' ? 'text-white' : 'text-cyan-400'
-                }`} />
-              </div>
+            <div className="flex items-center gap-4">
+              <ProfilePicUploader
+                profilePic={profilePic}
+                onProfilePicChange={handleProfilePicChange}
+                appTheme={appTheme}
+                sizeClass="w-14 h-14 md:w-16 md:h-16 shadow-xl"
+                isAuthorMode={isAuthorMode}
+              />
               <div>
-                <h1 id="app-heading" className={`transition-all ${
-                  appTheme === 'light'
-                    ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#2E2A27]'
-                    : appTheme === 'sankofa'
-                    ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#3a1a14]'
-                    : appTheme === 'momoamo'
-                    ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#FAF6F0]'
-                    : appTheme === 'madrid'
-                    ? 'font-unbounded font-black text-3xl md:text-4xl tracking-tighter text-[#0E0E15]'
-                    : 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-200 to-fuchsia-400 drop-shadow-[0_2px_12px_rgba(6,182,212,0.15)]'
-                }`}>
-                  rayZRtalks
-                </h1>
+                <div className="flex items-center gap-3">
+                  <h1 id="app-heading" className={`transition-all ${
+                    appTheme === 'light'
+                      ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#2E2A27]'
+                      : appTheme === 'sankofa'
+                      ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#3a1a14]'
+                      : appTheme === 'momoamo'
+                      ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#FAF6F0]'
+                      : appTheme === 'madrid'
+                      ? 'font-unbounded font-black text-3xl md:text-4xl tracking-tighter text-[#0E0E15]'
+                      : 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-200 to-fuchsia-400 drop-shadow-[0_2px_12px_rgba(6,182,212,0.15)]'
+                  }`}>
+                    rayZRtalks
+                  </h1>
+                </div>
                 <p id="app-subheading" className={`transition-all ${
                   appTheme === 'light'
                     ? 'font-serif italic text-xs md:text-sm font-medium tracking-wide text-[#738A7C] mt-1'
