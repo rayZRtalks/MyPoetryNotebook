@@ -59,6 +59,7 @@ app.use((req, res, next) => {
 const POEMS_FILE = path.join(DATA_DIR, 'poems.json');
 const CATEGORIES_FILE = path.join(DATA_DIR, 'categories.json');
 const CLOUDINARY_CONFIG_FILE = path.join(DATA_DIR, 'cloudinary_config.json');
+const PROFILE_FILE = path.join(DATA_DIR, 'profile.json');
 
 // Initial baseline categories congruent with client side definitions
 const INITIAL_CATEGORIES = [
@@ -79,6 +80,9 @@ function initDataFiles() {
     }
     if (!fs.existsSync(CATEGORIES_FILE)) {
       fs.writeFileSync(CATEGORIES_FILE, JSON.stringify(INITIAL_CATEGORIES, null, 2), 'utf-8');
+    }
+    if (!fs.existsSync(PROFILE_FILE)) {
+      fs.writeFileSync(PROFILE_FILE, JSON.stringify({ profilePic: '', position: { scale: 1, x: 0, y: 0 } }, null, 2), 'utf-8');
     }
   } catch (err) {
     console.error('[Data Init] Failed to initialize local data files:', err);
@@ -493,6 +497,71 @@ app.post('/api/cloudinary-config', (req, res) => {
   } catch (err) {
     console.error('Failed to write Cloudinary config:', err);
     res.status(500).json({ error: 'Failed to write Cloudinary config' });
+  }
+});
+
+// Author profile picture and frame crop positioning API
+app.get('/api/profile', async (req, res) => {
+  try {
+    let profile = { profilePic: '', position: { scale: 1, x: 0, y: 0 } };
+    
+    // Attempt database fetching first
+    if (supabase && supabaseEnabled) {
+      try {
+        const { data, error } = await supabase.from('profile').select('*').eq('id', 'author').single();
+        if (!error && data) {
+          profile = {
+            profilePic: data.profilePic || '',
+            position: typeof data.position === 'string' ? JSON.parse(data.position) : (data.position || { scale: 1, x: 0, y: 0 })
+          };
+        } else {
+          profile = readJSONFile(PROFILE_FILE, { profilePic: '', position: { scale: 1, x: 0, y: 0 } });
+        }
+      } catch (dbErr) {
+        // Suppress errors silently and fall back to local disk persistence
+        profile = readJSONFile(PROFILE_FILE, { profilePic: '', position: { scale: 1, x: 0, y: 0 } });
+      }
+    } else {
+      profile = readJSONFile(PROFILE_FILE, { profilePic: '', position: { scale: 1, x: 0, y: 0 } });
+    }
+    
+    res.json(profile);
+  } catch (err: any) {
+    console.error('Error getting profile:', err);
+    res.status(500).json({ error: `Failed to load profile: ${err?.message || String(err)}` });
+  }
+});
+
+app.post('/api/profile', async (req, res) => {
+  try {
+    const { profilePic, position } = req.body;
+    const profile = {
+      profilePic: profilePic ?? '',
+      position: position ?? { scale: 1, x: 0, y: 0 }
+    };
+
+    // Attempt syncing to database
+    if (supabase && supabaseEnabled) {
+      try {
+        const { error } = await supabase.from('profile').upsert({
+          id: 'author',
+          profilePic: profile.profilePic,
+          position: typeof profile.position === 'object' ? JSON.stringify(profile.position) : profile.position,
+          updatedAt: new Date().toISOString()
+        });
+        if (error) throw error;
+        console.log('[Supabase] Profile synced successfully.');
+      } catch (dbErr: any) {
+        console.warn('[Supabase] Failed to save profile to database, writing only locally:', dbErr?.message || dbErr?.details || JSON.stringify(dbErr) || String(dbErr));
+      }
+    }
+
+    writeJSONFile(PROFILE_FILE, profile);
+    console.log('Successfully persisted profile locally.');
+    res.json(profile);
+  } catch (err: any) {
+    console.error('Error saving profile:', err);
+    res.status(500).json({ error: `Failed to save profile: ${err?.message || String(err)}` });
   }
 });
 

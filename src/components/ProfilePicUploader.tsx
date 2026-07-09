@@ -6,7 +6,8 @@ import { safeLocalStorage } from '../utils/safeStorage';
 
 interface ProfilePicUploaderProps {
   profilePic: string;
-  onProfilePicChange: (url: string) => void;
+  profilePicPosition: { scale: number; x: number; y: number };
+  onProfileChange: (url: string, pos: { scale: number; x: number; y: number }) => void;
   appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid';
   sizeClass?: string;
   isAuthorMode?: boolean;
@@ -14,7 +15,8 @@ interface ProfilePicUploaderProps {
 
 export default function ProfilePicUploader({
   profilePic,
-  onProfilePicChange,
+  profilePicPosition,
+  onProfileChange,
   appTheme,
   sizeClass = 'w-10 h-10 md:w-11 md:h-11',
   isAuthorMode = false,
@@ -25,14 +27,14 @@ export default function ProfilePicUploader({
   
   // Modal position states
   const [showAdjustModal, setShowAdjustModal] = useState(false);
-  const [position, setPosition] = useState<{ scale: number; x: number; y: number }>(() => {
-    try {
-      const saved = safeLocalStorage.getItem('poetry_notebook_profile_pic_position');
-      return saved ? JSON.parse(saved) : { scale: 1, x: 0, y: 0 };
-    } catch {
-      return { scale: 1, x: 0, y: 0 };
+  const [position, setPosition] = useState<{ scale: number; x: number; y: number }>(profilePicPosition || { scale: 1, x: 0, y: 0 });
+
+  // Synchronize with external profile positions fetched from server
+  useEffect(() => {
+    if (profilePicPosition) {
+      setPosition(profilePicPosition);
     }
-  });
+  }, [profilePicPosition]);
 
   const [tempPosition, setTempPosition] = useState<{ scale: number; x: number; y: number }>({ scale: 1, x: 0, y: 0 });
   const isDragging = useRef<boolean>(false);
@@ -218,10 +220,9 @@ export default function ProfilePicUploader({
       }
 
       // 3. Callback update
-      onProfilePicChange(uploadedUrl);
+      onProfileChange(uploadedUrl, { scale: 1, x: 0, y: 0 });
       
       // 4. Automatically open positioning modal so they can frame the new image immediately!
-      savePosition({ scale: 1, x: 0, y: 0 });
       setShowAdjustModal(true);
     } catch (err: any) {
       console.error('[Profile Upload] Error processing picture:', err);
@@ -236,8 +237,7 @@ export default function ProfilePicUploader({
 
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onProfilePicChange('');
-    savePosition({ scale: 1, x: 0, y: 0 });
+    onProfileChange('', { scale: 1, x: 0, y: 0 });
   };
 
   const handleDragStartLocal = (clientX: number, clientY: number) => {
@@ -544,7 +544,7 @@ export default function ProfilePicUploader({
                 <button
                   type="button"
                   onClick={() => {
-                    savePosition(tempPosition);
+                    onProfileChange(profilePic, tempPosition);
                     setShowAdjustModal(false);
                   }}
                   className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-[11px] font-semibold shadow transition-all duration-200 active:scale-95 ${modalStyles.accentBg} ${modalStyles.accentText} ${modalStyles.accentHover}`}

@@ -54,12 +54,33 @@ export default function App() {
     }
   });
 
-  const handleProfilePicChange = (url: string) => {
+  const [profilePicPosition, setProfilePicPosition] = useState<{ scale: number; x: number; y: number }>(() => {
+    try {
+      const saved = safeLocalStorage.getItem('poetry_notebook_profile_pic_position');
+      return saved ? JSON.parse(saved) : { scale: 1, x: 0, y: 0 };
+    } catch {
+      return { scale: 1, x: 0, y: 0 };
+    }
+  });
+
+  const handleProfileChange = async (url: string, position: { scale: number; x: number; y: number }) => {
     setProfilePic(url);
+    setProfilePicPosition(position);
     try {
       safeLocalStorage.setItem('poetry_notebook_profile_pic', url);
+      safeLocalStorage.setItem('poetry_notebook_profile_pic_position', JSON.stringify(position));
     } catch (e) {
       console.error('[ProfilePic] Local storage save failed:', e);
+    }
+
+    try {
+      await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profilePic: url, position })
+      });
+    } catch (err) {
+      console.error('[Profile] Failed to save profile to database:', err);
     }
   };
 
@@ -573,6 +594,24 @@ export default function App() {
         }
       } catch (err) {
         console.warn('Backend Cloudinary config fetch failed:', err);
+      }
+
+      // Fetch persistent profile configuration (profile pic & alignment crop positions) from database
+      try {
+        const profileRes = await fetch('/api/profile');
+        if (profileRes.ok) {
+          const profileData = await profileRes.json();
+          if (profileData.profilePic !== undefined) {
+            setProfilePic(profileData.profilePic);
+            safeLocalStorage.setItem('poetry_notebook_profile_pic', profileData.profilePic);
+          }
+          if (profileData.position !== undefined) {
+            setProfilePicPosition(profileData.position);
+            safeLocalStorage.setItem('poetry_notebook_profile_pic_position', JSON.stringify(profileData.position));
+          }
+        }
+      } catch (profileErr) {
+        console.warn('Backend profile fetch failed, fallback to offline local cache:', profileErr);
       } finally {
         setIsDbLoading(false);
       }
@@ -1374,7 +1413,8 @@ export default function App() {
             <div className="flex items-center gap-4">
               <ProfilePicUploader
                 profilePic={profilePic}
-                onProfilePicChange={handleProfilePicChange}
+                profilePicPosition={profilePicPosition}
+                onProfileChange={handleProfileChange}
                 appTheme={appTheme}
                 sizeClass="w-14 h-14 md:w-16 md:h-16 shadow-xl"
                 isAuthorMode={isAuthorMode}
