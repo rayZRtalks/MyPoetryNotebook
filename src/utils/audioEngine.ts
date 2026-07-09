@@ -5,6 +5,7 @@
 
 class AudioEngine {
   private ctx: AudioContext | null = null;
+  private currentRecitalSource: AudioBufferSourceNode | null = null;
   private currentDrone: {
     oscL: OscillatorNode;
     oscR: OscillatorNode;
@@ -405,6 +406,76 @@ class AudioEngine {
       modulator.stop(now + 1.0);
     } catch (e) {
       console.warn('Typewriter bell synthesis failed:', e);
+    }
+  }
+
+  /**
+   * Play high-fidelity raw PCM (16-bit little-endian) audio stream returned by Gemini TTS
+   */
+  public playBase64PCM(base64Data: string, sampleRate = 24000, onEnded?: () => void) {
+    const ctx = this.initContext();
+    if (!ctx) return null;
+    this.stopRecital();
+
+    try {
+      // Decode base64 to a binary string
+      const binaryString = atob(base64Data);
+      const len = binaryString.length;
+      
+      // Each 16-bit sample takes exactly 2 bytes
+      const numSamples = len / 2;
+      const audioBuffer = ctx.createBuffer(1, numSamples, sampleRate);
+      const channelData = audioBuffer.getChannelData(0);
+
+      // Convert the binary string into a Uint8Array byte buffer
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+
+      // Read 16-bit signed integers and normalize to [-1.0, 1.0]
+      const dataView = new DataView(bytes.buffer);
+      for (let i = 0; i < numSamples; i++) {
+        const sample16 = dataView.getInt16(i * 2, true); // true = little endian
+        channelData[i] = sample16 / 32768.0;
+      }
+
+      const source = ctx.createBufferSource();
+      source.buffer = audioBuffer;
+
+      if (this.mainVolumeNode) {
+        source.connect(this.mainVolumeNode);
+      } else {
+        source.connect(ctx.destination);
+      }
+
+      source.onended = () => {
+        if (this.currentRecitalSource === source) {
+          this.currentRecitalSource = null;
+        }
+        if (onEnded) onEnded();
+      };
+
+      source.start();
+      this.currentRecitalSource = source;
+      return source;
+    } catch (err) {
+      console.error('[AudioEngine] Failed to decode or play base64 PCM audio stream:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Stop any ongoing premium recital playback
+   */
+  public stopRecital() {
+    if (this.currentRecitalSource) {
+      try {
+        this.currentRecitalSource.stop();
+      } catch (e) {
+        // May have already finished playing
+      }
+      this.currentRecitalSource = null;
     }
   }
 }

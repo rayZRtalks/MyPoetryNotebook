@@ -2,6 +2,19 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import { createClient } from '@supabase/supabase-js';
+import { GoogleGenAI } from '@google/genai';
+
+let ai: GoogleGenAI | null = null;
+if (process.env.GEMINI_API_KEY) {
+  ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
+    },
+  });
+}
 
 const app = express();
 const PORT = 3000;
@@ -602,6 +615,63 @@ app.get('/api/supabase-status', async (req, res) => {
     error: statusError,
     timestamp: new Date().toISOString()
   });
+});
+
+// Professional Premium Gemini Text to Speech Recital API
+app.post('/api/tts', async (req, res) => {
+  try {
+    const { text, voiceName } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: 'Text content is required for voice recital synthesis.' });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ 
+        error: 'GEMINI_API_KEY is not configured in environment secrets. Please configure it in Settings > Secrets.' 
+      });
+    }
+
+    if (!ai) {
+      ai = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
+    }
+
+    // Construct an elegant expressive poetry prompt so the model reads with proper emotion, pauses, and pacing.
+    const recitalPrompt = `Please recite the following poem with beautiful, moving emotion, artistic depth, and natural human pacing with expressive breathing pauses:\n\n${text}`;
+
+    console.log(`[TTS] Requesting premium speech synthesis for text length: ${text.length}, voice: ${voiceName || 'Kore'}`);
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.1-flash-tts-preview",
+      contents: [{ parts: [{ text: recitalPrompt }] }],
+      config: {
+        responseModalities: ['AUDIO'],
+        speechConfig: {
+          voiceConfig: {
+            // Supported: Puck, Charon, Kore, Fenrir, Zephyr
+            prebuiltVoiceConfig: { voiceName: voiceName || 'Kore' },
+          },
+        },
+      },
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Audio) {
+      console.error('[TTS] No audio data returned by Gemini API:', JSON.stringify(response));
+      return res.status(500).json({ error: 'The premium voice model failed to return audio stream data.' });
+    }
+
+    res.json({ audio: base64Audio });
+  } catch (err: any) {
+    console.error('[TTS] Voice synthesis failed:', err);
+    res.status(500).json({ error: `Premium recital failed: ${err?.message || String(err)}` });
+  }
 });
 
 // Catch-all API 404 handler for unmatched routes

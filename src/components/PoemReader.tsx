@@ -107,7 +107,9 @@ export default function PoemReader({
   const [copied, setCopied] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [voiceRate, setVoiceRate] = useState(0.8);
+  const [selectedVoice, setSelectedVoice] = useState<'Kore' | 'Zephyr' | 'Puck' | 'Charon' | 'Fenrir'>('Kore');
+  const [isSynthesizing, setIsSynthesizing] = useState(false);
+  const [recitalCache, setRecitalCache] = useState<Record<string, string>>({});
   const category = categories.find((c) => c.id === poem.categoryId);
 
   // Reader Zen Mode state variables (WOW factors)
@@ -148,9 +150,7 @@ export default function PoemReader({
   useEffect(() => {
     // Automatically stop speech and ambient soundscapes when reader is closed / unmounted
     return () => {
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-      }
+      audioEngine.stopRecital();
       try {
         audioEngine.stopAllSoundscapes();
       } catch (err) {
@@ -170,83 +170,68 @@ export default function PoemReader({
     }
   };
 
-  const handleSpeakToggle = () => {
-    if (!('speechSynthesis' in window)) {
-      alert("Speech synthesis is not supported on this browser.");
+  const handleSpeakToggle = async () => {
+    if (isPlaying) {
+      handleStopSpeech();
       return;
     }
 
-    if (isPlaying) {
-      if (isPaused) {
-        window.speechSynthesis.resume();
-        setIsPaused(false);
-      } else {
-        window.speechSynthesis.pause();
-        setIsPaused(true);
+    const cacheKey = `${selectedVoice}-${poem.id}`;
+    let audioBase64 = recitalCache[cacheKey];
+
+    if (!audioBase64) {
+      setIsSynthesizing(true);
+      try {
+        const response = await fetch('/api/tts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text: poem.body,
+            voiceName: selectedVoice,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to synthesize speech');
+        }
+
+        const data = await response.json();
+        if (data.audio) {
+          audioBase64 = data.audio;
+          setRecitalCache((prev) => ({
+            ...prev,
+            [cacheKey]: audioBase64,
+          }));
+        } else {
+          throw new Error('No audio data stream returned');
+        }
+      } catch (err: any) {
+        console.error('[TTS] Recital failed:', err);
+        alert(`Could not synthesize natural recital: ${err.message || err}`);
+        setIsSynthesizing(false);
+        return;
+      } finally {
+        setIsSynthesizing(false);
       }
-    } else {
-      window.speechSynthesis.cancel(); // Clear any pre-existing text in queue
+    }
 
-      // Structure text to read slowly and elegantly
-      const readText = `Reciting entry. Title: ${poem.title}. By ${poem.author || 'Anonymous'}. \n\n ${poem.body}`;
-      const utterance = new SpeechSynthesisUtterance(readText);
-      utterance.rate = voiceRate;
-
-      // Try to load any warm, consistent Indian English male voices
-      const voices = window.speechSynthesis.getVoices();
-      
-      // Filter voices that are en-IN (English India)
-      const indianVoices = voices.filter(v => 
-        v.lang.toLowerCase().replace('_', '-').includes('en-in')
-      );
-
-      // Match any en-IN that features 'male', 'rishi', 'ravi', or 'mohan'
-      let selectedVoice = indianVoices.find(v => 
-        v.name.toLowerCase().includes('male') || 
-        v.name.toLowerCase().includes('rishi') || 
-        v.name.toLowerCase().includes('ravi') || 
-        v.name.toLowerCase().includes('mohan')
-      );
-
-      // If we don't have an explicit male Indian voice, grab the standard Indian English voice (such as Google English (India))
-      if (!selectedVoice && indianVoices.length > 0) {
-        selectedVoice = indianVoices.find(v => v.name.toLowerCase().includes('google')) || indianVoices[0];
-      }
-
-      // If no en-IN voices exist on the system (e.g. some mobile browsers), fallback to a high-quality warm English male/natural voice
-      if (!selectedVoice) {
-        selectedVoice = voices.find(v => 
-          v.lang.toLowerCase().replace('_', '-').startsWith('en-') && 
-          (v.name.toLowerCase().includes('male') || v.name.toLowerCase().includes('natural'))
-        ) || voices.find(v => v.lang.toLowerCase().startsWith('en'));
-      }
-
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-      }
-
-      utterance.onend = () => {
-        setIsPlaying(false);
-        setIsPaused(false);
-      };
-
-      utterance.onerror = () => {
-        setIsPlaying(false);
-        setIsPaused(false);
-      };
-
-      window.speechSynthesis.speak(utterance);
+    if (audioBase64) {
       setIsPlaying(true);
       setIsPaused(false);
+      audioEngine.playBase64PCM(audioBase64, 24000, () => {
+        setIsPlaying(false);
+        setIsPaused(false);
+      });
     }
   };
 
   const handleStopSpeech = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      setIsPlaying(false);
-      setIsPaused(false);
-    }
+    audioEngine.stopRecital();
+    setIsPlaying(false);
+    setIsPaused(false);
   };
 
   const formattedDate = new Date(poem.createdAt).toLocaleDateString('en-US', {
@@ -404,39 +389,59 @@ export default function PoemReader({
             <div className="w-16 h-[2px] bg-amber-500/30 mx-auto" />
 
             {/* Recital controller block in Zen Gaze */}
-            <div className="p-5 bg-black/45 border border-white/5 rounded-3xl max-w-md mx-auto space-y-3 shadow-lg">
-              <p className="text-[9px] font-mono text-neutral-400 uppercase tracking-widest font-bold">
-                ✨ Oral Recital Engine
-              </p>
-              <div className="flex items-center justify-center gap-3">
-                {isPlaying ? (
-                  <button
-                    type="button"
-                    onClick={handleSpeakToggle}
-                    className="w-9 h-9 rounded-full bg-cyan-500 hover:bg-cyan-400 text-neutral-950 flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95"
-                    title={isPaused ? "Resume Reading Recital" : "Pause Recital"}
-                  >
-                    {isPaused ? <Play className="w-4 h-4 fill-neutral-950" /> : <Pause className="w-4 h-4 fill-neutral-950" />}
-                  </button>
+            <div className="p-5 bg-black/45 border border-white/5 rounded-3xl max-w-md mx-auto space-y-4 shadow-lg">
+              <div className="flex justify-between items-center border-b border-white/5 pb-2">
+                <p className="text-[9px] font-mono text-neutral-400 uppercase tracking-widest font-bold">
+                  ✨ Oral Recital Engine
+                </p>
+                <span className="text-[8px] bg-amber-500/10 text-amber-400 border border-amber-500/25 px-1.5 py-0.5 rounded-full font-mono uppercase tracking-wider">
+                  PREMIUM VOICE
+                </span>
+              </div>
+              
+              <div className="flex items-center justify-between gap-3 text-xs text-neutral-300">
+                <span className="font-mono text-[10px] text-neutral-400 uppercase tracking-wider font-semibold">Narrator:</span>
+                <select
+                  value={selectedVoice}
+                  onChange={(e) => {
+                    const voice = e.target.value as any;
+                    setSelectedVoice(voice);
+                    handleStopSpeech();
+                  }}
+                  className="bg-neutral-900 border border-white/10 text-xs font-sans text-neutral-200 px-2 py-1 rounded-md cursor-pointer outline-none focus:border-amber-500/50"
+                >
+                  <option value="Kore">Kore (Warm & Emotional)</option>
+                  <option value="Zephyr">Zephyr (Gentle & Calm)</option>
+                  <option value="Puck">Puck (Expressive & Playful)</option>
+                  <option value="Charon">Charon (Deep & Solemn)</option>
+                  <option value="Fenrir">Fenrir (Authoritative & Bold)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-center py-1">
+                {isSynthesizing ? (
+                  <div className="flex items-center gap-2 text-xs text-amber-400 font-mono animate-pulse">
+                    <Sparkles className="w-4 h-4 animate-spin text-amber-400" />
+                    <span>SYNTHESIZING PREMIUM AUDIO...</span>
+                  </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={handleSpeakToggle}
-                    className="w-9 h-9 rounded-full bg-amber-500 hover:bg-amber-400 text-neutral-950 flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95"
-                    title="Begin Recital Speech Synthesis"
-                  >
-                    <Play className="w-4 h-4 fill-neutral-950" />
-                  </button>
-                )}
-                {isPlaying && (
-                  <button
-                    type="button"
-                    onClick={handleStopSpeech}
-                    className="w-9 h-9 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95"
-                    title="Stop Speech recital"
-                  >
-                    <Square className="w-3.5 h-3.5 fill-white" />
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSpeakToggle}
+                      className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95 ${
+                        isPlaying 
+                          ? 'bg-rose-600 hover:bg-rose-500 text-white' 
+                          : 'bg-amber-500 hover:bg-amber-400 text-neutral-950'
+                      }`}
+                      title={isPlaying ? "Stop Premium Recital" : "Begin Premium Recital"}
+                    >
+                      {isPlaying ? <Square className="w-3.5 h-3.5 fill-current" /> : <Play className="w-4 h-4 fill-current ml-0.5" />}
+                    </button>
+                    {isPlaying && (
+                      <span className="text-[10px] text-neutral-400 font-mono tracking-wider">SPEAKING...</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -566,43 +571,39 @@ export default function PoemReader({
 
           {/* Vocal Recital Controller widget */}
           {poem.body && poem.body.trim() && (
-            <div id="vocal-recital-panel" className="max-w-xs mx-auto mt-4 px-4 py-2.5 bg-[#0e0f18] border border-neutral-800/80 rounded-xl flex items-center justify-between gap-3 text-left">
-              <div className="flex items-center gap-2">
-                <button
-                  id="vocal-play-btn"
-                  onClick={handleSpeakToggle}
-                  className="p-2 bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-neutral-950 rounded-full transition-all cursor-pointer flex items-center justify-center shadow-lg shadow-cyan-500/20"
-                  title={isPlaying ? (isPaused ? "Resume Recital" : "Pause Recital") : "Start Recital Voice Over"}
-                >
-                  {isPlaying && !isPaused ? (
-                    <Pause className="w-3.5 h-3.5 fill-current" />
-                  ) : (
-                    <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                  )}
-                </button>
-                {isPlaying && (
+            <div id="vocal-recital-panel" className="max-w-md mx-auto mt-4 px-4 py-2.5 bg-[#0e0f18] border border-neutral-800/80 rounded-xl flex items-center justify-between gap-3 text-left">
+              <div className="flex items-center gap-3">
+                {isSynthesizing ? (
+                  <div className="p-2 bg-neutral-900 rounded-full flex items-center justify-center">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+                  </div>
+                ) : (
                   <button
-                    id="vocal-stop-btn"
-                    onClick={handleStopSpeech}
-                    className="p-2 bg-neutral-900 hover:bg-neutral-800 active:scale-95 text-red-400 rounded-full border border-neutral-800 transition-all cursor-pointer flex items-center justify-center"
-                    title="Stop Voice Over"
+                    id="vocal-play-btn"
+                    onClick={handleSpeakToggle}
+                    className="p-2 bg-cyan-500 hover:bg-cyan-400 active:scale-95 text-neutral-950 rounded-full transition-all cursor-pointer flex items-center justify-center shadow-lg shadow-cyan-500/20"
+                    title={isPlaying ? "Stop Premium Recital" : "Start Premium Recital"}
                   >
-                    <Square className="w-3.5 h-3.5 fill-neutral-400" />
+                    {isPlaying ? (
+                      <Square className="w-3.5 h-3.5 fill-current" />
+                    ) : (
+                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                    )}
                   </button>
                 )}
                 <div className="flex flex-col">
                   <span className="text-[9px] font-bold font-mono tracking-wider text-neutral-500 uppercase">
-                    Vocal Recital
+                    Premium Oral Recital
                   </span>
                   <span className="text-[10px] font-sans font-semibold text-neutral-350">
-                    {isPlaying ? (isPaused ? "Paused" : "Speaking...") : "Listen to entry"}
+                    {isSynthesizing ? "Synthesizing voice..." : isPlaying ? "Speaking (Premium)..." : "Listen to entry"}
                   </span>
                 </div>
               </div>
 
-              {/* Equalizer & voice velocity panel */}
-              <div className="flex items-center gap-2">
-                {isPlaying && !isPaused && (
+              {/* Equalizer & Voice select panel */}
+              <div className="flex items-center gap-3">
+                {isPlaying && (
                   <div className="flex items-end gap-[2.5px] h-3.5 px-1">
                     <span className="w-[3px] h-3 bg-cyan-400 rounded-full animate-bounce [animation-duration:0.6s]" />
                     <span className="w-[3px] h-4 bg-indigo-400 rounded-full animate-bounce [animation-duration:0.8s] [animation-delay:0.1s]" />
@@ -610,31 +611,22 @@ export default function PoemReader({
                   </div>
                 )}
                 
-                {/* Rate Selector Button */}
+                {/* Narrator Select Dropdown */}
                 <select
-                  id="vocal-rate-select"
-                  value={voiceRate}
+                  value={selectedVoice}
                   onChange={(e) => {
-                    const rate = parseFloat(e.target.value);
-                    setVoiceRate(rate);
-                    // If speaking, restart with new rate
-                    if (isPlaying) {
-                      window.speechSynthesis.cancel();
-                      setIsPlaying(false);
-                      setIsPaused(false);
-                      setTimeout(() => {
-                        handleSpeakToggle();
-                      }, 100);
-                    }
+                    const voice = e.target.value as any;
+                    setSelectedVoice(voice);
+                    handleStopSpeech();
                   }}
-                  className="bg-neutral-950 border border-neutral-800 text-[10px] font-mono font-bold text-neutral-450 p-1.5 rounded-md cursor-pointer outline-none focus:border-cyan-500/40"
-                  title="Recital pacing speed"
+                  className="bg-neutral-950 border border-neutral-800 text-[10px] font-mono font-bold text-neutral-300 p-1.5 rounded-md cursor-pointer outline-none focus:border-cyan-500/40"
+                  title="Recital premium voice narrator"
                 >
-                <option value="0.5">0.6x</option>
-                <option value="0.6">0.8x</option>
-                <option value="0.7">1.0x</option>
-                
-              
+                  <option value="Kore">Kore (Warm)</option>
+                  <option value="Zephyr">Zephyr (Calm)</option>
+                  <option value="Puck">Puck (Playful)</option>
+                  <option value="Charon">Charon (Deep)</option>
+                  <option value="Fenrir">Fenrir (Authoritative)</option>
                 </select>
               </div>
             </div>
