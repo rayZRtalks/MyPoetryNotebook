@@ -1,6 +1,91 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Poem, Category } from '../types';
-import { X, Copy, Check, Edit3, Calendar, Tag, BookOpen, Play, Pause, Square, Volume2 } from 'lucide-react';
+import { X, Copy, Check, Edit3, Calendar, Tag, BookOpen, Play, Pause, Square, Volume2, Sparkles, Type, Sliders, Music, VolumeX, Eye } from 'lucide-react';
+import { audioEngine } from '../utils/audioEngine';
+
+function ZenParticles({ mood }: { mood: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationFrameId: number;
+    let width = (canvas.width = canvas.parentElement?.offsetWidth || canvas.offsetWidth || 800);
+    let height = (canvas.height = canvas.parentElement?.offsetHeight || canvas.offsetHeight || 600);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = canvas.parentElement?.offsetWidth || canvas.offsetWidth || 800;
+      height = canvas.height = canvas.parentElement?.offsetHeight || canvas.offsetHeight || 600;
+    };
+    window.addEventListener('resize', handleResize);
+
+    const particles: Array<{ x: number; y: number; size: number; speedY: number; speedX: number; alpha: number }> = [];
+    const particleCount = mood === 'Romantic' || mood === 'Mystical' ? 60 : 40;
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        size: Math.random() * 2.2 + 0.4,
+        speedY: -(Math.random() * 0.35 + 0.08),
+        speedX: (Math.random() * 0.2 - 0.1),
+        alpha: Math.random() * 0.65 + 0.1
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, width, height);
+      
+      const grad = ctx.createRadialGradient(width / 2, height / 2, 10, width / 2, height / 2, Math.max(width, height) * 0.8);
+      if (mood === 'Romantic') {
+        grad.addColorStop(0, 'rgba(157, 23, 77, 0.12)'); 
+      } else if (mood === 'Mystical') {
+        grad.addColorStop(0, 'rgba(88, 28, 135, 0.14)'); 
+      } else if (mood === 'Hopeful') {
+        grad.addColorStop(0, 'rgba(16, 185, 129, 0.08)'); 
+      } else if (mood === 'Melancholy') {
+        grad.addColorStop(0, 'rgba(30, 58, 138, 0.12)'); 
+      } else {
+        grad.addColorStop(0, 'rgba(6, 182, 212, 0.08)'); 
+      }
+      grad.addColorStop(1, 'rgba(7, 8, 13, 0.85)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = mood === 'Romantic' ? `rgba(244, 63, 94, ${p.alpha})` : mood === 'Mystical' ? `rgba(192, 132, 252, ${p.alpha})` : `rgba(165, 243, 252, ${p.alpha})`;
+        ctx.fill();
+
+        p.y += p.speedY;
+        p.x += p.speedX;
+
+        if (p.y < -10) {
+          p.y = height + 10;
+          p.x = Math.random() * width;
+        }
+        if (p.x < -10 || p.x > width + 10) {
+          p.x = Math.random() * width;
+        }
+      }
+      animationFrameId = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [mood]);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-70" />;
+}
 
 interface PoemReaderProps {
   poem: Poem;
@@ -25,11 +110,51 @@ export default function PoemReader({
   const [voiceRate, setVoiceRate] = useState(0.8);
   const category = categories.find((c) => c.id === poem.categoryId);
 
+  // Reader Zen Mode state variables (WOW factors)
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [zenFontSize, setZenFontSize] = useState<'sm' | 'md' | 'lg' | 'xl'>('lg');
+  const [zenFontFamily, setZenFontFamily] = useState<'serif' | 'sans' | 'mono'>('serif');
+  const [activeSoundscape, setActiveSoundscape] = useState<'off' | 'drone' | 'rain' | 'chimes'>('off');
+
+  const handleToggleSoundscape = (type: 'off' | 'drone' | 'rain' | 'chimes') => {
+    setActiveSoundscape(type);
+    try {
+      audioEngine.stopAllSoundscapes();
+      if (type === 'drone') {
+        audioEngine.startBinauralDrone();
+      } else if (type === 'rain') {
+        audioEngine.startSummerRain();
+      } else if (type === 'chimes') {
+        audioEngine.startForestChimes();
+      }
+    } catch (err) {
+      console.warn('Failed soundscape switch:', err);
+    }
+  };
+
+  const fontSizes = {
+    sm: 'text-sm md:text-md leading-relaxed',
+    md: 'text-md md:text-lg leading-loose',
+    lg: 'text-lg md:text-xl leading-10',
+    xl: 'text-xl md:text-2xl leading-11',
+  };
+
+  const fontFamilies = {
+    serif: 'font-serif',
+    sans: 'font-sans',
+    mono: 'font-mono tracking-tight',
+  };
+
   useEffect(() => {
-    // Automatically stop speech when reader is closed / unmounted
+    // Automatically stop speech and ambient soundscapes when reader is closed / unmounted
     return () => {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
+      }
+      try {
+        audioEngine.stopAllSoundscapes();
+      } catch (err) {
+        console.warn('Failed stopping soundscapes:', err);
       }
     };
   }, []);
@@ -131,6 +256,203 @@ export default function PoemReader({
     day: 'numeric',
   });
 
+  // Render Zen Reader full screen mode override if activated
+  if (isZenMode) {
+    return (
+      <div className="fixed inset-0 bg-[#07080d] z-50 flex flex-col justify-between overflow-hidden text-neutral-100 select-none animate-fade-in">
+        {/* Particle Canvas background rendering */}
+        <ZenParticles mood={poem.mood || 'Reflective'} />
+
+        {/* Floating Controls Bar */}
+        <div className="relative z-10 px-6 py-4 md:px-12 border-b border-white/5 bg-black/45 backdrop-blur-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+            <div>
+              <span className="text-[10px] font-bold font-mono text-amber-500 uppercase tracking-widest block">
+                IMMERSIVE READER FLOW
+              </span>
+              <h2 className="text-sm font-sans font-black tracking-wide uppercase text-white">
+                {poem.title}
+              </h2>
+            </div>
+          </div>
+
+          {/* Controls Hub */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            {/* Font Selector */}
+            <div className="flex items-center bg-black/50 rounded-full border border-white/10 p-1 text-[10px] font-mono">
+              <button
+                type="button"
+                onClick={() => setZenFontFamily('serif')}
+                className={`px-2 py-1 rounded-full cursor-pointer transition-all ${zenFontFamily === 'serif' ? 'bg-amber-500 text-neutral-950 font-extrabold' : 'text-neutral-400'}`}
+              >
+                Serif
+              </button>
+              <button
+                type="button"
+                onClick={() => setZenFontFamily('sans')}
+                className={`px-2 py-1 rounded-full cursor-pointer transition-all ${zenFontFamily === 'sans' ? 'bg-amber-500 text-neutral-950 font-extrabold' : 'text-neutral-400'}`}
+              >
+                Sans
+              </button>
+              <button
+                type="button"
+                onClick={() => setZenFontFamily('mono')}
+                className={`px-2 py-1 rounded-full cursor-pointer transition-all ${zenFontFamily === 'mono' ? 'bg-amber-500 text-neutral-950 font-extrabold' : 'text-neutral-400'}`}
+              >
+                Mono
+              </button>
+            </div>
+
+            {/* Font Size Selector */}
+            <div className="flex items-center bg-black/50 rounded-full border border-white/10 p-1 text-[10px] font-mono">
+              {(['sm', 'md', 'lg', 'xl'] as const).map((sz) => (
+                <button
+                  key={sz}
+                  type="button"
+                  onClick={() => setZenFontSize(sz)}
+                  className={`w-6 h-6 rounded-full cursor-pointer flex items-center justify-center transition-all uppercase ${zenFontSize === sz ? 'bg-amber-500 text-neutral-950 font-extrabold' : 'text-neutral-400 hover:text-white'}`}
+                >
+                  {sz}
+                </button>
+              ))}
+            </div>
+
+            {/* Ambient Soundscapes Selector */}
+            <div className="flex items-center bg-black/50 rounded-full border border-white/10 p-1 text-[10px] font-mono gap-1.5">
+              <span className="text-neutral-500 pl-2 text-[9px] font-bold uppercase">SOUNDS:</span>
+              <button
+                type="button"
+                onClick={() => handleToggleSoundscape('off')}
+                className={`px-2 py-1 rounded-full cursor-pointer flex items-center gap-1 transition-all ${activeSoundscape === 'off' ? 'bg-amber-500 text-neutral-950 font-extrabold' : 'text-neutral-400 hover:text-white'}`}
+                title="Silence / Off"
+              >
+                <VolumeX className="w-3 h-3" />
+                <span>OFF</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleSoundscape('drone')}
+                className={`px-2 py-1 rounded-full cursor-pointer flex items-center gap-1 transition-all ${activeSoundscape === 'drone' ? 'bg-amber-500 text-neutral-950 font-extrabold' : 'text-neutral-400 hover:text-white'}`}
+                title="Cosmic Binaural Drone"
+              >
+                <Music className="w-3 h-3" />
+                <span>COSMIC</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleSoundscape('rain')}
+                className={`px-2 py-1 rounded-full cursor-pointer flex items-center gap-1 transition-all ${activeSoundscape === 'rain' ? 'bg-amber-500 text-neutral-950 font-extrabold' : 'text-neutral-400 hover:text-white'}`}
+                title="Summer Rainfall and pink noise"
+              >
+                <Music className="w-3 h-3" />
+                <span>RAIN</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleSoundscape('chimes')}
+                className={`px-2 py-1 rounded-full cursor-pointer flex items-center gap-1 transition-all ${activeSoundscape === 'chimes' ? 'bg-amber-500 text-neutral-950 font-extrabold' : 'text-neutral-400 hover:text-white'}`}
+                title="Sankofa Canopy and Chimes"
+              >
+                <Music className="w-3 h-3" />
+                <span>CHIMES</span>
+              </button>
+            </div>
+
+            {/* Return / Back Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsZenMode(false);
+                handleToggleSoundscape('off');
+              }}
+              className="px-4 py-1.5 bg-amber-500 hover:bg-amber-400 text-neutral-950 font-bold rounded-full font-mono text-[10px] uppercase tracking-wider flex items-center gap-1 cursor-pointer shadow-md transition-transform active:scale-95"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>Exit Zen</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Central Display Gaze block */}
+        <div className="flex-1 relative z-10 overflow-y-auto px-6 py-12 md:px-24 flex flex-col items-center justify-start text-center">
+          <div className="max-w-3xl w-full space-y-12 py-10">
+            {/* Header typography detail */}
+            <div className="space-y-3">
+              <span className="text-[10px] font-mono font-bold tracking-widest text-amber-500/80 uppercase">
+                ✦ {category?.name || 'GENRE UNSPECIFIED'} ✦
+              </span>
+              <h1 className="text-3xl md:text-5xl font-serif text-white tracking-tight leading-tight font-extrabold">
+                {poem.title}
+              </h1>
+              <p className="text-xs md:text-sm font-sans font-semibold text-neutral-400 tracking-wider">
+                — inscribed by {poem.author || 'Anonymous'} —
+              </p>
+            </div>
+
+            <div className="w-16 h-[2px] bg-amber-500/30 mx-auto" />
+
+            {/* Big readable text body */}
+            <div className={`text-center flex justify-center py-6`}>
+              <div
+                className={`${fontFamilies[zenFontFamily]} ${fontSizes[zenFontSize]} text-neutral-100 whitespace-pre-wrap max-w-full text-center tracking-normal leading-loose italic`}
+              >
+                {poem.body}
+              </div>
+            </div>
+
+            <div className="w-16 h-[2px] bg-amber-500/30 mx-auto" />
+
+            {/* Recital controller block in Zen Gaze */}
+            <div className="p-5 bg-black/45 border border-white/5 rounded-3xl max-w-md mx-auto space-y-3 shadow-lg">
+              <p className="text-[9px] font-mono text-neutral-400 uppercase tracking-widest font-bold">
+                ✨ Oral Recital Engine
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                {isPlaying ? (
+                  <button
+                    type="button"
+                    onClick={handleSpeakToggle}
+                    className="w-9 h-9 rounded-full bg-cyan-500 hover:bg-cyan-400 text-neutral-950 flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95"
+                    title={isPaused ? "Resume Reading Recital" : "Pause Recital"}
+                  >
+                    {isPaused ? <Play className="w-4 h-4 fill-neutral-950" /> : <Pause className="w-4 h-4 fill-neutral-950" />}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSpeakToggle}
+                    className="w-9 h-9 rounded-full bg-amber-500 hover:bg-amber-400 text-neutral-950 flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95"
+                    title="Begin Recital Speech Synthesis"
+                  >
+                    <Play className="w-4 h-4 fill-neutral-950" />
+                  </button>
+                )}
+                {isPlaying && (
+                  <button
+                    type="button"
+                    onClick={handleStopSpeech}
+                    className="w-9 h-9 rounded-full bg-rose-600 hover:bg-rose-500 text-white flex items-center justify-center cursor-pointer shadow-md transition-all active:scale-95"
+                    title="Stop Speech recital"
+                  >
+                    <Square className="w-3.5 h-3.5 fill-white" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer info bar */}
+        <div className="relative z-10 px-6 py-4 border-t border-white/5 bg-black/25 text-[10px] font-mono text-neutral-500 flex justify-between items-center">
+          <span>ATMOSPHERE: {poem.mood || 'Standard'}</span>
+          <span>WRITING INSCRIPTION FOR THE SPIRIT</span>
+          <span>DATE: {formattedDate}</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
       id="poem-reader-modal" 
@@ -150,6 +472,21 @@ export default function PoemReader({
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {/* Zen Reader Button */}
+          <button
+            id="btn-zen-reader-toggle"
+            onClick={() => {
+              setIsZenMode(true);
+              // Warm up Web Audio context
+              audioEngine.getContext();
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-amber-300 hover:bg-amber-950/40 hover:text-amber-200 bg-neutral-900 rounded-full border border-amber-900/40 transition-all font-bold cursor-pointer font-sans"
+            title="Switch to Immersive Zen Mode with particle effects and sounds"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            <span>Immersive Zen</span>
+          </button>
+
           {/* Copy Button */}
           {isEditable && (
             <button

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Poem, Category, PoemMood, PoemAttachment } from '../types';
-import { X, Check, Plus, Tag, FolderPlus, Paperclip, Image as ImageIcon, Video, AlertCircle, Lock, Unlock } from 'lucide-react';
+import { X, Check, Plus, Tag, FolderPlus, Paperclip, Image as ImageIcon, Video, AlertCircle, Lock, Unlock, Volume2, Sparkles, Eye, EyeOff, Feather } from 'lucide-react';
 import { storeAttachmentBlob, deleteAttachmentBlob } from '../utils/attachmentDb';
 import { uploadToStorage } from '../cloudinary';
+import { audioEngine } from '../utils/audioEngine';
 
 interface PoemFormProps {
   poem?: Poem | null; // If editing
@@ -37,6 +38,10 @@ export default function PoemForm({
   // Custom new category creation box state
   const [showNewCatInput, setShowNewCatInput] = useState(false);
   const [newCatName, setNewCatName] = useState('');
+
+  // Immersive WOW states for the Writer's Flow Focus Mode
+  const [typewriterEnabled, setTypewriterEnabled] = useState(false);
+  const [isZenFocus, setIsZenFocus] = useState(false);
 
   useEffect(() => {
     if (poem) {
@@ -325,6 +330,166 @@ export default function PoemForm({
               </option>
             ))}
           </select>
+        </div>
+      </div>
+
+      {/* --- WOW WRITING CORE WORKSPACE --- */}
+      <div id="writing-workspace-container" className="space-y-3.5 border-t pt-5 border-[#e8e8ed] relative">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-0.5">
+            <label id="lbl-body" className="block text-xs font-bold text-[#86868b] uppercase tracking-wider font-sans flex items-center gap-1.5">
+              <Feather className="w-3.5 h-3.5 text-cyan-500" />
+              Poem Body / Verses *
+            </label>
+            <p className="text-[10px] text-neutral-400 font-sans">
+              Enter stanzas. Hit Enter for carriage return.
+            </p>
+          </div>
+
+          {/* Interactive Writers Focus controls */}
+          <div className="flex items-center gap-2">
+            {/* Typewriter Clicker Toggle */}
+            <button
+              id="typewriter-toggle-btn"
+              type="button"
+              onClick={() => {
+                setTypewriterEnabled(!typewriterEnabled);
+                // Trigger context warming up
+                audioEngine.getContext();
+                audioEngine.playTypewriterClick();
+              }}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border ${
+                typewriterEnabled
+                  ? 'bg-cyan-50 text-cyan-700 border-cyan-300 shadow-sm'
+                  : 'bg-[#f5f5f7] border-[#e8e8ed] text-neutral-500 hover:text-neutral-800'
+              }`}
+              title="Toggle Mechanical Typewriter Click Audio Response"
+            >
+              <Volume2 className={`w-3.5 h-3.5 ${typewriterEnabled ? 'text-cyan-500 animate-pulse' : ''}`} />
+              <span>{typewriterEnabled ? '🔊 Typewriter clicks: ON' : '🔇 Clicks: OFF'}</span>
+            </button>
+
+            {/* Zen Mode Toggle */}
+            <button
+              id="zen-focus-toggle-btn"
+              type="button"
+              onClick={() => setIsZenFocus(!isZenFocus)}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-bold font-mono uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer border ${
+                isZenFocus
+                  ? 'bg-amber-50 text-amber-700 border-amber-300 shadow-sm'
+                  : 'bg-[#f5f5f7] border-[#e8e8ed] text-neutral-500 hover:text-neutral-800'
+              }`}
+              title="Toggle Immersive Zen Focus Screen Alignment Overlay"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${isZenFocus ? 'text-amber-500 animate-pulse' : ''}`} />
+              <span>{isZenFocus ? '🧘 Zen Gaze: ACTIVE' : '👓 Zen: OFF'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Dynamic Zen Focus Overlay (rendered in-place to keep styling clean) */}
+        {isZenFocus && (
+          <div className="fixed inset-0 bg-[#07080d]/95 z-50 flex flex-col items-center justify-center p-4 md:p-12 transition-all backdrop-blur-md animate-fade-in">
+            <div className="w-full max-w-4xl space-y-6 flex flex-col h-full justify-between py-6">
+              {/* Zen Header */}
+              <div className="flex items-center justify-between border-b border-neutral-850 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+                  <span className="text-xs uppercase font-extrabold tracking-widest text-amber-500 font-mono">
+                    🧘 Zen Distraction-Free Flow State
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setTypewriterEnabled(!typewriterEnabled)}
+                    className={`px-3 py-1.5 text-[9px] font-mono border rounded-full font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer ${
+                      typewriterEnabled ? 'bg-cyan-950/40 text-cyan-400 border-cyan-800' : 'text-neutral-500 border-neutral-800 hover:text-neutral-300'
+                    }`}
+                  >
+                    <Volume2 className="w-3 h-3" />
+                    <span>Clicks: {typewriterEnabled ? 'ON' : 'OFF'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsZenFocus(false)}
+                    className="text-neutral-400 hover:text-white border border-neutral-800 hover:bg-neutral-900 rounded-full px-3 py-1.5 text-[10px] font-bold font-mono uppercase tracking-wider flex items-center gap-1 cursor-pointer transition-all"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    <span>Return</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Zen Typography Title Preview */}
+              <div className="text-center space-y-1">
+                <h4 className="text-neutral-500 text-[10px] uppercase tracking-widest font-mono font-bold">
+                  AMENDING: {title || 'Untitled Verse'}
+                </h4>
+                <p className="text-xs italic font-serif text-amber-500/80">
+                  Mood set to: {mood}
+                </p>
+              </div>
+
+              {/* Centered Large Serif Textarea */}
+              <div className="flex-1 flex flex-col relative py-2">
+                <textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (typewriterEnabled) {
+                      if (e.key === 'Enter') {
+                        audioEngine.playTypewriterBell();
+                      } else if (e.key === ' ') {
+                        audioEngine.playTypewriterClick(true);
+                      } else if (e.key.length === 1) {
+                        audioEngine.playTypewriterClick(false);
+                      }
+                    }
+                  }}
+                  placeholder="Pour your heart out onto this clean dark parchment..."
+                  className="w-full h-full flex-1 bg-transparent border-0 resize-none text-neutral-100 font-serif text-lg md:text-xl leading-10 focus:outline-none focus:ring-0 placeholder:text-neutral-700 pl-4 border-l-2 border-amber-500/40"
+                  autoFocus
+                />
+              </div>
+
+              {/* Zen Footer */}
+              <div className="flex justify-between items-center text-[10px] text-neutral-500 border-t border-neutral-850 pt-4 font-mono">
+                <span>{body.trim().split(/\s+/).filter(Boolean).length} words</span>
+                <span>{body.length} characters</span>
+                <span className="text-amber-500/40">ESC or tap Return to exit Zen Mode</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Normal Standard Mode Editor Textarea */}
+        <div className="relative group">
+          <textarea
+            id="input-body"
+            required
+            rows={12}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            onKeyDown={(e) => {
+              if (typewriterEnabled) {
+                if (e.key === 'Enter') {
+                  audioEngine.playTypewriterBell();
+                } else if (e.key === ' ') {
+                  audioEngine.playTypewriterClick(true);
+                } else if (e.key.length === 1) {
+                  audioEngine.playTypewriterClick(false);
+                }
+              }
+            }}
+            placeholder="Write your beautiful verses here... Feel free to form multiple stanzas. Toggle Typewriter responses to find your rhythm."
+            className="w-full px-4 py-3.5 bg-white border border-[#e8e8ed] rounded-xl text-[#1d1d1f] font-serif text-md md:text-lg leading-relaxed focus:outline-none focus:ring-4 focus:ring-[#0071e3]/10 focus:border-[#0071e3] transition-all placeholder:text-[#86868b]/50 shadow-inner"
+          />
+          <div className="absolute right-3.5 bottom-3 text-[10px] font-mono text-neutral-400 pointer-events-none select-none font-semibold uppercase tracking-wider bg-white/90 px-2 py-1 rounded border border-[#e8e8ed] shadow-xs flex items-center gap-1.5">
+            <span>{body.trim().split(/\s+/).filter(Boolean).length} WRD</span>
+            <span className="w-1 h-1 rounded-full bg-neutral-350" />
+            <span>{body.length} CHR</span>
+          </div>
         </div>
       </div>
 

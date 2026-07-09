@@ -22,6 +22,8 @@ import DailySnapCard from './components/DailySnapCard';
 import CloudinarySettingsModal from './components/CloudinarySettingsModal';
 import UnveilingCurtain from './components/UnveilingCurtain';
 import ProfilePicUploader from './components/ProfilePicUploader';
+import { audioEngine } from './utils/audioEngine';
+import PoeticInspirationDeck from './components/PoeticInspirationDeck';
 
 // Cloud Ledger & Local Media Setup
 import { uploadToStorage } from './cloudinary';
@@ -86,6 +88,25 @@ export default function App() {
 
   const [isAuthorMode, setIsAuthorMode] = useState<boolean>(true);
   const [showUnveiling, setShowUnveiling] = useState<boolean>(false);
+
+  // Soundscape togglers (WOW factor)
+  const [appSoundscape, setAppSoundscape] = useState<'off' | 'drone' | 'rain' | 'chimes'>('off');
+
+  const handleToggleAppSoundscape = (type: 'off' | 'drone' | 'rain' | 'chimes') => {
+    setAppSoundscape(type);
+    try {
+      audioEngine.stopAllSoundscapes();
+      if (type === 'drone') {
+        audioEngine.startBinauralDrone();
+      } else if (type === 'rain') {
+        audioEngine.startSummerRain();
+      } else if (type === 'chimes') {
+        audioEngine.startForestChimes();
+      }
+    } catch (err) {
+      console.warn('[Soundscape] trigger failed:', err);
+    }
+  };
 
   // Check first time visitor unveiling status
   useEffect(() => {
@@ -1540,6 +1561,71 @@ export default function App() {
               <Grid3X3 className="w-4.5 h-4.5" />
             </button>
 
+            {/* Ambient Soundscape Segmented Control */}
+            <div id="app-soundscape-group" className={`flex items-center gap-0.5 border p-1 rounded-full text-[9px] font-mono tracking-wider font-extrabold uppercase mr-1 shadow-sm select-none transition-all ${
+              appTheme === 'light'
+                ? 'bg-[#FAF6F0] border-[#E2D9CF]'
+                : appTheme === 'sankofa'
+                ? 'bg-[#200e0b]/90 border-[#3a1a14]'
+                : appTheme === 'momoamo'
+                ? 'bg-[#141C16] border-[#FAF6F0]/15'
+                : appTheme === 'madrid'
+                ? 'bg-black/45 backdrop-blur-md border-black/15'
+                : 'bg-neutral-900/90 border-neutral-850'
+            }`}>
+              <span className={`px-2 text-[8px] font-bold ${
+                appTheme === 'light' ? 'text-neutral-500' : 'text-neutral-400'
+              }`}>🔊 AMBIENCE:</span>
+              <button
+                type="button"
+                onClick={() => handleToggleAppSoundscape('off')}
+                className={`px-2 py-1 rounded-full cursor-pointer transition-all ${
+                  appSoundscape === 'off'
+                    ? appTheme === 'light' ? 'bg-[#2E2A27] text-white font-bold' : 'bg-neutral-800 text-neutral-200 font-bold'
+                    : 'text-neutral-500 hover:text-neutral-350'
+                }`}
+                title="Mute Background"
+              >
+                🔇 OFF
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleAppSoundscape('drone')}
+                className={`px-2 py-1 rounded-full cursor-pointer transition-all ${
+                  appSoundscape === 'drone'
+                    ? 'bg-amber-500 text-neutral-950 font-black shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-350'
+                }`}
+                title="Enable Binaural Celestial Drone"
+              >
+                🌌 COSMIC
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleAppSoundscape('rain')}
+                className={`px-2 py-1 rounded-full cursor-pointer transition-all ${
+                  appSoundscape === 'rain'
+                    ? 'bg-cyan-500 text-neutral-950 font-black shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-350'
+                }`}
+                title="Enable Soft Summer Rain Backdrop"
+              >
+                🌧️ RAIN
+              </button>
+              <button
+                type="button"
+                onClick={() => handleToggleAppSoundscape('chimes')}
+                className={`px-2 py-1 rounded-full cursor-pointer transition-all ${
+                  appSoundscape === 'chimes'
+                    ? 'bg-emerald-500 text-neutral-950 font-black shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-350'
+                }`}
+                title="Enable Sankofa Canopy Forest Wind Chimes"
+              >
+                🍃 CHIMES
+              </button>
+            </div>
+
              {/* Theme Selector Segmented Control (Always Visible) */}
             <div id="theme-selector-group" className={`flex flex-wrap items-center gap-0.5 border p-1 rounded-full text-[9px] font-mono tracking-wider font-extrabold uppercase mr-1.5 shadow-sm select-none transition-all ${
               appTheme === 'light'
@@ -1827,6 +1913,14 @@ export default function App() {
       {/* Main Single-Screen workspace */}
       <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 md:px-8 py-8 space-y-8 z-10 relative">
         
+        {/* Poetic Inspiration Deck WOW Element */}
+        <PoeticInspirationDeck
+          poems={poems}
+          appTheme={appTheme}
+          onReadPoem={(p) => setActivePoemForReading(p)}
+          isAuthorMode={isAuthorMode}
+        />
+
         {/* Advanced elegant filter bar row */}
         <section id="filters-panel" className={`p-6 rounded-2xl space-y-5 relative transition-all duration-300 border ${
           appTheme === 'light'
