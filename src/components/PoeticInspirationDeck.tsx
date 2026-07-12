@@ -5,7 +5,7 @@ import { Poem } from '../types';
 
 interface PoeticInspirationDeckProps {
   poems: Poem[];
-  appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid';
+  appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid' | 'multiverse';
   onReadPoem: (poem: Poem) => void;
   isAuthorMode?: boolean;
 }
@@ -95,6 +95,14 @@ export default function PoeticInspirationDeck({
 
   const currentModalStyles = useMemo(() => {
     switch (appTheme) {
+      case 'multiverse':
+        return {
+          bg: 'bg-[#090A16]/85 border-[#00F2FE]/20 text-neutral-100 backdrop-blur-xl',
+          accentText: 'text-[#00F2FE]',
+          buttonBg: 'bg-gradient-to-r from-[#00F2FE] to-[#10B981] text-black hover:opacity-90 font-bold',
+          cardBack: 'bg-gradient-to-br from-[#00F2FE]/15 to-[#10B981]/15 border-[#00F2FE]/25 text-neutral-100',
+          cardFront: 'bg-[#05050A]/90 border-[#00F2FE]/20 shadow-2xl text-neutral-100'
+        };
       case 'light':
         return {
           bg: 'bg-[#faf6f0] border-[#e2d9cf] text-[#2e2a27]',

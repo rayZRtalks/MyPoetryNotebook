@@ -10,12 +10,12 @@ interface PoemCardProps {
   onDelete: (id: string) => void;
   isEditable?: boolean;
   onSelectMedia?: (poem: Poem) => void; // Triggered when the media thumbnail is clicked for lightbox
-  appTheme?: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid';
+  appTheme?: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid' | 'multiverse';
   gridOverlayEnabled?: boolean;
   isWide?: boolean;
 }
 
-const getMoodColor = (mood?: string, appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid' = 'dark') => {
+const getMoodColor = (mood?: string, appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid' | 'multiverse' = 'dark') => {
   if (appTheme === 'light') {
     const glowColor = 'hover:border-[#C97F65] hover:shadow-[0_8px_24px_rgba(201,127,101,0.08)] hover:bg-[#FAF6F0] focus-within:ring-[#C97F65]/10';
     switch (mood) {
@@ -213,6 +213,68 @@ const getMoodColor = (mood?: string, appTheme: 'dark' | 'light' | 'sankofa' | 'm
     }
   }
 
+  if (appTheme === 'multiverse') {
+    const glowColor = 'hover:border-[#00F2FE]/45 hover:shadow-[0_0_20px_rgba(0,242,254,0.18)] hover:bg-[#070814] focus-within:ring-[#00F2FE]/15';
+    switch (mood) {
+      case 'Reflective':
+        return {
+          badge: 'bg-[#05050A] text-[#00F2FE] border-[#00F2FE]/30 font-mono text-[9px] uppercase tracking-wider font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-[#00F2FE]',
+          accentBg: 'bg-[#00F2FE]/10'
+        };
+      case 'Melancholy':
+        return {
+          badge: 'bg-[#05050A] text-violet-400 border-violet-550/30 font-mono text-[9px] uppercase tracking-wider font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-violet-400',
+          accentBg: 'bg-violet-500/10'
+        };
+      case 'Romantic':
+        return {
+          badge: 'bg-[#05050A] text-rose-400 border-rose-550/30 font-mono text-[9px] uppercase tracking-wider font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-rose-400',
+          accentBg: 'bg-rose-500/10'
+        };
+      case 'Hopeful':
+        return {
+          badge: 'bg-[#05050A] text-[#10B981] border-[#10B981]/30 font-mono text-[9px] uppercase tracking-wider font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-[#10B981]',
+          accentBg: 'bg-[#10B981]/10'
+        };
+      case 'Whimsical':
+        return {
+          badge: 'bg-[#05050A] text-amber-400 border-amber-550/30 font-mono text-[9px] uppercase tracking-wider font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-amber-400',
+          accentBg: 'bg-amber-500/10'
+        };
+      case 'Mystical':
+        return {
+          badge: 'bg-[#05050A] text-fuchsia-400 border-fuchsia-550/30 font-mono text-[9px] uppercase tracking-wider font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-fuchsia-400',
+          accentBg: 'bg-fuchsia-500/10'
+        };
+      case 'Free':
+        return {
+          badge: 'bg-[#05050A] text-lime-400 border-lime-550/30 font-mono text-[9px] uppercase tracking-wider font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-lime-400',
+          accentBg: 'bg-lime-500/10'
+        };
+      default:
+        return {
+          badge: 'bg-[#05050A] text-[#00F2FE] border-[#00F2FE]/30 font-mono text-[9px] uppercase tracking-wider font-bold shadow-xs',
+          glow: glowColor,
+          accentText: 'text-[#00F2FE]',
+          accentBg: 'bg-[#00F2FE]/10'
+        };
+    }
+  }
+
   switch (mood) {
     case 'Reflective':
       return {
@@ -273,8 +335,30 @@ const getMoodColor = (mood?: string, appTheme: 'dark' | 'light' | 'sankofa' | 'm
   }
 };
 
-const getThemeStyles = (appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid' = 'dark') => {
+const getThemeStyles = (appTheme: 'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid' | 'multiverse' = 'dark') => {
   switch (appTheme) {
+    case 'multiverse':
+      return {
+        cardBg: 'bg-[#090A16]/80 border-[#00F2FE]/15 hover:border-[#00F2FE]/45 text-neutral-100 shadow-[0_8px_32px_rgba(0,242,254,0.1)] backdrop-blur-lg focus-within:ring-[#00F2FE]/30',
+        cardBorder: 'border-[#00F2FE]/15',
+        textTitle: 'text-white tracking-tight',
+        textAuthor: 'text-[#10B981] font-mono uppercase tracking-wider',
+        textBody: 'border-[#00F2FE]/20 text-neutral-200',
+        stzBadge: 'bg-[#05050A] border-[#00F2FE]/15 text-[#00F2FE]/70',
+        enlargeBadge: 'text-[#00F2FE] bg-[#05050A] border-[#00F2FE]/20 group-hover/thumb:bg-gradient-to-r group-hover/thumb:from-[#00F2FE] group-hover/thumb:to-[#10B981] group-hover/thumb:text-black group-hover/thumb:border-transparent',
+        catPill: 'bg-[#05050A] text-[#10B981] border-[#10B981]/25 font-mono uppercase text-[9px]',
+        pvtBadge: 'text-amber-400 bg-amber-950/20 border-amber-900/30',
+        attachBadge: 'text-[#00F2FE] bg-[#05050A] border-[#00F2FE]/25',
+        deleteBtn: 'text-rose-400 hover:bg-rose-950/25 hover:text-rose-300',
+        dateBtn: 'text-neutral-400 hover:bg-[#090A16]',
+        metaBorder: 'border-[#00F2FE]/10',
+        liveBadge: 'border-[#00F2FE]/20 text-[#00F2FE]',
+        liveIndicator: 'bg-[#10B981] shadow-[0_0_8px_#10B981]',
+        specimenText: 'text-[#00F2FE]/10 group-hover/thumb:text-[#10B981]/15',
+        specimenTileBg: 'bg-[#05050A] border-[#00F2FE]/15 text-neutral-400',
+        actionBtn: 'text-[#00F2FE]/80 hover:text-white hover:bg-[#00F2FE]/10',
+        deleteConfirmBg: 'bg-[#05050A] border-rose-500/30 text-rose-400'
+      };
     case 'light':
       return {
         cardBg: 'bg-[#FAF6F0] border-[#E2D9CF] text-[#2E2A27] shadow-[0_4px_24px_rgba(201,127,101,0.04)] focus-within:ring-[#C97F65]/20',

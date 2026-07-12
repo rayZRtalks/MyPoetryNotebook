@@ -146,9 +146,10 @@ export default function App() {
   });
   const [isDbLoading, setIsDbLoading] = useState(true);
 
-  const [appTheme, setAppTheme] = useState<'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid'>(() => {
+  const [appTheme, setAppTheme] = useState<'dark' | 'light' | 'sankofa' | 'momoamo' | 'madrid' | 'multiverse'>(() => {
     try {
       const saved = safeLocalStorage.getItem('poetry_notebook_theme');
+      if (saved === 'multiverse') return 'multiverse';
       if (saved === 'momoamo') return 'momoamo';
       if (saved === 'madrid') return 'madrid';
       if (saved === 'sankofa') return 'sankofa';
@@ -1357,6 +1358,8 @@ export default function App() {
         ? 'bg-[#142217] text-[#FAF6F0] selection:bg-[#E1FE35]/20 selection:text-[#E1FE35]'
         : appTheme === 'madrid'
         ? 'bg-[#FDA172] text-[#0E0E15] selection:bg-black/10 selection:text-black'
+        : appTheme === 'multiverse'
+        ? 'bg-[#05050A] text-[#f4f4f5] selection:bg-[#00F2FE]/25 selection:text-[#00F2FE]'
         : 'bg-[#07080d] text-[#e4e4e7] selection:bg-cyan-500/20 selection:text-cyan-300'
     }`}>
       {/* Sankofa Repeating Geometric Pattern Top Banner */}
@@ -1373,13 +1376,23 @@ export default function App() {
       {/* Background Glowing Ambient Aura */}
       {appTheme !== 'light' ? (
         <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden pointer-events-none z-0">
-          <div className="absolute -top-[150px] -left-[100px] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[130px]" />
-          {appTheme === 'momoamo' ? (
-            <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-emerald-500/15 blur-[140px]" />
+          {appTheme === 'multiverse' ? (
+            <>
+              <div className="absolute -top-[150px] -left-[100px] w-[500px] h-[500px] rounded-full bg-cyan-500/15 blur-[120px] animate-pulse" />
+              <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-emerald-500/20 blur-[130px]" />
+              <div className="absolute top-[250px] left-[25%] w-[600px] h-[600px] rounded-full bg-violet-600/10 blur-[150px] animate-pulse" />
+            </>
           ) : (
-            <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-cyan-500/10 blur-[140px]" />
+            <>
+              <div className="absolute -top-[150px] -left-[100px] w-[500px] h-[500px] rounded-full bg-indigo-500/10 blur-[130px]" />
+              {appTheme === 'momoamo' ? (
+                <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-emerald-500/15 blur-[140px]" />
+              ) : (
+                <div className="absolute -top-[100px] right-[5%] w-[400px] h-[400px] rounded-full bg-cyan-500/10 blur-[140px]" />
+              )}
+              <div className="absolute top-[300px] left-[30%] w-[600px] h-[600px] rounded-full bg-purple-500/5 blur-[160px]" />
+            </>
           )}
-          <div className="absolute top-[300px] left-[30%] w-[600px] h-[600px] rounded-full bg-purple-500/5 blur-[160px]" />
         </div>
       ) : (
         <div className="absolute top-0 left-0 w-full h-[600px] overflow-hidden pointer-events-none z-0 opacity-40">
@@ -1425,6 +1438,8 @@ export default function App() {
           ? 'bg-[#142217]/90 border-b border-[#FAF6F0]/15 shadow-lg shadow-black/20'
           : appTheme === 'madrid'
           ? 'bg-[#FDA172]/90 border-b border-black/15 shadow-md shadow-black/5'
+          : appTheme === 'multiverse'
+          ? 'bg-[#05050A]/85 border-b border-[#00F2FE]/20 shadow-[0_4px_30px_rgba(0,242,254,0.05)]'
           : 'bg-[#0c0d14]/80 border-b border-neutral-850 shadow-lg shadow-black/25'
       }`}>
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -1451,6 +1466,8 @@ export default function App() {
                       ? 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-[#FAF6F0]'
                       : appTheme === 'madrid'
                       ? 'font-unbounded font-black text-3xl md:text-4xl tracking-tighter text-[#0E0E15]'
+                      : appTheme === 'multiverse'
+                      ? 'font-display font-extrabold text-2xl md:text-3xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#00F2FE] via-[#10B981] to-cyan-400 drop-shadow-[0_2px_10px_rgba(0,242,254,0.2)]'
                       : 'font-syne font-extrabold text-2xl md:text-3xl tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-200 to-fuchsia-400 drop-shadow-[0_2px_12px_rgba(6,182,212,0.15)]'
                   }`}>
                     rayZRtalks
@@ -1465,6 +1482,8 @@ export default function App() {
                     ? 'font-serif italic text-xs md:text-sm font-medium tracking-wide text-[#E1FE35] mt-1'
                     : appTheme === 'madrid'
                     ? 'font-mono text-[10px] md:text-xs uppercase tracking-widest text-[#0E0E15]/75 font-black mt-1'
+                    : appTheme === 'multiverse'
+                    ? 'font-display text-xs md:text-sm font-bold tracking-wider mt-1 inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#00F2FE] via-[#10B981] to-cyan-400'
                     : 'font-display text-xs md:text-sm font-semibold tracking-wider mt-1 inline-block text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-300 to-fuchsia-400'
                 }`}>
                   Where thoughts find rhythm and stories become poetry
@@ -1472,7 +1491,7 @@ export default function App() {
                 {/* Dynamically tracking metrics ledger counters */}
                 <div id="header-counters" className="flex items-center gap-3 mt-1.5 flex-wrap">
                   <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
-                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#E1FE35]/70' : 'text-neutral-400'
+                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#E1FE35]/70' : appTheme === 'multiverse' ? 'text-[#00F2FE]/70' : 'text-neutral-400'
                   }`}>
                     ✍️ <span className={`font-black ${
                       appTheme === 'light' 
@@ -1481,14 +1500,16 @@ export default function App() {
                         ? 'text-[#fffdf9] bg-[#bf3f27] px-1.5 py-0.5 rounded-md border border-[#bf3f27]/30'
                         : appTheme === 'momoamo'
                         ? 'text-[#E1FE35] bg-[#141C16]/60 px-1.5 py-0.5 rounded-md border border-[#E1FE35]/20'
+                        : appTheme === 'multiverse'
+                        ? 'text-[#00F2FE] bg-[#090A16] px-1.5 py-0.5 rounded-md border border-[#00F2FE]/20 shadow-[0_0_8px_rgba(0,242,254,0.15)]'
                         : 'text-cyan-400 bg-cyan-950/40 px-1.5 py-0.5 rounded-md border border-cyan-900/30'
                     }`}>{poems.filter(p => !p.isPhotoCapture).length}</span> Verses
                   </span>
                   <span className={`w-1 h-1 rounded-full ${
-                    appTheme === 'light' ? 'bg-[#E2D9CF]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]/40' : appTheme === 'momoamo' ? 'bg-[#E1FE35]/35' : 'bg-neutral-800'
+                    appTheme === 'light' ? 'bg-[#E2D9CF]' : appTheme === 'sankofa' ? 'bg-[#bf3f27]/40' : appTheme === 'momoamo' ? 'bg-[#E1FE35]/35' : appTheme === 'multiverse' ? 'bg-[#10B981]' : 'bg-neutral-800'
                   }`} />
                   <span className={`inline-flex items-center gap-1.5 text-[10px] md:text-xs font-mono font-bold uppercase tracking-wider ${
-                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#E1FE35]/70' : 'text-neutral-400'
+                    appTheme === 'light' ? 'text-[#738A7C]' : appTheme === 'sankofa' ? 'text-[#3a1a14]/80' : appTheme === 'momoamo' ? 'text-[#E1FE35]/70' : appTheme === 'multiverse' ? 'text-[#10B981]/70' : 'text-neutral-400'
                   }`}>
                     📷 <span className={`font-black ${
                       appTheme === 'light' 
@@ -1497,6 +1518,8 @@ export default function App() {
                         ? 'text-[#3a1a14] bg-[#dca626]/40 px-1.5 py-0.5 rounded-md border border-[#bf3f27]/25'
                         : appTheme === 'momoamo'
                         ? 'text-[#E1FE35] bg-[#141C16]/60 px-1.5 py-0.5 rounded-md border border-[#E1FE35]/20'
+                        : appTheme === 'multiverse'
+                        ? 'text-[#10B981] bg-[#090A16] px-1.5 py-0.5 rounded-md border border-[#10B981]/20 shadow-[0_0_8px_rgba(16,185,129,0.15)]'
                         : 'text-pink-400 bg-fuchsia-950/40 px-1.5 py-0.5 rounded-md border border-fuchsia-900/30'
                     }`}>{poems.filter(p => p.isPhotoCapture).length}</span> Daily Snaps
                   </span>
@@ -1524,6 +1547,8 @@ export default function App() {
                     ? 'bg-[#141C16] border-[#E1FE35]/20 hover:border-[#E1FE35] text-[#E1FE35] hover:bg-[#18231C]'
                     : appTheme === 'madrid'
                     ? 'bg-black/10 border-black/15 hover:bg-black/20 text-[#0E0E15]'
+                    : appTheme === 'multiverse'
+                    ? 'bg-[#00F2FE]/10 border-[#00F2FE]/30 hover:border-[#10B981] text-[#00F2FE] hover:bg-[#10B981]/15 shadow-[0_0_10px_rgba(0,242,254,0.1)]'
                     : 'bg-cyan-500/10 border-cyan-500/30 hover:border-cyan-400 text-cyan-400 hover:bg-cyan-500/20'
                 }`}
                 title="Test/Replay the Website Unveiling Ceremony"
@@ -1549,11 +1574,15 @@ export default function App() {
                     ? 'bg-[#2E2A27] text-[#C97F65] border-[#E2D9CF] shadow-[0_0_12px_rgba(201,127,101,0.15)]'
                     : appTheme === 'momoamo'
                     ? 'bg-[#141C16] text-[#E1FE35] border-[#E1FE35]/40 shadow-[0_0_12px_rgba(225,254,53,0.15)]'
+                    : appTheme === 'multiverse'
+                    ? 'bg-[#00F2FE]/15 text-[#00F2FE] border-[#00F2FE]/50 shadow-[0_0_12px_rgba(0,242,254,0.25)]'
                     : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.15)]'
                   : appTheme === 'light'
                     ? 'bg-[#E2D9CF]/50 border-[#E2D9CF] text-[#738A7C] hover:text-[#2E2A27] hover:border-[#738A7C]'
                     : appTheme === 'momoamo'
                     ? 'bg-[#141C16] border-[#E1FE35]/20 text-[#E1FE35]/70 hover:text-[#E1FE35] hover:border-[#E1FE35]/40'
+                    : appTheme === 'multiverse'
+                    ? 'bg-[#05050A] border-[#00F2FE]/20 text-[#00F2FE]/60 hover:text-[#00F2FE] hover:border-[#00F2FE]/50'
                     : 'bg-neutral-900/95 border-neutral-850 text-neutral-400 hover:text-white hover:border-neutral-700'
               }`}
               title={gridOverlayEnabled ? "Hide alignment guidelines" : "Display alignment guidelines"}
@@ -1636,6 +1665,8 @@ export default function App() {
                 ? 'bg-[#141C16] border-[#FAF6F0]/15'
                 : appTheme === 'madrid'
                 ? 'bg-black/45 backdrop-blur-md border-black/15'
+                : appTheme === 'multiverse'
+                ? 'bg-[#05050A]/90 border-[#00F2FE]/25 shadow-[0_0_12px_rgba(0,242,254,0.15)]'
                 : 'bg-neutral-900/90 border-neutral-850'
             }`}>
               <button
@@ -1745,6 +1776,30 @@ export default function App() {
                 title="Switch to Madrid Theme"
               >
                 🇪🇸 Madrid
+              </button>
+              <button
+                id="theme-btn-multiverse"
+                onClick={() => {
+                  setAppTheme('multiverse');
+                  safeLocalStorage.setItem('poetry_notebook_theme', 'multiverse');
+                  showToast('Theme set to Multiverse Mode.', 'info');
+                }}
+                className={`px-3 py-1.5 rounded-full transition-all cursor-pointer whitespace-nowrap select-none ${
+                  appTheme === 'multiverse'
+                    ? 'bg-gradient-to-r from-[#00F2FE] to-[#10B981] text-black font-black shadow-[0_0_12px_rgba(0,242,254,0.3)]'
+                    : appTheme === 'sankofa'
+                    ? 'text-[#ebd6bc]/70 hover:text-[#ebd6bc]'
+                    : appTheme === 'light'
+                    ? 'text-[#738A7C] hover:text-[#2E2A27]'
+                    : appTheme === 'momoamo'
+                    ? 'text-[#FAF6F0]/70 hover:text-[#E1FE35]'
+                    : appTheme === 'madrid'
+                    ? 'text-neutral-400 hover:text-[#FDA172]'
+                    : 'text-neutral-400 hover:text-[#00F2FE]'
+                }`}
+                title="Switch to Multiverse Theme"
+              >
+                🌌 Multiverse
               </button>
             </div>
 
@@ -1927,6 +1982,8 @@ export default function App() {
             ? 'bg-[#FAF6F0] border-[#E2D9CF] text-[#2E2A27] shadow-sm'
             : appTheme === 'momoamo'
             ? 'bg-[#18231C] border-[#FAF6F0]/15 text-[#FAF6F0] shadow-xl'
+            : appTheme === 'multiverse'
+            ? 'bg-[#090A16]/80 border-[#00F2FE]/20 shadow-[0_4px_30px_rgba(0,242,254,0.05)] text-neutral-100 backdrop-blur-md'
             : 'bg-[#0f111a]/80 border-neutral-800/80 shadow-xl backdrop-blur-md text-[#e4e4e7]'
         }`}>
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -1945,6 +2002,8 @@ export default function App() {
                     ? 'bg-[#FAF6F0] border-[#E2D9CF] text-[#2E2A27] focus:ring-[#C97F65]/10 focus:border-[#C97F65]'
                     : appTheme === 'momoamo'
                     ? 'bg-[#141C16] border-[#FAF6F0]/15 text-[#FAF6F0] focus:ring-[#E1FE35]/20 focus:border-[#E1FE35] focus:bg-[#18231C]'
+                    : appTheme === 'multiverse'
+                    ? 'bg-[#05050A]/95 border-[#00F2FE]/20 text-[#f4f4f5] focus:ring-[#00F2FE]/30 focus:border-[#00F2FE] focus:bg-[#090A16] shadow-[0_0_8px_rgba(0,242,254,0.05)]'
                     : 'bg-[#141622] border border-neutral-800 text-neutral-100 focus:ring-cyan-500/40 focus:border-cyan-500 focus:bg-[#181a28]'
                 }`}
               />
